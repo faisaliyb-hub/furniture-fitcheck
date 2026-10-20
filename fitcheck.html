@@ -164,7 +164,7 @@ const ROOM_TYPES={living:'Living room',bedroom:'Bedroom',dining:'Dining room',of
 const RF=['name','type','rw','rl','dwall','dw','doff','dh','items','cuts','obs','rh','mode','walls','shape','sketch'];
 const normRoom=r=>{r.mode=r.mode||'rect';r.walls=r.walls||[];r.shape=r.shape||(r.mode==='walls'&&r.walls.length?'free':'rect');r.sketch=r.sketch||null;r.cuts=r.cuts||[];r.obs=r.obs||[];r.rh=r.rh||260;return r};
 function fixRoom(){S.cuts=S.cuts||[];S.obs=S.obs||[];S.rh=S.rh||260;S.mode=S.mode||'rect';S.walls=S.walls||[];S.shape=S.shape||'rect';
- const def=shapeDef(S.shape);if(S.mode==='walls'&&def&&S.walls.length!==def.turns.length)S.walls=def.turns.map(turn=>({len:0,turn}));
+ const def=shapeDef(S.shape);if(S.mode==='walls'&&def&&S.walls.length!==def.turns.length)S.walls=wallsFor(def);
  recomputeShape()}
 const clone=o=>JSON.parse(JSON.stringify(o));
 function stash(){const o={};RF.forEach(k=>o[k]=S[k]);o.closed=S.mode==='walls'?!!S.closed:true;S.rooms[S.cur]=clone(o)}
@@ -188,7 +188,9 @@ const SHAPES={
  'L-tr':{name:'L-shape',turns:['R','L','R','R','R','R'],pts:[[0,0],[60,0],[60,30],[100,30],[100,70],[0,70]],rule:'Wall 5 should equal wall 1 + wall 3, and wall 6 should equal wall 2 + wall 4.'}
 };
 // A shape's definition: one of the pictures, or the rep's own straightened sketch.
-const shapeDef=k=>k==='sketch'?(S.sketch?{name:'Your drawing',turns:S.sketch.turns,pts:S.sketch.pts}:null):SHAPES[k]||null;
+const shapeDef=k=>k==='sketch'?(S.sketch?{name:'Your drawing',turns:S.sketch.turns,curves:S.sketch.curves,pts:S.sketch.preview?S.sketch.preview.pts:S.sketch.pts,labels:S.sketch.preview&&S.sketch.preview.labels}:null):SHAPES[k]||null;
+// Empty wall list for a shape: one entry per wall, curved walls carry which way they bow and a depth to measure.
+const wallsFor=def=>def.turns.map((turn,i)=>({len:0,turn,curve:def.curves&&def.curves[i]?{side:def.curves[i].side,depth:0}:null}));
 // Plain rule for any shape: walls running one way must add up to the walls running the opposite way.
 function shapeRule(turns){let d=0;const g=[[],[],[],[]];turns.forEach((t,i)=>{g[d].push(i+1);d=(d+(t==='L'?3:1))%4});
  const side=a=>a.length>1?'walls '+a.join(' + '):'wall '+a[0],cap=x=>x[0].toUpperCase()+x.slice(1);
@@ -196,94 +198,161 @@ function shapeRule(turns){let d=0;const g=[[],[],[],[]];turns.forEach((t,i)=>{g[
 // Small picture of a shape; big=true adds the wall numbers (or Length / Width for a rectangle).
 function shapeSvg(key,big){const pts=shapeDef(key).pts,sc=big?2.2:.5,pad=big?26:3,P=pts.map(([x,y])=>[pad+x*sc,pad+y*sc]),n=P.length,vw=100*sc+2*pad,vh=70*sc+2*pad;
  let h=`<svg viewBox="0 0 ${vw} ${vh}" aria-hidden="true"><polygon points="${P.map(p=>p.join(',')).join(' ')}" fill="var(--room)" stroke="var(--ink)" stroke-width="${big?2.5:2}" stroke-linejoin="round"/>`;
- if(big)P.forEach((a,i)=>{const b=P[(i+1)%n],len=Math.hypot(b[0]-a[0],b[1]-a[1]),dx=(b[0]-a[0])/len,dy=(b[1]-a[1])/len,mx=(a[0]+b[0])/2+dy*15,my=(a[1]+b[1])/2-dx*15;
+ const lab=shapeDef(key).labels;
+ if(big&&lab)lab.forEach(([x,y],i)=>{const mx=pad+x*sc,my=pad+y*sc;h+=`<circle cx="${mx}" cy="${my}" r="10" fill="var(--accent)"/><text x="${mx}" y="${my+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent-ink)">${i+1}</text>`});
+ if(big&&!lab)P.forEach((a,i)=>{const b=P[(i+1)%n],len=Math.hypot(b[0]-a[0],b[1]-a[1]),dx=(b[0]-a[0])/len,dy=(b[1]-a[1])/len,mx=(a[0]+b[0])/2+dy*15,my=(a[1]+b[1])/2-dx*15;
   if(key==='rect'&&i>1)return;const t=key==='rect'?(i===0?'Length':'Width'):String(i+1),r=key==='rect'?0:10;
   h+=r?`<circle cx="${mx}" cy="${my}" r="${r}" fill="var(--accent)"/><text x="${mx}" y="${my+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent-ink)">${t}</text>`
    :`<text x="${mx}" y="${my+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent)">${t}</text>`});
  return h+'</svg>'}
 
-// ---- Rough sketch -> clean right-angled outline ----
-// The finger path is simplified (Ramer-Douglas-Peucker), every piece is snapped to across or up/down, pieces going the same way are
-// joined, tiny wobbles and back-tracks are removed, and the loop is made clockwise starting with the top wall going right.
-function segDist(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],L=dx*dx+dy*dy;if(!L)return Math.hypot(p[0]-a[0],p[1]-a[1]);const t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/L));return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy)}
-function rdp(P,eps){if(P.length<3)return P;const a=P[0],b=P[P.length-1];let idx=-1,dm=0;
- for(let i=1;i<P.length-1;i++){const d=segDist(P[i],a,b);if(d>dm){dm=d;idx=i}}
- return dm>eps?rdp(P.slice(0,idx+1),eps).slice(0,-1).concat(rdp(P.slice(idx),eps)):[a,b]}
-const SKETCH_FAIL="I couldn't read that shape. Draw it again with straight walls and clear corners, or tap one of the pictures.";
-function sketchToShape(raw){
- if(raw.length<6)return{err:'Draw the outline of the room in one line, all the way round.'};
- const xs=raw.map(p=>p[0]),ys=raw.map(p=>p[1]),diag=Math.hypot(Math.max(...xs)-Math.min(...xs),Math.max(...ys)-Math.min(...ys));
- if(diag<60)return{err:'Draw bigger: use most of the box.'};
- const simp=rdp(raw.concat([raw[0]]),diag*.06);
- let segs=[];for(let i=0;i<simp.length-1;i++){const dx=simp[i+1][0]-simp[i][0],dy=simp[i+1][1]-simp[i][1],d=Math.abs(dx)>=Math.abs(dy)?(dx>=0?0:2):(dy>=0?1:3),len=Math.abs(d%2?dy:dx);if(len>0)segs.push({d,len})}
- const minLen=diag*.06;let changed=true,guard=0;
- while(changed&&guard++<200&&segs.length>1){changed=false;
-  for(let i=0;i<segs.length;i++){const j=(i+1)%segs.length;if(i===j)break;
-   if(segs[i].d===segs[j].d){segs[i].len+=segs[j].len;segs.splice(j,1);changed=true;break}
-   if((segs[i].d+2)%4===segs[j].d){const diff=segs[i].len-segs[j].len;if(diff>=0){segs[i].len=diff;segs.splice(j,1)}else{segs[j].len=-diff;segs.splice(i,1)}changed=true;break}}
-  if(changed){segs=segs.filter(x=>x.len>0);continue}
-  const k=segs.findIndex(x=>x.len<minLen);if(k>=0&&segs.length>4){segs.splice(k,1);changed=true}}
- segs=segs.filter(x=>x.len>0);const n=segs.length;
- if(n<4||n%2)return{err:SKETCH_FAIL};
- let turnSum=0;for(let i=0;i<n;i++){const t=(segs[(i+1)%n].d-segs[i].d+4)%4;if(t!==1&&t!==3)return{err:SKETCH_FAIL};turnSum+=t===1?1:-1}
- if(turnSum<0)segs=segs.reverse().map(x=>({d:(x.d+2)%4,len:x.len}));
- // even out the rough lengths so the drawing closes (only for the picture; real lengths are typed)
- const sum=d=>segs.filter(x=>x.d===d).reduce((a,x)=>a+x.len,0),H=(sum(0)+sum(2))/2,V=(sum(1)+sum(3))/2,f=[0,1,2,3].map(d=>(d%2?V:H)/sum(d));
- segs.forEach(x=>{x.len*=f[x.d]});
- const walk=list=>{let x=0,y=0;return list.map(sg=>{const p=[x,y];x+=DIRS[sg.d][0]*sg.len;y+=DIRS[sg.d][1]*sg.len;return p})};
- let v=walk(segs);const tol=(Math.max(...v.map(p=>p[1]))-Math.min(...v.map(p=>p[1])))*.04;let start=-1;
- segs.forEach((sg,i)=>{if(sg.d!==0)return;if(start<0||v[i][1]<v[start][1]-tol||(Math.abs(v[i][1]-v[start][1])<=tol&&v[i][0]<v[start][0]))start=i});
- segs=segs.slice(start).concat(segs.slice(0,start));v=walk(segs);
- const mx=Math.min(...v.map(p=>p[0])),my=Math.min(...v.map(p=>p[1])),w=Math.max(...v.map(p=>p[0]))-mx,h=Math.max(...v.map(p=>p[1]))-my,sc=Math.min(100/w,70/h);
- const pts=v.map(([x,y])=>[Math.round((x-mx)*sc*10)/10,Math.round((y-my)*sc*10)/10]);
- const box=i=>{const a=pts[i],b=pts[(i+1)%n];return{x0:Math.min(a[0],b[0]),y0:Math.min(a[1],b[1]),x1:Math.max(a[0],b[0]),y1:Math.max(a[1],b[1])}};
- for(let i=0;i<n;i++)for(let j=i+2;j<n;j++){if(i===0&&j===n-1)continue;const A=box(i),B=box(j);if(A.x0<=B.x1&&A.x1>=B.x0&&A.y0<=B.y1&&A.y1>=B.y0)return{err:SKETCH_FAIL}}
- return{turns:segs.map((x,i)=>((segs[(i+1)%n].d-x.d+4)%4)===1?'R':'L'),pts}}
-
-// ---- Room outline built from wall measurements ----
-// The rep measures wall after wall (right-angled corners) and says which way they turn at each corner. The first wall runs left to right
-// on the plan. When the walls come back to the start (within a small tolerance) the outline is closed and adjusted so every wall is
-// straight. The part of the overall rectangle that is outside the outline becomes cut-outs, so all checks keep working unchanged.
-const DIRS=[[1,0],[0,1],[-1,0],[0,-1]];   // east, south, west, north (clockwise on screen)
+// ---- Room outlines with straight, angled and curved walls ----
+// Directions come in 45-degree steps (E, SE, S, SW, W, NW, N, NE, clockwise on screen). Each wall has a length; a curved wall's
+// length is the straight distance between its ends, plus how deep the curve is. When the measured walls come back to the start
+// the outline is closed and stored as a polygon (curves become many short points), and every fit check tests against it.
+const D8=[[1,0],[Math.SQRT1_2,Math.SQRT1_2],[0,1],[-Math.SQRT1_2,Math.SQRT1_2],[-1,0],[-Math.SQRT1_2,-Math.SQRT1_2],[0,-1],[Math.SQRT1_2,-Math.SQRT1_2]];
+const TURN8={S:0,R45:1,R:2,R135:3,L45:-1,L:-2,L135:-3},TURNNAME={0:'S',1:'R45',2:'R',3:'R135','-1':'L45','-2':'L','-3':'L135'};
 const RECTW={N:'Top',S:'Bottom',W:'Left',E:'Right'};
 function inPoly(px,py,v){let c=false;for(let i=0,j=v.length-1;i<v.length;j=i++){const a=v[i],b=v[j];if((a.y>py)!==(b.y>py)&&px<(b.x-a.x)*(py-a.y)/(b.y-a.y)+a.x)c=!c}return c}
-function outsideRects(v,W,L){const xs=[...new Set(v.map(p=>p.x))].sort((a,b)=>a-b),ys=[...new Set(v.map(p=>p.y))].sort((a,b)=>a-b),rows=[];
- for(let j=0;j<ys.length-1;j++){const row=[];for(let i=0;i<xs.length-1;i++)row.push(!inPoly((xs[i]+xs[i+1])/2,(ys[j]+ys[j+1])/2,v));rows.push(row)}
- const out=[];let act=new Map();
- rows.forEach((row,j)=>{const next=new Map();let i=0;
-  while(i<row.length){if(!row[i]){i++;continue}let k=i;while(k+1<row.length&&row[k+1])k++;
-   const key=i+'-'+k,prev=act.get(key);if(prev){prev.y1=ys[j+1];next.set(key,prev)}else{const r={x0:xs[i],y0:ys[j],x1:xs[k+1],y1:ys[j+1]};out.push(r);next.set(key,r)}i=k+1}
-  act=next});
- return out.map(r=>({x:r.x0,y:r.y0,w:r.x1-r.x0,d:r.y1-r.y0}))}
+// Points strictly between a and b on a circular arc that bulges s cm towards (nx,ny).
+function arcPts(a,b,s,nx,ny){const dx=b.x-a.x,dy=b.y-a.y,c=Math.hypot(dx,dy);if(c<1||!(s>0))return[];s=Math.min(s,c/2);
+ const R=(c*c/4+s*s)/(2*s),ux=dx/c,uy=dy/c,N=Math.max(8,Math.round(c/20)),out=[];
+ for(let k=1;k<N;k++){const t=k/N,x=(t-.5)*c,h=Math.sqrt(Math.max(0,R*R-x*x))-(R-s);out.push({x:a.x+ux*t*c+nx*h,y:a.y+uy*t*c+ny*h})}return out}
+function arcLen(c,s){if(!(s>0))return c;s=Math.min(s,c/2);const R=(c*c/4+s*s)/(2*s);return 2*R*Math.asin(Math.min(1,c/(2*R)))}
+function segX(a,b,c,d){const o=(p,q,r)=>Math.sign(Math.round(((q.x-p.x)*(r.y-p.y)-(q.y-p.y)*(r.x-p.x))*1e6)/1e6);
+ const on=(p,q,r)=>Math.min(p.x,q.x)-1e-6<=r.x&&r.x<=Math.max(p.x,q.x)+1e-6&&Math.min(p.y,q.y)-1e-6<=r.y&&r.y<=Math.max(p.y,q.y)+1e-6;
+ const o1=o(a,b,c),o2=o(a,b,d),o3=o(c,d,a),o4=o(c,d,b);
+ if(o1!==o2&&o3!==o4)return true;
+ return (o1===0&&on(a,b,c))||(o2===0&&on(a,b,d))||(o3===0&&on(c,d,a))||(o4===0&&on(c,d,b))}
+// True when no two non-neighbouring edges of the closed outline cross or touch.
+function simplePoly(P){const n=P.length;for(let i=0;i<n;i++){const a=P[i],b=P[(i+1)%n];for(let j=i+2;j<n;j++){if(i===0&&j===n-1)continue;if(segX(a,b,P[j],P[(j+1)%n]))return false}}return true}
+// Inside intervals of the outline for each 1 cm row (row i covers y=i..i+1, sampled at its middle).
+function buildSpan(P,L){const rows=[];for(let i=0;i<Math.ceil(L);i++){const y=i+.5,xs=[];
+ for(let k=0,j=P.length-1;k<P.length;j=k++){const a=P[k],b=P[j];if((a.y>y)!==(b.y>y))xs.push(a.x+(y-a.y)*(b.x-a.x)/(b.y-a.y))}
+ xs.sort((p,q)=>p-q);const iv=[];for(let k=0;k+1<xs.length;k+=2)iv.push([xs[k],xs[k+1]]);rows.push(iv)}return rows}
+const insideAt=(px,py)=>{const row=S.span&&S.span[Math.floor(py)];return !!row&&row.some(([a,b])=>px>=a&&px<b)};
+// Is the rectangle inside the room? Outline rooms use the row table (0.5 cm tolerance, so pieces may touch walls);
+// quick rectangles use the overall box (their cut-outs are checked as fixed blocks).
+function rectInRoom(r){if(!S.span)return !(r.x0<-.5||r.y0<-.5||r.x1>S.rw+.5||r.y1>S.rl+.5);
+ if(r.y0<-.5||r.y1>S.rl+.5||r.x0<-.5||r.x1>S.rw+.5)return false;
+ const y0=Math.max(0,Math.floor(r.y0+.5)),y1=Math.min(S.span.length-1,Math.ceil(r.y1-.5)-1),ok=i=>S.span[i].some(([a,b])=>a<=r.x0+.5&&b>=r.x1-.5);
+ for(let i=y0;i<=y1;i+=2)if(!ok(i))return false;return y1<y0||ok(y1)}
+// Distance from a point to the outline along a ray (Infinity if none).
+function rayDist(ox,oy,dx,dy){let best=Infinity;const P=S.poly;if(!P)return best;
+ for(let k=0,j=P.length-1;k<P.length;j=k++){const a=P[j],b=P[k],ex=b.x-a.x,ey=b.y-a.y,den=dx*ey-dy*ex;if(Math.abs(den)<1e-9)continue;
+  const t=((a.x-ox)*ey-(a.y-oy)*ex)/den,u=((a.x-ox)*dy-(a.y-oy)*dx)/den;if(t>1e-6&&u>=-1e-9&&u<=1+1e-9&&t<best)best=t}return best}
+
+// ---- Rough sketch -> clean outline ----
+// The finger path is resampled and smoothed; corners are where it turns sharply. Each piece between corners becomes a straight wall
+// (direction snapped to the nearest 45 degrees) or, if it bows clearly away from the line between its ends, a curved wall.
+// The loop is made clockwise and numbered from the top-left wall. Lengths never come from the drawing: the rep types them.
+const SKETCH_FAIL="I couldn't read that shape. Draw it again with clear corners, or tap one of the pictures.";
+function sketchToShape(raw){
+ if(raw.length<8)return{err:'Draw the outline of the room in one line, all the way round.'};
+ const X=raw.map(p=>p[0]),Y=raw.map(p=>p[1]),diag=Math.hypot(Math.max(...X)-Math.min(...X),Math.max(...Y)-Math.min(...Y));
+ if(diag<60)return{err:'Draw bigger: use most of the box.'};
+ const loop=raw.concat([raw[0]]),step=diag/100;let P=[loop[0]],prev=loop[0],need=step;
+ for(let i=1;i<loop.length;i++){const cur=loop[i];let seg=Math.hypot(cur[0]-prev[0],cur[1]-prev[1]);
+  while(seg>=need&&seg>0){const t=need/seg,p=[prev[0]+(cur[0]-prev[0])*t,prev[1]+(cur[1]-prev[1])*t];P.push(p);prev=p;seg=Math.hypot(cur[0]-prev[0],cur[1]-prev[1]);need=step}
+  need-=seg;prev=cur}
+ if(P.length>2&&Math.hypot(P[P.length-1][0]-P[0][0],P[P.length-1][1]-P[0][1])<step)P.pop();
+ const n=P.length;if(n<24)return{err:SKETCH_FAIL};
+ for(let pass=0;pass<3;pass++)P=P.map((p,i)=>{const a=P[(i-1+n)%n],b=P[(i+1)%n];return[(a[0]+2*p[0]+b[0])/4,(a[1]+2*p[1]+b[1])/4]});
+ // corners: sharp turns measured over a stretch of about 6% of the drawing on each side
+ const k=Math.max(4,Math.round(n*.022)),ang=P.map((p,i)=>{const a=P[(i-k+n)%n],b=P[(i+k)%n],v1=[p[0]-a[0],p[1]-a[1]],v2=[b[0]-p[0],b[1]-p[1]];return Math.abs(Math.atan2(v1[0]*v2[1]-v1[1]*v2[0],v1[0]*v2[0]+v1[1]*v2[1])*180/Math.PI)});
+ let corners=[];for(let i=0;i<n;i++){const a=ang[i];if(a<30)continue;let peak=true;for(let j=1;j<=k;j++)if(ang[(i+j)%n]>a||ang[(i-j+n)%n]>a){peak=false;break}
+  if(peak&&(!corners.length||i-corners[corners.length-1]>k))corners.push(i)}
+ if(corners.length>1&&n-corners[corners.length-1]+corners[0]<=k)corners.pop();
+ if(corners.length<3)return{err:corners.length?SKETCH_FAIL:"Fully round rooms can't be drawn yet. Draw the room with a few straight walls."};
+ const snap=an=>((Math.round(an/(Math.PI/4))%8)+8)%8;
+ // each piece between corners: straight, or curved when the points follow a smooth arc (fitted bulge, not just wobble)
+ let pieces=corners.map((c,ci)=>{const e=corners[(ci+1)%corners.length],pts=[];for(let i=c;;i=(i+1)%n){pts.push(P[i]);if(i===e)break}
+  const a=pts[0],b=pts[pts.length-1],dx=b[0]-a[0],dy=b[1]-a[1],ch=Math.hypot(dx,dy)||1e-9;let num=0,den=0,ss=0;
+  const dv=pts.map(p=>{const t=((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(ch*ch),dev=(dx*(p[1]-a[1])-dy*(p[0]-a[0]))/ch,f=4*t*(1-t);num+=dev*f;den+=f*f;ss+=dev*dev;return[t,dev]});
+  const sf=den?num/den:0;let res=0;dv.forEach(([t,dev])=>{const e=dev-4*sf*t*(1-t);res+=e*e});const r2=ss?1-res/ss:0;
+  const curved=Math.abs(sf)>=.06*ch&&Math.abs(sf)>=.035*diag&&r2>=.6;
+  const an=Math.atan2(dy,dx);return{a,b,an,d:snap(an),len:ch,curve:curved?{right:sf>0,ratio:Math.min(.5,Math.abs(sf)/ch)}:null}});
+ // join straight pieces that are nearly in line (a wobble, not a corner), then pieces snapped the same way; drop tiny ones
+ const joinAt=i=>{const j=(i+1)%pieces.length,A=pieces[i],B=pieces[j],dx=B.b[0]-A.a[0],dy=B.b[1]-A.a[1],an=Math.atan2(dy,dx);
+  pieces[i]={a:A.a,b:B.b,an,d:snap(an),len:Math.hypot(dx,dy),curve:null};pieces.splice(j,1)};
+ const minLen=diag*.06;let changed=true,guard=0;
+ while(changed&&guard++<200&&pieces.length>3){changed=false;
+  for(let i=0;i<pieces.length;i++){const j=(i+1)%pieces.length,A=pieces[i],B=pieces[j];if(A.curve||B.curve)continue;
+   let da=Math.abs(B.an-A.an)%(2*Math.PI);if(da>Math.PI)da=2*Math.PI-da;
+   if(da<22*Math.PI/180||A.d===B.d){joinAt(i);changed=true;break}}
+  if(changed)continue;const t=pieces.findIndex(p=>p.len<minLen&&!p.curve);if(t>=0){pieces.splice(t,1);changed=true}}
+ const m=pieces.length;if(m<3)return{err:SKETCH_FAIL};
+ let sum=0;for(let i=0;i<m;i++){let t=(pieces[(i+1)%m].d-pieces[i].d+8)%8;if(t===4)return{err:SKETCH_FAIL};if(t>4)t-=8;sum+=t}
+ if(Math.abs(sum)!==8)return{err:SKETCH_FAIL};
+ const cw=sum>0;pieces.forEach(p=>{if(p.curve)p.curve.side=p.curve.right===cw?'in':'out'});
+ if(!cw)pieces=pieces.reverse().map(p=>({d:(p.d+4)%8,len:p.len,curve:p.curve}));
+ const walk=list=>{let x=0,y=0;return list.map(p=>{const q={x,y};x+=D8[p.d][0]*p.len;y+=D8[p.d][1]*p.len;return q})};
+ let v=walk(pieces);const tol=(Math.max(...v.map(p=>p.y))-Math.min(...v.map(p=>p.y)))*.04;let start=-1;
+ pieces.forEach((p,i)=>{if(p.d!==0||p.curve)return;if(start<0||v[i].y<v[start].y-tol||(Math.abs(v[i].y-v[start].y)<=tol&&v[i].x<v[start].x))start=i});
+ if(start<0)pieces.forEach((p,i)=>{if(start<0||v[i].y<v[start].y-tol||(Math.abs(v[i].y-v[start].y)<=tol&&v[i].x<v[start].x))start=i});
+ pieces=pieces.slice(start).concat(pieces.slice(0,start));v=walk(pieces);
+ // preview: close the rough drawing (spread the gap over the walls) and draw curves
+ const tot=pieces.reduce((a,p)=>a+p.len,0);let gx=0,gy=0;pieces.forEach(p=>{gx+=D8[p.d][0]*p.len;gy+=D8[p.d][1]*p.len});
+ let cum=0;v.forEach((q,i)=>{q.x-=gx*cum/tot;q.y-=gy*cum/tot;cum+=pieces[i].len});
+ const poly=[],labels=[];
+ pieces.forEach((p,i)=>{const a=v[i],b=v[(i+1)%m],c=Math.hypot(b.x-a.x,b.y-a.y)||1,ux=(b.x-a.x)/c,uy=(b.y-a.y)/c,ox=uy,oy=-ux;poly.push({x:a.x,y:a.y});
+  let mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+  if(p.curve){const s=p.curve.ratio*c,sg=p.curve.side==='in'?-1:1;poly.push(...arcPts(a,b,s,ox*sg,oy*sg));mx+=ox*sg*Math.min(s,c/2);my+=oy*sg*Math.min(s,c/2)}
+  labels.push({x:mx,y:my,ox,oy})});
+ if(!simplePoly(poly))return{err:SKETCH_FAIL};
+ const x0=Math.min(...poly.map(q=>q.x)),y0=Math.min(...poly.map(q=>q.y)),w=Math.max(...poly.map(q=>q.x))-x0,h=Math.max(...poly.map(q=>q.y))-y0,sc=Math.min(100/w,70/h);
+ const N=q=>[Math.round((q.x-x0)*sc*10)/10,Math.round((q.y-y0)*sc*10)/10];
+ return{d0:pieces[0].d,turns:pieces.map((p,i)=>TURNNAME[(()=>{let t=(pieces[(i+1)%m].d-p.d+8)%8;return t>4?t-8:t})()]),
+  curves:pieces.map(p=>p.curve?{side:p.curve.side}:null),preview:{pts:poly.map(N),labels:labels.map(l=>{const q=N(l);return[q[0]+l.ox*7,q[1]+l.oy*7]})}}}
+
 function recomputeShape(){
- S.poly=null;S.wallGeo=[];S.closed=false;S.misclose=0;S.shapeErr='';S.gapInfo=null;S.pathPts=null;
+ S.poly=null;S.wallGeo=[];S.closed=false;S.misclose=0;S.shapeErr='';S.gapInfo=null;S.pathPts=null;S.span=null;S.mismatch=0;
  if(S.mode!=='walls')return;
  const ws=S.walls,n=ws.length;
  if(!n){S.rw=300;S.rl=300;S.cuts=[];return}
- let d=0,x=0,y=0;const pts=[{x:0,y:0}],dirIdx=[];
- ws.forEach(w=>{const len=Math.max(0,+w.len||0);dirIdx.push(d);x+=DIRS[d][0]*len;y+=DIRS[d][1]*len;pts.push({x,y});d=(d+(w.turn==='L'?3:1))%4});
- const perim=ws.reduce((a,w)=>a+Math.max(0,+w.len||0),0),end=pts[n],gap=Math.hypot(end.x,end.y),tol=Math.max(8,.015*perim);
- let ok=false;
- if(gap<=tol){
-  if(n<4||n%2)S.shapeErr='Right-angled rooms need an even number of walls (4, 6, 8...).';
-  else if(ws.some(w=>!(+w.len>0)))S.shapeErr='Every wall needs a length.';
-  else{const v=pts.slice(0,n).map(p=>({x:p.x,y:p.y})),dl=dirIdx[n-1];
-   if(dl%2===0)v[n-1].y=0;else v[n-1].x=0;
-   const box=i=>{const a=v[i],b=v[(i+1)%n];return{x0:Math.min(a.x,b.x),y0:Math.min(a.y,b.y),x1:Math.max(a.x,b.x),y1:Math.max(a.y,b.y)}};
-   let bad=false;for(let i=0;i<n&&!bad;i++)for(let j=i+2;j<n;j++){if(i===0&&j===n-1)continue;const A=box(i),B=box(j);if(A.x0<=B.x1&&A.x1>=B.x0&&A.y0<=B.y1&&A.y1>=B.y0){bad=true;break}}
-   if(bad)S.shapeErr='The walls cross or touch each other. Check the lengths and the turn directions.';
-   else{const mx=Math.min(...v.map(p=>p.x)),my=Math.min(...v.map(p=>p.y));v.forEach(p=>{p.x-=mx;p.y-=my});
-    let area=0;v.forEach((p,i)=>{const q=v[(i+1)%n];area+=p.x*q.y-q.x*p.y});const cw=area>0;
-    S.wallGeo=v.map((a,i)=>{const b=v[(i+1)%n],len=Math.hypot(b.x-a.x,b.y-a.y),dx=(b.x-a.x)/len,dy=(b.y-a.y)/len;return{a,b,len,dx,dy,nx:cw?-dy:dy,ny:cw?dx:-dx}});
-    S.poly=v;S.rw=Math.max(...v.map(p=>p.x));S.rl=Math.max(...v.map(p=>p.y));S.cuts=outsideRects(v,S.rw,S.rl);S.closed=true;S.misclose=gap;ok=true}}}
- if(!ok){const mx=Math.min(...pts.map(p=>p.x)),my=Math.min(...pts.map(p=>p.y));
-  S.pathPts=pts.map(p=>({x:p.x-mx,y:p.y-my}));S.rw=Math.max(150,Math.ceil(Math.max(...S.pathPts.map(p=>p.x))));S.rl=Math.max(150,Math.ceil(Math.max(...S.pathPts.map(p=>p.y))));S.cuts=[];
-  const dir=DIRS[d],vx=-end.x,vy=-end.y,dot=vx*dir[0]+vy*dir[1],cross=Math.abs(vx*dir[1]-vy*dir[0]);
-  S.gapInfo={ex:end.x,ey:end.y,closeLen:dot>=1&&cross<=tol?Math.round(dot):0}}
- if(S.closed&&!S.wallGeo[+S.dwall])S.dwall='0'}
+ let d=(S.shape==='sketch'&&S.sketch&&S.sketch.d0)||0;const dirs=[];
+ ws.forEach(w=>{dirs.push(d);d=(d+(TURN8[w.turn]??2)+8)%8});
+ const lens=ws.map(w=>Math.max(0,+w.len||0)),vs=lens.map((l,i)=>[D8[dirs[i]][0]*l,D8[dirs[i]][1]*l]);
+ const perim=lens.reduce((a,b)=>a+b,0),tol=Math.max(8,.015*perim);
+ const filled=ws.every((w,i)=>lens[i]>0&&(!w.curve||+w.curve.depth>0));
+ let V=null;
+ if(filled&&n>=3){
+  // walls at an angle (not along the room's main directions) take their exact angle from the other measurements
+  const free=dirs.map((x,i)=>x%2?i:-1).filter(i=>i>=0);
+  const rest=vs.reduce((a,v,i)=>free.includes(i)?a:[a[0]+v[0],a[1]+v[1]],[0,0]),T=[-rest[0],-rest[1]],tl=Math.hypot(T[0],T[1]);
+  if(free.length===1){const i=free[0],mis=Math.abs(tl-lens[i]);S.mismatch=mis;if(mis<=tol&&tl>0){V=vs.slice();V[i]=T;S.misclose=mis}}
+  else if(free.length===2){const [i,j]=free,L1=lens[i],L2=lens[j];
+   if(tl>0){const a=(L1*L1-L2*L2+tl*tl)/(2*tl),h=Math.sqrt(Math.max(0,L1*L1-a*a)),ux=T[0]/tl,uy=T[1]/tl,w1=D8[dirs[i]];
+    const A=[[ux*a-uy*h,uy*a+ux*h],[ux*a+uy*h,uy*a-ux*h]].sort((p,q)=>(q[0]*w1[0]+q[1]*w1[1])-(p[0]*w1[0]+p[1]*w1[1]))[0],B=[T[0]-A[0],T[1]-A[1]];
+    const mis=Math.abs(Math.hypot(A[0],A[1])-L1)+Math.abs(Math.hypot(B[0],B[1])-L2);S.mismatch=mis;if(mis<=tol){V=vs.slice();V[i]=A;V[j]=B;S.misclose=mis}}}
+  else{const gx=vs.reduce((a,v)=>a+v[0],0),gy=vs.reduce((a,v)=>a+v[1],0),gap=Math.hypot(gx,gy);S.mismatch=gap;if(gap<=tol){V=vs.slice();S.misclose=gap}}}
+ if(V){let x=0,y=0;const v=[{x:0,y:0}];V.forEach(q=>{x+=q[0];y+=q[1];v.push({x,y})});
+  const gx=v[n].x,gy=v[n].y;
+  if(Math.hypot(gx,gy)>1e-6){
+   if(dirs.every(x=>x%2===0)){if(dirs[n-1]%4===0)v[n-1].y=0;else v[n-1].x=0}   // square rooms: keep every wall straight
+   else{let cum=0;for(let k=1;k<n;k++){cum+=Math.hypot(V[k-1][0],V[k-1][1]);v[k].x-=gx*cum/perim;v[k].y-=gy*cum/perim}}}
+  v.length=n;
+  let area=0;v.forEach((p,i)=>{const q=v[(i+1)%n];area+=p.x*q.y-q.x*p.y});const cw=area>0;
+  const poly=[],geo=[];
+  v.forEach((a,i)=>{const b=v[(i+1)%n],c=Math.hypot(b.x-a.x,b.y-a.y)||1,dx=(b.x-a.x)/c,dy=(b.y-a.y)/c,inx=cw?-dy:dy,iny=cw?dx:-dx,w=ws[i];
+   poly.push({x:a.x,y:a.y});const g={a,b,len:c,dx,dy,nx:inx,ny:iny,mid:{x:(a.x+b.x)/2,y:(a.y+b.y)/2}};
+   if(w.curve&&+w.curve.depth>0){const s=+w.curve.depth,sg=w.curve.side==='in'?1:-1,nx=inx*sg,ny=iny*sg;poly.push(...arcPts(a,b,s,nx,ny));
+    g.curve={depth:s,side:w.curve.side,arc:arcLen(c,s)};g.mid.x+=nx*Math.min(s,c/2);g.mid.y+=ny*Math.min(s,c/2)}
+   geo.push(g)});
+  if(!simplePoly(poly))S.shapeErr='The walls cross or touch each other. Check the measurements and the drawing.';
+  else{const mx=Math.min(...poly.map(p=>p.x)),my=Math.min(...poly.map(p=>p.y));
+   poly.forEach(p=>{p.x-=mx;p.y-=my});v.forEach(p=>{p.x-=mx;p.y-=my});geo.forEach(g=>{g.mid.x-=mx;g.mid.y-=my});
+   S.poly=poly;S.wallGeo=geo;S.rw=Math.max(...poly.map(p=>p.x));S.rl=Math.max(...poly.map(p=>p.y));S.cuts=[];S.span=buildSpan(poly,S.rl);S.closed=true;
+   const g=S.wallGeo[+S.dwall];if(!g||g.curve)S.dwall=String(Math.max(0,S.wallGeo.findIndex(x=>!x.curve)));return}}
+ // not closed yet: draw the path so far
+ let x=0,y=0;const pts=[{x:0,y:0}];vs.forEach(q=>{x+=q[0];y+=q[1];pts.push({x,y})});
+ const mx=Math.min(...pts.map(p=>p.x)),my=Math.min(...pts.map(p=>p.y));
+ S.pathPts=pts.map(p=>({x:p.x-mx,y:p.y-my}));S.rw=Math.max(150,Math.ceil(Math.max(...S.pathPts.map(p=>p.x))));S.rl=Math.max(150,Math.ceil(Math.max(...S.pathPts.map(p=>p.y))));S.cuts=[];
+ const end=pts[n],dir=D8[d],vx=-end.x,vy=-end.y,dot=vx*dir[0]+vy*dir[1],cross=Math.abs(vx*dir[1]-vy*dir[0]);
+ S.gapInfo={ex:end.x,ey:end.y,closeLen:dot>=1&&cross<=tol?Math.round(dot):0}}
 // A stretch of wall: ref is a wall index (wall by wall mode) or N/E/S/W (quick rectangle). Returns its floor rectangle `depth` cm into the room and the wall line.
 function wallSpan(ref,off,len,depth){
- if(S.mode==='walls'){const g=S.wallGeo[+ref];if(!g)return null;const t0=Math.max(0,off),t1=Math.min(g.len,off+len);
+ if(S.mode==='walls'){const g=S.wallGeo[+ref];if(!g||g.curve)return null;const t0=Math.max(0,off),t1=Math.min(g.len,off+len);
   const p0={x:g.a.x+g.dx*t0,y:g.a.y+g.dy*t0},p1={x:g.a.x+g.dx*t1,y:g.a.y+g.dy*t1},q0={x:p0.x+g.nx*depth,y:p0.y+g.ny*depth},q1={x:p1.x+g.nx*depth,y:p1.y+g.ny*depth};
   const xs=[p0.x,p1.x,q0.x,q1.x],ys=[p0.y,p1.y,q0.y,q1.y];
   return{rect:{x0:Math.min(...xs),y0:Math.min(...ys),x1:Math.max(...xs),y1:Math.max(...ys)},line:[p0.x,p0.y,p1.x,p1.y],n:{x:g.nx,y:g.ny}}}
@@ -319,10 +388,10 @@ function check(){
  if(S.mode==='walls'&&!S.closed)return [['warn','The room outline is not closed yet. Finish measuring the walls to check fit.']];
  const out=[],W=S.rw,L=S.rl,dz=doorRect();
  S.items.forEach(it=>{const c=cat(it.k),b=body(it),f=front(it);
-  if(b.x0<-.5||b.y0<-.5||b.x1>W+.5||b.y1>L+.5)out.push(['err',`${c.n} sticks out of the room.`]);
+  if(!rectInRoom(b))out.push(['err',`${c.n} sticks out of the room.`]);
   if(hit(b,dz))out.push(['warn',`${c.n} blocks the door swing area.`]);
   const fr={x0:Math.max(f.x0,0),y0:Math.max(f.y0,0),x1:Math.min(f.x1,W),y1:Math.min(f.y1,L)};
-  if(f.x0<-.5||f.y0<-.5||f.x1>W+.5||f.y1>L+.5)out.push(['warn',`${c.n}: front clearance (${U(c.cl)}) runs into a wall.`]);
+  if(!rectInRoom(f))out.push(['warn',`${c.n}: front clearance (${U(c.cl)}) runs into a wall.`]);
   S.items.forEach(o=>{if(o.id===it.id)return;
    if(o.id>it.id&&hit(b,body(o)))out.push(['err',`${c.n} overlaps ${cat(o.k).n}.`]);
    if(hit(f,body(o)))out.push(['warn',`${cat(o.k).n} is inside the clearance zone of ${c.n}.`]);});
@@ -377,19 +446,21 @@ const unitHint=()=>({cm:'e.g. 450',m:'e.g. 4.5',mm:'e.g. 4500',ftin:'e.g. 14 ft 
 // Free distance from a piece to the nearest wall or neighbouring piece in each direction (cm).
 function gaps(it){const b=body(it),W=+S.rw,L=+S.rl,o=[...S.items.filter(x=>x.id!==it.id).map(body),...hardRects()];
  const ys=q=>q.y0<b.y1-.5&&q.y1>b.y0+.5,xs=q=>q.x0<b.x1-.5&&q.x1>b.x0+.5;
- const left=Math.max(0,...o.filter(q=>ys(q)&&q.x1<=b.x0+.5).map(q=>q.x1)),
+ let left=Math.max(0,...o.filter(q=>ys(q)&&q.x1<=b.x0+.5).map(q=>q.x1)),
   right=Math.min(W,...o.filter(q=>ys(q)&&q.x0>=b.x1-.5).map(q=>q.x0)),
   up=Math.max(0,...o.filter(q=>xs(q)&&q.y1<=b.y0+.5).map(q=>q.y1)),
   down=Math.min(L,...o.filter(q=>xs(q)&&q.y0>=b.y1-.5).map(q=>q.y0));
+ if(S.poly){const cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2,r=(dx,dy)=>rayDist(cx,cy,dx,dy);
+  left=Math.max(left,cx-r(-1,0));right=Math.min(right,cx+r(1,0));up=Math.max(up,cy-r(0,-1));down=Math.min(down,cy+r(0,1))}
  return{b,left,right,up,down,gl:Math.max(0,b.x0-left),gr:Math.max(0,right-b.x1),gu:Math.max(0,b.y0-up),gd:Math.max(0,down-b.y1)}}
 // Floor areas in cm2 on a cell grid: room (minus cut-outs), fixed features, furniture, and what is free. Cached per layout.
 const uCache=new Map();
 function usage(){const W=+S.rw,L=+S.rl;if(!(W>0&&L>0))return{room:0,fixed:0,used:0,free:0,overlap:false};
- const key=W+'|'+L+'|'+JSON.stringify([S.cuts,S.obs.filter(o=>OBS[o.kind]&&OBS[o.kind].hard),S.items.map(i=>[i.k,i.x,i.y,i.rot])]);
+ const key=W+'|'+L+'|'+JSON.stringify([S.mode==='walls'?[S.walls,S.sketch&&S.sketch.d0,S.shape]:0,S.cuts,S.obs.filter(o=>OBS[o.kind]&&OBS[o.kind].hard),S.items.map(i=>[i.k,i.x,i.y,i.rot])]);
  if(uCache.has(key))return uCache.get(key);
  const st=Math.max(1,Math.round(Math.sqrt(W*L)/300)),cuts=S.cuts.map(rectOf),fixed=S.obs.filter(o=>OBS[o.kind]&&OBS[o.kind].hard).map(rectOf),bs=S.items.map(body);
  const inn=(r,x,y)=>x>=r.x0&&x<r.x1&&y>=r.y0&&y<r.y1;let room=0,fx=0,used=0,over=0;
- for(let y=0;y<L;y+=st)for(let x=0;x<W;x+=st){const px=x+st/2,py=y+st/2;if(cuts.some(r=>inn(r,px,py)))continue;room++;
+ for(let y=0;y<L;y+=st)for(let x=0;x<W;x+=st){const px=x+st/2,py=y+st/2;if(S.span?!insideAt(px,py):cuts.some(r=>inn(r,px,py)))continue;room++;
   const n=bs.reduce((a,r)=>a+(inn(r,px,py)?1:0),0);
   if(fixed.some(r=>inn(r,px,py))){fx++;if(n)over++;continue}
   if(n)used++;if(n>1)over++}
@@ -412,8 +483,10 @@ function drawOpen(W,L,u,sw,fs){
 function drawPlan(sel,print){
  const W=+S.rw||1,L=+S.rl||1,dz=doorRect(),u=Math.max(W,L)/400,sw=u*1.5,fs=u*11;
  if(S.mode==='walls'&&!S.closed)return drawOpen(W,L,u,sw,fs);
- let h=`<rect x="0" y="0" width="${W}" height="${L}" fill="var(--room)"/>`;
- h+=`<rect x="${-sw/2}" y="${-sw/2}" width="${W+sw}" height="${L+sw}" fill="none" stroke="var(--ink)" stroke-width="${sw}"/>`;
+ let h;
+ if(S.poly){const pp=S.poly.map(p=>`${p.x},${p.y}`).join(' ');
+  h=`<path d="M0 0H${W}V${L}H0Z M${S.poly.map(p=>`${p.x} ${p.y}`).join(' L')}Z" fill="url(#hatch)" fill-rule="evenodd" opacity=".7"/><polygon points="${pp}" fill="var(--room)" stroke="var(--ink)" stroke-width="${sw}" stroke-linejoin="round"/>`}
+ else h=`<rect x="0" y="0" width="${W}" height="${L}" fill="var(--room)"/><rect x="${-sw/2}" y="${-sw/2}" width="${W+sw}" height="${L+sw}" fill="none" stroke="var(--ink)" stroke-width="${sw}"/>`;
  h+=`<rect x="${dz.x0}" y="${dz.y0}" width="${dz.x1-dz.x0}" height="${dz.y1-dz.y0}" fill="var(--accent)" opacity=".12"/>`;
  const ds=wallSpan(S.dwall,S.doff,S.dw,S.dw),dl=ds?ds.line:[0,0,0,0];
  h+=`<line x1="${dl[0]}" y1="${dl[1]}" x2="${dl[2]}" y2="${dl[3]}" stroke="var(--accent)" stroke-width="${u*4}"/>`;
@@ -428,8 +501,8 @@ function drawPlan(sel,print){
   else h+=`<g data-ob="${o.id}" style="cursor:grab"><rect x="${o.x}" y="${o.y}" width="${o.w}" height="${o.d}" fill="var(--warn)" fill-opacity=".07" stroke="var(--warn)" stroke-dasharray="${u*3} ${u*3}" stroke-width="${sw*.8}"/><text x="${o.x+o.w/2}" y="${o.y+o.d/2}" text-anchor="middle" dominant-baseline="middle" font-size="${f}" fill="var(--warn)" pointer-events="none">${esc(lab)}</text></g>`});
  h+=`<text x="${W/2}" y="${-12}" text-anchor="middle" font-size="${fs}" fill="var(--mute)">${U(W)}</text>`;
  h+=`<text x="${-12}" y="${L/2}" text-anchor="middle" font-size="${fs}" fill="var(--mute)" transform="rotate(-90 -12 ${L/2})">${U(L)}</text>`;
- if(S.mode==='walls')S.wallGeo.forEach((g,i)=>{const mx=(g.a.x+g.b.x)/2+g.nx*u*13,my=(g.a.y+g.b.y)/2+g.ny*u*13+fs*.3;
-  h+=`<text x="${mx}" y="${my}" text-anchor="middle" font-size="${fs*.8}" fill="var(--mute)" pointer-events="none">${i+1}: ${U(g.len)}</text>`});
+ if(S.mode==='walls')S.wallGeo.forEach((g,i)=>{const mx=g.mid.x+g.nx*u*13,my=g.mid.y+g.ny*u*13+fs*.3;
+  h+=`<text x="${mx}" y="${my}" text-anchor="middle" font-size="${fs*.8}" fill="var(--mute)" pointer-events="none">${i+1}: ${U(g.len)}${g.curve?' curve':''}</text>`});
  const sb=imperial()?91.44:100,sbl=imperial()?'3 ft':{m:'1 m',mm:'1000 mm',cm:'100 cm'}[S.unit];
  h+=`<g stroke="var(--mute)" stroke-width="${sw}"><line x1="0" y1="${L+24}" x2="${sb}" y2="${L+24}"/><line x1="0" y1="${L+20}" x2="0" y2="${L+28}"/><line x1="${sb}" y1="${L+20}" x2="${sb}" y2="${L+28}"/></g><text x="${sb+8}" y="${L+24+fs*.35}" font-size="${fs}" fill="var(--mute)">${sbl} scale</text>`;
  const halo=`paint-order="stroke" stroke="var(--room)" stroke-width="${u*3}" stroke-linejoin="round"`;
@@ -471,13 +544,15 @@ const ov=(a,b)=>a.x0<b.x1&&a.x1>b.x0&&a.y0<b.y1&&a.y1>b.y0;
 function freeRect(){const W=Math.floor(S.rw),L=Math.floor(S.rl);if(W<1||L<1)return{w:0,d:0,a:0};
  const bl=[...S.items.map(body),doorRect(),...hardRects()],hgt=new Array(W).fill(0);let best={w:0,d:0,a:0};
  for(let j=0;j<L;j++){
-  for(let i=0;i<W;i++)hgt[i]=bl.some(b=>ov({x0:i,y0:j,x1:i+1,y1:j+1},b))?0:hgt[i]+1;
+  for(let i=0;i<W;i++)hgt[i]=(S.span&&!insideAt(i+.5,j+.5))||bl.some(b=>ov({x0:i,y0:j,x1:i+1,y1:j+1},b))?0:hgt[i]+1;
   const st=[];for(let i=0;i<=W;i++){const h=i<W?hgt[i]:0;let start=i;
    while(st.length&&st[st.length-1].h>=h){const t=st.pop(),a=t.h*(i-t.s);if(a>best.a)best={w:i-t.s,d:t.h,a};start=t.s}
    st.push({s:start,h})}}
  return best}
 // Distance from a piece's back edge to the nearest wall or fixed block behind it (ri: 0 back is up, 1 right, 2 down, 3 left).
-function backGap(b,ri,hr,W,L){const ys=q=>q.y0<b.y1-.5&&q.y1>b.y0+.5,xs=q=>q.x0<b.x1-.5&&q.x1>b.x0+.5;
+function backGap(b,ri,hr,W,L){const r=backGapRects(b,ri,hr,W,L);if(!S.poly)return r;
+ const cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2,half=ri%2?(b.x1-b.x0)/2:(b.y1-b.y0)/2,d=[[0,-1],[1,0],[0,1],[-1,0]][ri];return Math.min(r,rayDist(cx,cy,d[0],d[1])-half)}
+function backGapRects(b,ri,hr,W,L){const ys=q=>q.y0<b.y1-.5&&q.y1>b.y0+.5,xs=q=>q.x0<b.x1-.5&&q.x1>b.x0+.5;
  if(ri===0)return b.y0-Math.max(0,...hr.filter(q=>xs(q)&&q.y1<=b.y0+.5).map(q=>q.y1));
  if(ri===1)return Math.min(W,...hr.filter(q=>ys(q)&&q.x0>=b.x1-.5).map(q=>q.x0))-b.x1;
  if(ri===2)return Math.min(L,...hr.filter(q=>xs(q)&&q.y0>=b.y1-.5).map(q=>q.y0))-b.y1;
@@ -489,13 +564,14 @@ function findSpot(c,cl,rots=[0,90,180,270]){const W=+S.rw,L=+S.rl,ob=S.items.map
   const xs=new Set([W-w]),ys=new Set([L-d]);
   for(let x=0;x<=W-w;x+=step)xs.add(x);for(let y=0;y<=L-d;y+=step)ys.add(y);
   [...ob,...hr].forEach(b=>{xs.add(b.x1);xs.add(b.x0-w);ys.add(b.y1);ys.add(b.y0-d)});
+  S.wallGeo.forEach(g=>{xs.add(g.a.x);xs.add(g.a.x-w);ys.add(g.a.y);ys.add(g.a.y-d)});
   for(const x of xs){if(x<-.01||x>W-w+.01)continue;
    for(const y of ys){if(y<-.01||y>L-d+.01)continue;
     const b={x0:x,y0:y,x1:x+w,y1:y+d};
-    if(hit(b,dz)||ob.some(o=>hit(b,o))||hr.some(o=>hit(b,o)))continue;
+    if(hit(b,dz)||ob.some(o=>hit(b,o))||hr.some(o=>hit(b,o))||!rectInRoom(b))continue;
     if(lows.some(o=>c.h>o.h&&hit(b,rectOf(o)))||wins.some(o=>c.h>o.sill&&hit(b,winRect(o))))continue;
     const f=[{x0:b.x0,y0:b.y1,x1:b.x1,y1:b.y1+cl},{x0:b.x0-cl,y0:b.y0,x1:b.x0,y1:b.y1},{x0:b.x0,y0:b.y0-cl,x1:b.x1,y1:b.y0},{x0:b.x1,y0:b.y0,x1:b.x1+cl,y1:b.y1}][rot/90];
-    if(f.x0<-.5||f.y0<-.5||f.x1>W+.5||f.y1>L+.5)continue;
+    if(!rectInRoom(f))continue;
     if(ob.some(o=>hit(f,o))||hr.some(o=>hit(f,o))||of.some(o=>hit(b,o)))continue;
     const back=backGap(b,rot/90,hr,W,L),score=back*3+Math.min(b.x0,W-b.x1)+Math.min(b.y0,L-b.y1);
     if(!best||score<best.score)best={x:x+w/2,y:y+d/2,rot,score}}}}
@@ -559,7 +635,7 @@ function roomBlock(print){
  const total=Object.entries(g).reduce((s,[k,q])=>s+cat(k).p*q,0);
  let h=`<h3 style="margin:14px 0 4px">${esc(S.name)} <span style="font-weight:400;color:var(--mute)">${ROOM_TYPES[S.type]||''} &middot; ${UU(W,L)} &middot; door ${UU(S.dw,S.dh)} &middot; ceiling ${U(S.rh)} &middot; free floor ${UA(free)}</span></h3>`;
  h+=rows?`<table><tr><th>Item</th><th class="n">Qty</th><th class="n">Price</th></tr>${rows}<tr><th>Room total</th><th></th><th class="n">${total.toLocaleString()}</th></tr></table>`:'<div class="hint">No items in this room yet.</div>';
- if(print&&S.mode==='walls'&&S.closed)h+=`<p style="font-size:13px">Walls, in measuring order: ${S.wallGeo.map((g,i)=>`${i+1}: ${U(g.len)}`).join(', ')}. Floor area ${UA(us.room)}.</p>`;
+ if(print&&S.mode==='walls'&&S.closed)h+=`<p style="font-size:13px">Walls, in measuring order: ${S.wallGeo.map((g,i)=>`${i+1}: ${U(g.len)}${g.curve?` (curved, ${U(g.curve.depth)} deep)`:''}`).join(', ')}. Floor area ${UA(us.room)}.</p>`;
  if(print){const ft=[...S.cuts.map(c=>`Cut-out ${UU(c.w,c.d)}`),...S.obs.map(o=>{const k=OBS[o.kind];return !k?'':k.wall?`Window ${U(o.w)} wide, sill ${U(o.sill)} (${S.mode==='walls'?'wall '+((+o.wall)+1):WALLS[o.wall]+' wall'})`:`${k.label} ${UU(o.w,o.d)}${o.kind==='low'?`, max height ${U(o.h)}`:''}`})].filter(Boolean);
   if(ft.length)h+=`<p style="font-size:13px">Room features: ${ft.map(esc).join('; ')}.</p>`}
  if(print)h+=`<svg viewBox="${-m} ${-m} ${W+2*m} ${L+2*m}" style="max-width:480px;page-break-inside:avoid">${drawPlan(null,true)}</svg><ul>${check().filter(([t])=>t!=='ok').map(([t,mm])=>`<li>${mm}</li>`).join('')||'<li>All pieces fit and clearances are respected.</li>'}</ul>`;
@@ -675,15 +751,15 @@ function ask(msg,yes){return new Promise(res=>{const d=$('ask');$('askmsg').text
 const m2=v=>(v/10000).toFixed(2);
 function fillDoor(){const sel=$('dwall'),cur=String(S.dwall);
  const opts=S.mode==='walls'?S.walls.map((w,i)=>[String(i),`Wall ${i+1} (${U(S.wallGeo[i]?S.wallGeo[i].len:+w.len||0)})`]):Object.entries(RECTW);
- sel.innerHTML=opts.map(([v,t])=>`<option value="${v}">${t}</option>`).join('');if(opts.some(o=>o[0]===cur))sel.value=cur;
+ sel.innerHTML=opts.map(([v,t])=>{const cv=S.mode==='walls'&&S.walls[+v]&&S.walls[+v].curve;return `<option value="${v}"${cv?' disabled':''}>${t}${cv?' - curved':''}</option>`}).join('');if(opts.some(o=>o[0]===cur))sel.value=cur;
  $('doffl').textContent=S.mode==='walls'?"Door offset from the wall's start corner":'Door offset from corner'}
 function renderWallStatus(){const el=$('wallstat'),cb=$('closewall');cb.hidden=true;
  if(S.mode!=='walls'){el.textContent='';return}
  if(S.shape==='sketch'&&!S.sketch){el.textContent='Draw the room in the box above.';return}
- if(S.shape!=='free'){const need=S.shape==='rect'?2:S.walls.length,have=(S.shape==='rect'?S.walls.slice(0,2):S.walls).filter(w=>+w.len>0).length;
+ if(S.shape!=='free'){const list=S.shape==='rect'?S.walls.slice(0,2):S.walls,need=list.reduce((a,w)=>a+(w.curve?2:1),0),have=list.reduce((a,w)=>a+(+w.len>0)+(w.curve&&+w.curve.depth>0?1:0),0);
   if(S.closed){el.innerHTML=`<span style="color:var(--ok)">Room measured:</span> ${UU(S.rw,S.rl)}, floor ${UA(usage().room)}.`+(S.misclose>5?` <span style="color:var(--warn)">The walls were ${U(S.misclose)} off, so re-check them.</span>`:'');return}
   if(have<need){el.textContent=`Type ${need-have} more measurement${need-have>1?'s':''}.`;return}
-  el.innerHTML=`<span style="color:var(--err)">These measurements don't fit together.</span> ${shapeDef(S.shape).rule||shapeRule(S.walls.map(w=>w.turn))} Measure them again.`;return}
+  el.innerHTML=`<span style="color:var(--err)">These measurements don't fit together.</span> ${S.shapeErr?S.shapeErr:shapeDef(S.shape).rule||(S.walls.every(w=>(w.turn==='R'||w.turn==='L')&&!w.curve)?shapeRule(S.walls.map(w=>w.turn)):`They are about ${U(S.mismatch)} apart from closing the room.`)} Measure them again.`;return}
  if(!S.walls.length){el.textContent='Start at any corner and measure the first wall (it runs left to right on the plan). Then choose which way you turn at the next corner, and keep going all the way round.';return}
  if(S.closed){el.innerHTML=`<span style="color:var(--ok)">Room closed.</span> Overall ${UU(S.rw,S.rl)}, floor ${UA(usage().room)}. Error at the closing corner: ${U(S.misclose)} (the outline is adjusted by that much).${S.misclose>5?' <span style="color:var(--warn)">That is a lot, so re-check the wall lengths.</span>':''}`;return}
  let msg=S.shapeErr?`<span style="color:var(--err)">${S.shapeErr}</span> `:'';const gi=S.gapInfo;
@@ -695,15 +771,16 @@ function renderShapes(){const keys=Object.keys(SHAPES).filter(k=>true),showFree=
   (showFree?`<button class="shape${S.shape==='free'?' on':''}" data-shape="free" aria-pressed="${S.shape==='free'}"><svg viewBox="0 0 56 39" aria-hidden="true"><path d="M3 3h30v12h20v21H20V24H3z" fill="var(--room)" stroke="var(--ink)" stroke-width="2" stroke-dasharray="4 3"/></svg><span>Other shape</span></button>`:'')}
 function renderShapeInputs(){const free=S.shape==='free';$('freebox').hidden=!free;if(free){$('shapebox').innerHTML='';return}
  if(S.shape==='sketch'&&!S.sketch){$('shapebox').innerHTML=`<svg id="pad" class="pad" viewBox="0 0 300 210" aria-label="Drawing area"><defs><pattern id="padgrid" width="15" height="15" patternUnits="userSpaceOnUse"><path d="M15 0H0V15" fill="none" stroke="var(--line)" stroke-width="1"/></pattern></defs><rect width="300" height="210" fill="url(#padgrid)"/><text id="padhint" x="150" y="108" text-anchor="middle" font-size="13" fill="var(--mute)">Draw the room's outline here with your finger</text><polyline id="padline" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points=""/></svg><div class="padtools"><span id="padmsg" class="hint" style="margin:0">One line, all the way round. It does not need to be neat.</span></div>`;return}
- const f=S.shape==='rect'?[[0,'Length'],[1,'Width']]:shapeDef(S.shape).pts.map((p,i)=>[i,'Wall '+(i+1)]);
- $('shapebox').innerHTML=`<div class="shapebig">${shapeSvg(S.shape,true)}</div>${S.shape==='sketch'?'<div class="padtools"><span class="hint" style="margin:0">Straightened from your drawing.</span><button id="redraw">Draw again</button></div>':''}<div class="tw">${f.map(([i,l])=>`<div><label for="tw${i}">${l}</label><input id="tw${i}" data-tw="${i}" ${lenAttrs()} placeholder="${esc(unitHint())}" value="${S.walls[i]&&S.walls[i].len?esc(U(S.walls[i].len,true)):''}"></div>`).join('')}</div>`}
+ const f=S.shape==='rect'?[[0,'Length'],[1,'Width']]:S.walls.flatMap((w,i)=>w.curve?[[i,`Wall ${i+1}: end to end`],[i+'c',`Wall ${i+1}: curve depth`]]:[[i,'Wall '+(i+1)]]);
+ $('shapebox').innerHTML=`<div class="shapebig">${shapeSvg(S.shape,true)}</div>${S.shape==='sketch'?'<div class="padtools"><span class="hint" style="margin:0">Straightened from your drawing.</span><button id="redraw">Draw again</button></div>':''}<div class="tw">${f.map(([i,l])=>`<div><label for="tw${i}">${l}</label><input id="tw${i}" data-tw="${i}" ${lenAttrs()} placeholder="${esc(unitHint())}" value="${twVal(i)}"></div>`).join('')}</div>`}
 $('shapes').onclick=e=>{const b=e.target.closest('[data-shape]');if(!b)return;const k=b.dataset.shape;if(k===S.shape)return;
  const old=S.walls.map(w=>+w.len||0),was=S.shape;S.shape=k;S.mode='walls';
- const def=shapeDef(k);S.walls=k==='free'?S.walls:def?def.turns.map(turn=>({len:0,turn})):[];
+ const def=shapeDef(k);S.walls=k==='free'?S.walls:def?wallsFor(def):[];
  onShapeChange(true)};
+const twVal=i=>{const w=S.walls[parseInt(i)];if(!w)return '';const v=String(i).endsWith('c')?(w.curve&&w.curve.depth):w.len;return v?esc(U(v,true)):''};
 $('shapebox').oninput=e=>{const i=e.target.dataset.tw;if(i==null)return;const v=e.target.value,cm=parseLen(v),bad=v.trim()!==''&&!isFinite(cm);
  e.target.classList.toggle('bad',bad);if(bad)return;const len=v.trim()===''?0:cm;
- if(S.shape==='rect'){S.walls[+i].len=len;S.walls[+i+2].len=len}else S.walls[+i].len=len;onShapeChange(false)};
+ if(S.shape==='rect'){S.walls[+i].len=len;S.walls[+i+2].len=len}else if(i.endsWith('c')){const w=S.walls[parseInt(i)];if(w.curve)w.curve.depth=len}else S.walls[+i].len=len;onShapeChange(false)};
 // drawing pad: one stroke, straightened when the finger lifts
 let padPts=null;
 const padPt=e=>{const sv=$('pad'),q=sv.createSVGPoint();q.x=e.clientX;q.y=e.clientY;const r=q.matrixTransform(sv.getScreenCTM().inverse());return[r.x,r.y]};
@@ -711,9 +788,9 @@ $('shapebox').addEventListener('pointerdown',e=>{if(!e.target.closest('#pad'))re
 $('shapebox').addEventListener('pointermove',e=>{if(!padPts)return;const p=padPt(e),l=padPts[padPts.length-1];if(Math.hypot(p[0]-l[0],p[1]-l[1])<2)return;padPts.push(p);$('padline').setAttribute('points',padPts.map(q=>q.join(',')).join(' '))});
 $('shapebox').addEventListener('pointerup',()=>{if(!padPts)return;const raw=padPts;padPts=null;const r=sketchToShape(raw);
  if(r.err){$('padmsg').style.color='var(--err)';$('padmsg').textContent=r.err;$('padline').setAttribute('points','');$('padhint').style.display='';return}
- S.sketch=r;S.walls=r.turns.map(turn=>({len:0,turn}));onShapeChange(true);const first=$('tw0');if(first)first.focus()});
+ S.sketch=r;S.walls=wallsFor(shapeDef('sketch'));onShapeChange(true);const first=$('tw0');if(first)first.focus()});
 $('shapebox').addEventListener('click',e=>{if(e.target.id==='redraw'){S.sketch=null;S.walls=[];onShapeChange(true)}});
-$('shapebox').addEventListener('change',e=>{const i=e.target.dataset.tw;if(i==null)return;const w=S.walls[+i];e.target.value=w&&w.len?U(w.len,true):'';e.target.classList.remove('bad')});
+$('shapebox').addEventListener('change',e=>{const i=e.target.dataset.tw;if(i==null)return;e.target.value=twVal(i).replace(/&quot;/g,'"').replace(/&amp;/g,'&');e.target.classList.remove('bad')});
 function renderWalls(){renderShapes();renderShapeInputs();
  $('walls').innerHTML=S.walls.map((w,i)=>`<div class="wrow" data-w="${i}"><b>${i+1}</b><input data-wf="len" ${lenAttrs()} placeholder="${esc(unitHint())}" value="${w.len?esc(U(w.len,true)):''}" aria-label="Wall ${i+1} length in cm"><select data-wf="turn" aria-label="Turn after wall ${i+1}"><option value="R"${w.turn!=='L'?' selected':''}>turn right</option><option value="L"${w.turn==='L'?' selected':''}>turn left</option></select><button data-wdel aria-label="Remove wall ${i+1}">&times;</button></div>`).join('');
  fillDoor();renderWallStatus()}
@@ -814,7 +891,7 @@ function pt(e){const p=$('plan'),q=p.createSVGPoint();q.x=e.clientX;q.y=e.client
 // Door step: the door goes on the wall nearest to where the plan was tapped, centred on that spot.
 function placeDoorAt(p){
  if(S.mode==='walls'){if(!S.closed)return;let best=null;
-  S.wallGeo.forEach((g,i)=>{const t=Math.max(0,Math.min(g.len,(p.x-g.a.x)*g.dx+(p.y-g.a.y)*g.dy)),d=Math.hypot(p.x-g.a.x-g.dx*t,p.y-g.a.y-g.dy*t);if(!best||d<best.d)best={i,t,d}});
+  S.wallGeo.forEach((g,i)=>{if(g.curve)return;const t=Math.max(0,Math.min(g.len,(p.x-g.a.x)*g.dx+(p.y-g.a.y)*g.dy)),d=Math.hypot(p.x-g.a.x-g.dx*t,p.y-g.a.y-g.dy*t);if(!best||d<best.d)best={i,t,d}});
   const g=S.wallGeo[best.i];S.dwall=String(best.i);S.doff=Math.round(Math.max(0,Math.min(g.len-S.dw,best.t-S.dw/2)))}
  else{const W=+S.rw,L=+S.rl,c=[['N',p.y,p.x,W],['S',L-p.y,p.x,W],['W',p.x,p.y,L],['E',W-p.x,p.y,L]].sort((a,b)=>a[1]-b[1])[0];S.dwall=c[0];S.doff=Math.round(Math.max(0,Math.min(c[3]-S.dw,c[2]-S.dw/2)))}
  $('dwall').value=S.dwall;$('doff').value=U(S.doff,true);render()}
