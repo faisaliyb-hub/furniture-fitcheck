@@ -76,6 +76,7 @@ A furniture house wants a system for its field marketers/sales reps to measure s
   - **There is no PDF any more.** If the furniture house needs a PDF quote, that needs another route (for example a server that renders PDFs, part of the backend step).
   - Data still lives only in each viewer's browser (per device), now on the hosted page's own storage, so visits made in the local file and on the link are separate.
   - Tested 2026-10-20 on the built file (`dist/fitcheck.artifact.html`) in the in-app browser: loads with no console errors; New visit asks in-page and Cancel keeps data, Continue clears it; Show full quote shows rooms, plan and total, then hides; Copy quote text produces the text (the clipboard was refused in the test browser, so the select-and-copy box appeared, as designed).
+  - The claude.ai link is now only a preview; reps should use the GitHub Pages address (see Housekeeping).
   - 2026-10-20: user reported "nothing is opening" on the link. The published content was read back and is the full app, and it runs, so the cause is most likely access (not signed in to claude.ai on that device, or opening where the link cannot load). Waiting for the user to say which device and what they see. **Still not tested on a phone.**
 - Tested in the in-app browser: layout checks (bad and clean layouts), and the import logic (good file with BOM/CRLF/quoted comma, missing columns, bad rows, duplicates, empty file, dropping placed items, search, restore sample).
 - **Not tested:** the file-picker button itself with a real file, touch dragging on a real phone, the PDF/print output, Safari behavior.
@@ -128,6 +129,12 @@ Suggested priority: non-rectangular rooms and obstacles first, then shared backe
 4. Add laser input (Android first), then decide on an iPhone wrapper.
 
 ## Housekeeping
-- Project folder: `/Users/hamzakokic/Project/furniture-fitcheck`. It is **not** a git repo and nothing has been pushed to GitHub. Ask before creating a repo or pushing.
+- Project folder: `furniture-fitcheck` in the user's Project folder.
+- **Hosting (added 2026-10-20):** public GitHub repository https://github.com/faisaliyb-hub/furniture-fitcheck (account `faisaliyb-hub`, confirmed by the user as theirs). GitHub Pages serves the `main` branch root at **https://faisaliyb-hub.github.io/furniture-fitcheck/** (the home address redirects to `fitcheck.html`). Verified live: the page loads with no console errors. No domain bought: decided to wait until the furniture house adopts it, ideally on their own domain (e.g. a subdomain), pointed at the same hosting.
+  - To update the live site: commit to `main` and push; Pages rebuilds in about 30 seconds.
+  - Everything in the repo is public, including this file (also served at `/docs/HANDOFF.md`). Never commit client data, real prices the furniture house wants private, or secrets. `.claude/` and `dist/` are ignored.
+  - The first commit contained this file with a local folder path (the macOS user name); it was removed from later versions but stays in the git history unless the history is rewritten.
+  - Hosting the page does not share data: each phone still keeps its own visits. Shared data needs the backend step.
+- Ask before pushing to `main`, since that changes the live site.
 - Scaffolding via `ce-new` was not used. Consider it if the project becomes a full webapp.
 - Keep this file updated at the end of every working session.
