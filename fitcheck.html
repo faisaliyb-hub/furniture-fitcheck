@@ -255,8 +255,8 @@ function frac8(x){const e=Math.round(x*8),w=Math.floor(e/8);let n=e%8,d=8;if(!n)
 function U(cm,bare){if(cm==null||!isFinite(cm))return '';const neg=cm<0?'-':'';cm=Math.abs(cm);let t;
  if(S.unit==='m')t=+(cm/100).toFixed(2)+(bare?'':' m');
  else if(S.unit==='mm')t=Math.round(cm*10)+(bare?'':' mm');
- else if(S.unit==='in')t=frac8(cm/2.54)+'"';
- else if(S.unit==='ftin'){const tot=Math.round(cm/2.54*8)/8,ft=Math.floor(tot/12),inch=tot-ft*12;t=ft?`${ft}' ${frac8(inch)}"`:`${frac8(inch)}"`}
+ else if(S.unit==='in')t=frac8(cm/2.54)+' in';
+ else if(S.unit==='ftin'){const tot=Math.round(cm/2.54*8)/8,ft=Math.floor(tot/12),inch=tot-ft*12;t=ft?(inch?`${ft} ft ${frac8(inch)} in`:`${ft} ft`):`${frac8(inch)} in`}
  else t=fmt(cm)+(bare?'':' cm');
  return neg+t}
 const UU=(a,b)=>imperial()?`${U(a)} x ${U(b)}`:`${U(a,true)} x ${U(b)}`;
@@ -279,7 +279,7 @@ function parseLen(str){let s=String(str).trim().toLowerCase().replace(/,/g,'.').
  const cm=(ft*12+inch)*2.54;return isFinite(cm)?cm:NaN}
 // Input boxes for lengths: phone keyboard and hint follow the unit.
 const lenAttrs=()=>`type="text" inputmode="${imperial()?'text':'decimal'}" autocomplete="off"`;
-const unitHint=()=>({cm:'e.g. 450',m:'e.g. 4.5',mm:'e.g. 4500',ftin:'e.g. 14\' 9"',in:'e.g. 177"'})[S.unit];
+const unitHint=()=>({cm:'e.g. 450',m:'e.g. 4.5',mm:'e.g. 4500',ftin:'e.g. 14 ft 9 in',in:'e.g. 177 in'})[S.unit];
 // Free distance from a piece to the nearest wall or neighbouring piece in each direction (cm).
 function gaps(it){const b=body(it),W=+S.rw,L=+S.rl,o=[...S.items.filter(x=>x.id!==it.id).map(body),...hardRects()];
  const ys=q=>q.y0<b.y1-.5&&q.y1>b.y0+.5,xs=q=>q.x0<b.x1-.5&&q.x1>b.x0+.5;
