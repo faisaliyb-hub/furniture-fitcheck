@@ -72,7 +72,8 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
  <section class="card"><h2>Room shape and features</h2>
   <div id="feat"></div>
   <div class="row" style="margin-top:6px"><div><select id="addkind"></select></div><div><button id="addfeat" style="width:100%">+ Add</button></div></div>
-  <div class="hint">Cut-outs make L, U or T shaped rooms. Columns, radiators, built-ins, stairs and other doors block the floor. Low ceiling zones limit how tall a piece can be. Windows flag tall pieces in front of them. Right-angled shapes only.</div>
+  <div class="hint">Position is measured on the plan: <b>From left side</b> and <b>From top side</b> go to the feature's top-left corner. Or drag the feature on the plan and the numbers fill in. Width runs left to right on the plan, depth top to bottom. For a window, <b>From wall corner</b> is measured from the corner where that wall starts.</div>
+  <div class="hint">Columns, radiators, built-ins, stairs and other doors block the floor. Low ceiling zones limit how tall a piece can be. Windows flag tall pieces in front of them. Cut-outs (quick rectangle only) make L, U or T shaped rooms. Right-angled shapes only.</div>
  </section>
  <section class="card"><h2 id="cathead">Catalog</h2>
   <input id="catq" placeholder="Search name or SKU" style="margin-bottom:8px">
@@ -547,7 +548,9 @@ $('tpl').onclick=()=>{
 function fillKinds(){$('addkind').innerHTML=(S.mode==='walls'?'':'<option value="cut">Cut-out (L/U/T shape)</option>')+Object.entries(OBS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}
 // Wall choices for windows: numbered walls (wall by wall) or compass sides (quick rectangle).
 const wallRefs=()=>S.mode==='walls'?S.walls.map((w,i)=>[i,'Wall '+(i+1)]):Object.entries(RECTW);
-const FF={cut:[['x','X'],['y','Y'],['w','Width'],['d','Depth']],hard:[['x','X'],['y','Y'],['w','Width'],['d','Depth'],['h','Height']],low:[['x','X'],['y','Y'],['w','Width'],['d','Depth'],['h','Max height']],window:[['off','Offset'],['w','Width'],['sill','Sill height']]};
+// Field labels in plain words: position is measured on the plan to the feature's top-left corner.
+const POS=[['x','From left side'],['y','From top side'],['w','Width (across)'],['d','Depth (down)']];
+const FF={cut:POS,hard:[...POS,['h','Height']],low:[...POS,['h','Max height']],window:[['off','From wall corner'],['w','Width'],['sill','Sill height']]};
 function renderFeat(){
  const inp=(f,l,v)=>`<div><label>${l}</label><input data-f="${f}" ${lenAttrs()} value="${esc(U(v,true))}"></div>`,rows=[];
  if(S.mode!=='walls')S.cuts.forEach((c,i)=>rows.push(`<div class="frow" data-cut="${i}"><b>Cut-out (not part of the room)</b>${FF.cut.map(([f,l])=>inp(f,l,c[f])).join('')}<button data-del>Remove</button></div>`));
