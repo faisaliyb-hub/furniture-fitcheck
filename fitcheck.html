@@ -770,7 +770,7 @@ function renderShapes(){const keys=Object.keys(SHAPES).filter(k=>true),showFree=
  $('shapes').innerHTML=`<button class="shape${S.shape==='sketch'?' on':''}" data-shape="sketch" aria-pressed="${S.shape==='sketch'}"><svg viewBox="0 0 56 39" aria-hidden="true"><path d="M5 6c12-3 25-2 44 0M49 6c2 9 1 18 0 28M49 34c-14 1-29 2-44 0M5 34c-1-9-2-18 0-28" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/></svg><span>Draw it</span></button>`+keys.map(k=>`<button class="shape${S.shape===k?' on':''}" data-shape="${k}" aria-pressed="${S.shape===k}" aria-label="${SHAPES[k].name}" title="${SHAPES[k].name}">${shapeSvg(k)}</button>`).join('')+
   (showFree?`<button class="shape${S.shape==='free'?' on':''}" data-shape="free" aria-pressed="${S.shape==='free'}"><svg viewBox="0 0 56 39" aria-hidden="true"><path d="M3 3h30v12h20v21H20V24H3z" fill="var(--room)" stroke="var(--ink)" stroke-width="2" stroke-dasharray="4 3"/></svg><span>Other shape</span></button>`:'')}
 function renderShapeInputs(){const free=S.shape==='free';$('freebox').hidden=!free;if(free){$('shapebox').innerHTML='';return}
- if(S.shape==='sketch'&&!S.sketch){$('shapebox').innerHTML=`<svg id="pad" class="pad" viewBox="0 0 300 210" aria-label="Drawing area"><defs><pattern id="padgrid" width="15" height="15" patternUnits="userSpaceOnUse"><path d="M15 0H0V15" fill="none" stroke="var(--line)" stroke-width="1"/></pattern></defs><rect width="300" height="210" fill="url(#padgrid)"/><text id="padhint" x="150" y="108" text-anchor="middle" font-size="13" fill="var(--mute)">Draw the room's outline here with your finger</text><polyline id="padline" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points=""/></svg><div class="padtools"><span id="padmsg" class="hint" style="margin:0">One line, all the way round. It does not need to be neat.</span></div>`;return}
+ if(S.shape==='sketch'&&!S.sketch){padStrokes=[];padPts=null;$('shapebox').innerHTML=`<svg id="pad" class="pad" viewBox="0 0 300 210" aria-label="Drawing area"><defs><pattern id="padgrid" width="15" height="15" patternUnits="userSpaceOnUse"><path d="M15 0H0V15" fill="none" stroke="var(--line)" stroke-width="1"/></pattern></defs><rect width="300" height="210" fill="url(#padgrid)"/><text id="padhint" x="150" y="108" text-anchor="middle" font-size="13" fill="var(--mute)">Draw the room's outline here with your finger</text><polyline id="padline" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points=""/><circle id="padstart" r="7" fill="var(--accent)" stroke="var(--room)" stroke-width="2" style="display:none"/></svg><p id="padmsg" class="hint" style="margin:4px 0 6px">Draw around the room. You can lift your finger and carry on. It finishes when you get back to the green start dot, or tap Done.</p><div class="padtools"><span><button id="padundo" disabled>Undo</button> <button id="padclear" disabled>Clear</button></span><button id="paddone" class="primary" disabled>Done</button></div>`;return}
  const f=S.shape==='rect'?[[0,'Length'],[1,'Width']]:S.walls.flatMap((w,i)=>w.curve?[[i,`Wall ${i+1}: end to end`],[i+'c',`Wall ${i+1}: curve depth`]]:[[i,'Wall '+(i+1)]]);
  $('shapebox').innerHTML=`<div class="shapebig">${shapeSvg(S.shape,true)}</div>${S.shape==='sketch'?'<div class="padtools"><span class="hint" style="margin:0">Straightened from your drawing.</span><button id="redraw">Draw again</button></div>':''}<div class="tw">${f.map(([i,l])=>`<div><label for="tw${i}">${l}</label><input id="tw${i}" data-tw="${i}" ${lenAttrs()} placeholder="${esc(unitHint())}" value="${twVal(i)}"></div>`).join('')}</div>`}
 $('shapes').onclick=e=>{const b=e.target.closest('[data-shape]');if(!b)return;const k=b.dataset.shape;if(k===S.shape)return;
@@ -782,14 +782,30 @@ $('shapebox').oninput=e=>{const i=e.target.dataset.tw;if(i==null)return;const v=
  e.target.classList.toggle('bad',bad);if(bad)return;const len=v.trim()===''?0:cm;
  if(S.shape==='rect'){S.walls[+i].len=len;S.walls[+i+2].len=len}else if(i.endsWith('c')){const w=S.walls[parseInt(i)];if(w.curve)w.curve.depth=len}else S.walls[+i].len=len;onShapeChange(false)};
 // drawing pad: one stroke, straightened when the finger lifts
-let padPts=null;
+let padPts=null,padStrokes=[];
 const padPt=e=>{const sv=$('pad'),q=sv.createSVGPoint();q.x=e.clientX;q.y=e.clientY;const r=q.matrixTransform(sv.getScreenCTM().inverse());return[r.x,r.y]};
-$('shapebox').addEventListener('pointerdown',e=>{if(!e.target.closest('#pad'))return;e.preventDefault();padPts=[padPt(e)];try{$('pad').setPointerCapture(e.pointerId)}catch(_){}$('padhint').style.display='none'});
-$('shapebox').addEventListener('pointermove',e=>{if(!padPts)return;const p=padPt(e),l=padPts[padPts.length-1];if(Math.hypot(p[0]-l[0],p[1]-l[1])<2)return;padPts.push(p);$('padline').setAttribute('points',padPts.map(q=>q.join(',')).join(' '))});
-$('shapebox').addEventListener('pointerup',()=>{if(!padPts)return;const raw=padPts;padPts=null;const r=sketchToShape(raw);
- if(r.err){$('padmsg').style.color='var(--err)';$('padmsg').textContent=r.err;$('padline').setAttribute('points','');$('padhint').style.display='';return}
- S.sketch=r;S.walls=wallsFor(shapeDef('sketch'));onShapeChange(true);const first=$('tw0');if(first)first.focus()});
-$('shapebox').addEventListener('click',e=>{if(e.target.id==='redraw'){S.sketch=null;S.walls=[];onShapeChange(true)}});
+// The drawing can take several strokes: each new stroke continues the line. It is read when the line gets back to where it
+// started (and has gone round the room), or when Done is tapped.
+const padAll=()=>padStrokes.flat().concat(padPts||[]);
+function padDraw(){const all=padAll();$('padline').setAttribute('points',all.map(q=>q.join(',')).join(' '));
+ const st=$('padstart');st.style.display=all.length?'':'none';if(all.length){st.setAttribute('cx',all[0][0]);st.setAttribute('cy',all[0][1])}
+ $('padhint').style.display=all.length?'none':'';$('padundo').disabled=$('padclear').disabled=!padStrokes.length;$('paddone').disabled=padAll().length<8}
+function padFinish(){const r=sketchToShape(padAll());
+ if(r.err){$('padmsg').style.color='var(--err)';$('padmsg').textContent=r.err.replace(' Draw it again','')+' Undo the last stroke, or Clear to start over.';return}
+ padStrokes=[];S.sketch=r;S.walls=wallsFor(shapeDef('sketch'));onShapeChange(true);const first=$('tw0');if(first)first.focus()}
+// back at the start after going round: finish by itself
+function padClosed(){const all=padAll();if(all.length<20)return false;const X=all.map(p=>p[0]),Y=all.map(p=>p[1]),diag=Math.hypot(Math.max(...X)-Math.min(...X),Math.max(...Y)-Math.min(...Y));
+ let len=0;for(let i=1;i<all.length;i++)len+=Math.hypot(all[i][0]-all[i-1][0],all[i][1]-all[i-1][1]);
+ const e=all[all.length-1];return diag>=60&&len>=2.2*diag&&Math.hypot(e[0]-all[0][0],e[1]-all[0][1])<=Math.max(14,diag*.07)}
+$('shapebox').addEventListener('pointerdown',e=>{if(!e.target.closest('#pad'))return;e.preventDefault();padPts=[padPt(e)];try{$('pad').setPointerCapture(e.pointerId)}catch(_){}
+ $('padmsg').style.color='';padDraw()});
+$('shapebox').addEventListener('pointermove',e=>{if(!padPts)return;const p=padPt(e),l=padPts[padPts.length-1];if(Math.hypot(p[0]-l[0],p[1]-l[1])<2)return;padPts.push(p);padDraw()});
+$('shapebox').addEventListener('pointerup',()=>{if(!padPts)return;if(padPts.length>1)padStrokes.push(padPts);padPts=null;padDraw();if(padClosed())padFinish()});
+$('shapebox').addEventListener('click',e=>{const id=e.target.id;
+ if(id==='redraw'){S.sketch=null;S.walls=[];padStrokes=[];onShapeChange(true)}
+ else if(id==='padundo'){padStrokes.pop();padDraw()}
+ else if(id==='padclear'){padStrokes=[];padDraw()}
+ else if(id==='paddone')padFinish()});
 $('shapebox').addEventListener('change',e=>{const i=e.target.dataset.tw;if(i==null)return;e.target.value=twVal(i).replace(/&quot;/g,'"').replace(/&amp;/g,'&');e.target.classList.remove('bad')});
 function renderWalls(){renderShapes();renderShapeInputs();
  $('walls').innerHTML=S.walls.map((w,i)=>`<div class="wrow" data-w="${i}"><b>${i+1}</b><input data-wf="len" ${lenAttrs()} placeholder="${esc(unitHint())}" value="${w.len?esc(U(w.len,true)):''}" aria-label="Wall ${i+1} length in cm"><select data-wf="turn" aria-label="Turn after wall ${i+1}"><option value="R"${w.turn!=='L'?' selected':''}>turn right</option><option value="L"${w.turn==='L'?' selected':''}>turn left</option></select><button data-wdel aria-label="Remove wall ${i+1}">&times;</button></div>`).join('');
