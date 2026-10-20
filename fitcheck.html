@@ -44,7 +44,7 @@ body:not(.more) .adv{display:none!important}
 .linkbtn{background:none;border:none;color:var(--accent);text-decoration:underline;padding:6px 0;min-height:36px}
 .typechips .chip{min-height:44px;font-size:15px}
 .wrow input,.wrow select{font-size:16px}
-.shapes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.shapes{margin-bottom:12px}
 .shapes{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px}.shape{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 2px;font-size:11px;line-height:1.2}
 .shape.on{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
 .shape svg{width:100%;max-width:46px;height:auto;touch-action:auto}
@@ -52,7 +52,7 @@ body:not(.more) .adv{display:none!important}
 .pad{width:100%;height:auto;display:block;border:1px dashed var(--line);border-radius:10px;background:var(--room);touch-action:none;cursor:crosshair}
 .padtools{display:flex;gap:8px;justify-content:space-between;align-items:center;margin:4px 0 10px}
 .tw{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:8px}.tw label{font-weight:600;color:var(--ink)}
-.col{display:contents}#stephead{order:-2}#morewrap{order:9}.navbar{order:10}body[data-step="3"] #layoutcard{order:-1}body[data-step="3"] #plan{cursor:crosshair}
+.col{display:contents}#plan{touch-action:pan-y}body[data-step="4"] #plan{touch-action:none}#stephead{order:-2}#morewrap{order:9}.navbar{order:10}body[data-step="3"] #layoutcard{order:-1}body[data-step="3"] #plan{cursor:crosshair}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.chip{text-align:left;line-height:1.25;padding:7px 11px}.chip small{display:block;opacity:.75;font-size:11px}.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .sg{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sg small{display:block;color:var(--mute)}.sg .tag{color:var(--warn)}
@@ -90,7 +90,7 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
   </div>
   <div class="row adv"><div><label id="rwl">Width</label><input id="rw" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label id="rll">Length</label><input id="rl" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
   <div class="row adv"><div><label>Ceiling height</label><input id="rh" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div></div></div>
-  <div class="hint adv">Type values now. A Bluetooth laser measurer can fill these fields later (Phase 1b). Width and length are the overall rectangle of the room.</div>
+  <div class="hint adv">Width and length are the overall size of the room (worked out from the walls, or typed in quick rectangle mode).</div>
  </section>
  <section class="card" data-step="3"><h2>Door</h2>
   <div class="row"><div class="adv"><label>Wall with the door</label><select id="dwall"></select></div><div><label>Door width</label><input id="dw" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
@@ -100,7 +100,7 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
   <div id="feat"></div>
   <div class="row" style="margin-top:6px"><div><select id="addkind"></select></div><div><button id="addfeat" style="width:100%">+ Add</button></div></div>
   <div class="hint">Position is measured on the plan: <b>From left side</b> and <b>From top side</b> go to the feature's top-left corner. Or drag the feature on the plan and the numbers fill in. Width runs left to right on the plan, depth top to bottom. For a window, <b>From wall corner</b> is measured from the corner where that wall starts.</div>
-  <div class="hint">Columns, radiators, built-ins, stairs and other doors block the floor. Low ceiling zones limit how tall a piece can be. Windows flag tall pieces in front of them. Cut-outs (quick rectangle only) make L, U or T shaped rooms. Right-angled shapes only.</div>
+  <div class="hint">Columns, radiators, built-ins, stairs and other doors block the floor. Low ceiling zones limit how tall a piece can be. Windows flag tall pieces in front of them. Cut-outs (quick rectangle mode only) make L, U or T shaped rooms.</div>
  </section>
  <section class="card adv" data-step="4"><h2 id="cathead">Catalog</h2>
   <input id="catq" placeholder="Search name or SKU" style="margin-bottom:8px">
@@ -213,7 +213,6 @@ function shapeSvg(key,big){const pts=shapeDef(key).pts,sc=big?2.2:.5,pad=big?26:
 const D8=[[1,0],[Math.SQRT1_2,Math.SQRT1_2],[0,1],[-Math.SQRT1_2,Math.SQRT1_2],[-1,0],[-Math.SQRT1_2,-Math.SQRT1_2],[0,-1],[Math.SQRT1_2,-Math.SQRT1_2]];
 const TURN8={S:0,R45:1,R:2,R135:3,L45:-1,L:-2,L135:-3},TURNNAME={0:'S',1:'R45',2:'R',3:'R135','-1':'L45','-2':'L','-3':'L135'};
 const RECTW={N:'Top',S:'Bottom',W:'Left',E:'Right'};
-function inPoly(px,py,v){let c=false;for(let i=0,j=v.length-1;i<v.length;j=i++){const a=v[i],b=v[j];if((a.y>py)!==(b.y>py)&&px<(b.x-a.x)*(py-a.y)/(b.y-a.y)+a.x)c=!c}return c}
 // Points strictly between a and b on a circular arc that bulges s cm towards (nx,ny).
 function arcPts(a,b,s,nx,ny){const dx=b.x-a.x,dy=b.y-a.y,c=Math.hypot(dx,dy);if(c<1||!(s>0))return[];s=Math.min(s,c/2);
  const R=(c*c/4+s*s)/(2*s),ux=dx/c,uy=dy/c,N=Math.max(8,Math.round(c/20)),out=[];
@@ -390,7 +389,6 @@ function check(){
  S.items.forEach(it=>{const c=cat(it.k),b=body(it),f=front(it);
   if(!rectInRoom(b))out.push(['err',`${c.n} sticks out of the room.`]);
   if(hit(b,dz))out.push(['warn',`${c.n} blocks the door swing area.`]);
-  const fr={x0:Math.max(f.x0,0),y0:Math.max(f.y0,0),x1:Math.min(f.x1,W),y1:Math.min(f.y1,L)};
   if(!rectInRoom(f))out.push(['warn',`${c.n}: front clearance (${U(c.cl)}) runs into a wall.`]);
   S.items.forEach(o=>{if(o.id===it.id)return;
    if(o.id>it.id&&hit(b,body(o)))out.push(['err',`${c.n} overlaps ${cat(o.k).n}.`]);
@@ -612,7 +610,7 @@ function render(){
  $('issues').innerHTML=check().map(([t,m])=>`<div class="issue ${t}">${m}</div>`).join('');
  $('rot').disabled=$('del').disabled=$('wall').disabled=S.sel==null;
  $('showcl').checked=!!S.showCl;
- const us=usage(),m2=v=>(v/10000).toFixed(2),free=us.free;
+ const us=usage(),free=us.free;
  $('space').innerHTML=`<table><tr><td>Room floor${S.cuts.length?' (without cut-outs)':''}</td><td class="n">${UA(us.room)}</td></tr>${us.fixed?`<tr><td>Fixed features (columns, radiators...)</td><td class="n">${UA(us.fixed)}</td></tr>`:''}<tr><td>Furniture footprint</td><td class="n">${UA(us.used)} (${us.room?Math.round(us.used/us.room*100):0}%)</td></tr><tr><th>Free floor space</th><th class="n">${UA(free)}</th></tr></table>${us.overlap?'<div class="hint">Some pieces overlap each other or a fixed feature, so these figures are approximate.</div>':''}`;
  syncFeat();syncDims();
  const si=S.items.find(i=>i.id===S.sel);$('selbox').hidden=!si;
@@ -633,7 +631,8 @@ function roomBlock(print){
  const g={};S.items.forEach(i=>g[i.k]=(g[i.k]||0)+1);
  const rows=Object.entries(g).map(([k,q])=>{const c=cat(k);return `<tr><td>${esc(c.n)}</td><td class="n">${q}</td><td class="n">${(c.p*q).toLocaleString()}</td></tr>`}).join('');
  const total=Object.entries(g).reduce((s,[k,q])=>s+cat(k).p*q,0);
- let h=`<h3 style="margin:14px 0 4px">${esc(S.name)} <span style="font-weight:400;color:var(--mute)">${ROOM_TYPES[S.type]||''} &middot; ${UU(W,L)} &middot; door ${UU(S.dw,S.dh)} &middot; ceiling ${U(S.rh)} &middot; free floor ${UA(free)}</span></h3>`;
+ const open=S.mode==='walls'&&!S.closed;
+ let h=`<h3 style="margin:14px 0 4px">${esc(S.name)} <span style="font-weight:400;color:var(--mute)">${ROOM_TYPES[S.type]||''} &middot; ${open?'not measured':`${UU(W,L)} &middot; door ${UU(S.dw,S.dh)} &middot; ceiling ${U(S.rh)} &middot; free floor ${UA(free)}`}</span></h3>`;
  h+=rows?`<table><tr><th>Item</th><th class="n">Qty</th><th class="n">Price</th></tr>${rows}<tr><th>Room total</th><th></th><th class="n">${total.toLocaleString()}</th></tr></table>`:'<div class="hint">No items in this room yet.</div>';
  if(print&&S.mode==='walls'&&S.closed)h+=`<p style="font-size:13px">Walls, in measuring order: ${S.wallGeo.map((g,i)=>`${i+1}: ${U(g.len)}${g.curve?` (curved, ${U(g.curve.depth)} deep)`:''}`).join(', ')}. Floor area ${UA(us.room)}.</p>`;
  if(print){const ft=[...S.cuts.map(c=>`Cut-out ${UU(c.w,c.d)}`),...S.obs.map(o=>{const k=OBS[o.kind];return !k?'':k.wall?`Window ${U(o.w)} wide, sill ${U(o.sill)} (${S.mode==='walls'?'wall '+((+o.wall)+1):WALLS[o.wall]+' wall'})`:`${k.label} ${UU(o.w,o.d)}${o.kind==='low'?`, max height ${U(o.h)}`:''}`})].filter(Boolean);
@@ -724,7 +723,7 @@ function renderFeat(){
  const inp=(f,l,v)=>`<div><label>${l}</label><input data-f="${f}" ${lenAttrs()} value="${esc(U(v,true))}"></div>`,rows=[];
  if(S.mode!=='walls')S.cuts.forEach((c,i)=>rows.push(`<div class="frow" data-cut="${i}"><b>Cut-out (not part of the room)</b>${FF.cut.map(([f,l])=>inp(f,l,c[f])).join('')}<button data-del>Remove</button></div>`));
  S.obs.forEach(o=>{const k=OBS[o.kind];if(!k)return;const set=k.wall?'window':k.hard?'hard':'low';
-  const wall=k.wall?`<div><label>Wall</label><select data-f="wall">${wallRefs().map(([v,t])=>`<option value="${v}"${String(o.wall)===String(v)?' selected':''}>${t}</option>`).join('')}</select></div>`:'';
+  const wall=k.wall?`<div><label>Wall</label><select data-f="wall">${wallRefs().map(([v,t])=>{const cv=S.mode==='walls'&&S.walls[+v]&&S.walls[+v].curve;return `<option value="${v}"${String(o.wall)===String(v)?' selected':''}${cv?' disabled':''}>${t}${cv?' - curved':''}</option>`}).join('')}</select></div>`:'';
   rows.push(`<div class="frow" data-ob="${o.id}"><b>${k.label}</b>${wall}${FF[set].map(([f,l])=>inp(f,l,o[f])).join('')}<button data-del>Remove</button></div>`)});
  $('feat').innerHTML=rows.join('')||'<div class="hint" style="margin:0 0 8px">No cut-outs or features. This room is a plain rectangle.</div>'}
 const featTarget=row=>row.dataset.cut!=null?S.cuts[+row.dataset.cut]:S.obs.find(o=>o.id==row.dataset.ob);
@@ -739,7 +738,7 @@ $('feat').onclick=e=>{if(!e.target.closest('[data-del]'))return;const row=e.targ
 $('addfeat').onclick=()=>{const k=$('addkind').value;
  if(k==='cut')S.cuts.push({x:Math.max(0,S.rw-150),y:Math.max(0,S.rl-150),w:150,d:150});
  else{const d=OBS[k],o={id:S.next++,kind:k};
-  if(d.wall)Object.assign(o,{wall:S.mode==='walls'?0:'N',off:Math.max(0,Math.round((S.rw-d.w)/2)),w:d.w,sill:d.sill});
+  if(d.wall)Object.assign(o,{wall:S.mode==='walls'?Math.max(0,S.walls.findIndex(w=>!w.curve)):'N',off:Math.max(0,Math.round((S.rw-d.w)/2)),w:d.w,sill:d.sill});
   else Object.assign(o,{w:d.w,d:d.d,h:d.h,x:Math.max(0,Math.round((S.rw-d.w)/2)),y:['radiator','builtin','xdoor'].includes(k)?0:k==='low'?Math.max(0,S.rl-d.d):Math.max(0,Math.round((S.rl-d.d)/2))});
   S.obs.push(o)}
  renderFeat();render()};
@@ -748,7 +747,6 @@ $('addfeat').onclick=()=>{const k=$('addkind').value;
 function ask(msg,yes){return new Promise(res=>{const d=$('ask');$('askmsg').textContent=msg;$('askyes').textContent=yes||'Continue';d.hidden=false;$('askyes').focus();
  const done=v=>{d.hidden=true;$('askyes').onclick=$('askno').onclick=null;res(v)};$('askyes').onclick=()=>done(true);$('askno').onclick=()=>done(false)})}
 // wall-by-wall measuring
-const m2=v=>(v/10000).toFixed(2);
 function fillDoor(){const sel=$('dwall'),cur=String(S.dwall);
  const opts=S.mode==='walls'?S.walls.map((w,i)=>[String(i),`Wall ${i+1} (${U(S.wallGeo[i]?S.wallGeo[i].len:+w.len||0)})`]):Object.entries(RECTW);
  sel.innerHTML=opts.map(([v,t])=>{const cv=S.mode==='walls'&&S.walls[+v]&&S.walls[+v].curve;return `<option value="${v}"${cv?' disabled':''}>${t}${cv?' - curved':''}</option>`}).join('');if(opts.some(o=>o[0]===cur))sel.value=cur;
@@ -908,7 +906,7 @@ function pt(e){const p=$('plan'),q=p.createSVGPoint();q.x=e.clientX;q.y=e.client
 function placeDoorAt(p){
  if(S.mode==='walls'){if(!S.closed)return;let best=null;
   S.wallGeo.forEach((g,i)=>{if(g.curve)return;const t=Math.max(0,Math.min(g.len,(p.x-g.a.x)*g.dx+(p.y-g.a.y)*g.dy)),d=Math.hypot(p.x-g.a.x-g.dx*t,p.y-g.a.y-g.dy*t);if(!best||d<best.d)best={i,t,d}});
-  const g=S.wallGeo[best.i];S.dwall=String(best.i);S.doff=Math.round(Math.max(0,Math.min(g.len-S.dw,best.t-S.dw/2)))}
+  if(!best)return;const g=S.wallGeo[best.i];S.dwall=String(best.i);S.doff=Math.round(Math.max(0,Math.min(g.len-S.dw,best.t-S.dw/2)))}
  else{const W=+S.rw,L=+S.rl,c=[['N',p.y,p.x,W],['S',L-p.y,p.x,W],['W',p.x,p.y,L],['E',W-p.x,p.y,L]].sort((a,b)=>a[1]-b[1])[0];S.dwall=c[0];S.doff=Math.round(Math.max(0,Math.min(c[3]-S.dw,c[2]-S.dw/2)))}
  $('dwall').value=S.dwall;$('doff').value=U(S.doff,true);render()}
 $('plan').addEventListener('pointerdown',e=>{if(S.step===3){placeDoorAt(pt(e));return}
@@ -922,8 +920,11 @@ $('plan').addEventListener('pointermove',e=>{if(!drag)return;const p=pt(e);
  const it=drag.it;
  it.x=p.x-drag.dx;it.y=p.y-drag.dy;
  const b=body(it),s=8;
- if(Math.abs(b.x0)<s)it.x-=b.x0;else if(Math.abs(b.x1-S.rw)<s)it.x-=b.x1-S.rw;
- if(Math.abs(b.y0)<s)it.y-=b.y0;else if(Math.abs(b.y1-S.rl)<s)it.y-=b.y1-S.rl;
+ if(S.poly)S.wallGeo.forEach(g=>{if(g.curve)return;const lo=(p,q)=>Math.min(p,q),hi=(p,q)=>Math.max(p,q),bb=body(it);
+  if(Math.abs(g.dy)<1e-6&&bb.x0<hi(g.a.x,g.b.x)&&bb.x1>lo(g.a.x,g.b.x)){const y=g.a.y;if(g.ny>0&&Math.abs(bb.y0-y)<s)it.y+=y-bb.y0;else if(g.ny<0&&Math.abs(bb.y1-y)<s)it.y-=bb.y1-y}
+  if(Math.abs(g.dx)<1e-6&&bb.y0<hi(g.a.y,g.b.y)&&bb.y1>lo(g.a.y,g.b.y)){const x=g.a.x;if(g.nx>0&&Math.abs(bb.x0-x)<s)it.x+=x-bb.x0;else if(g.nx<0&&Math.abs(bb.x1-x)<s)it.x-=bb.x1-x}});
+ else{if(Math.abs(b.x0)<s)it.x-=b.x0;else if(Math.abs(b.x1-S.rw)<s)it.x-=b.x1-S.rw;
+  if(Math.abs(b.y0)<s)it.y-=b.y0;else if(Math.abs(b.y1-S.rl)<s)it.y-=b.y1-S.rl}
  {const b2=body(it);hardRects().forEach(r=>{
   if(b2.y0<r.y1&&b2.y1>r.y0){if(Math.abs(b2.x0-r.x1)<s)it.x+=r.x1-b2.x0;else if(Math.abs(b2.x1-r.x0)<s)it.x-=b2.x1-r.x0}
   if(b2.x0<r.x1&&b2.x1>r.x0){if(Math.abs(b2.y0-r.y1)<s)it.y+=r.y1-b2.y0;else if(Math.abs(b2.y1-r.y0)<s)it.y-=b2.y1-r.y0}})}

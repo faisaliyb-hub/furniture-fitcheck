@@ -1,6 +1,6 @@
 # FitCheck: Handoff
 
-Last updated: 2026-10-19. Phase: **idea / early prototype** (Phase 1 prototype built, not yet shown to the client).
+Last updated: 2026-10-20. Phase: **Phase 1 prototype, live on GitHub Pages**, not yet shown to the client, not yet tried on a real phone by the user.
 
 ## Goal
 A furniture house wants a system for its field marketers/sales reps to measure spaces and show which products fit. Wider hopes: architect-friendly files, marketing visibility. The client's name, furniture category, and team size are **not yet known**.
@@ -18,7 +18,18 @@ A furniture house wants a system for its field marketers/sales reps to measure s
 3. **Insight dashboard:** visit, lead, quote and sale linked
 4. **Scan and AR:** iPhone LiDAR, true-scale 3D placement
 
-## What exists
+## Current state (checked 2026-10-20)
+This section is the up-to-date summary. The change log further down is history: later entries replace what earlier ones describe.
+- **Live app:** https://faisaliyb-hub.github.io/furniture-fitcheck/ (from `fitcheck.html` on `main`). One HTML file, no server; each device keeps its own visits in the browser.
+- **Flow (5 steps, Back/Next):** 1 Room (type chips, optional name/client/rep, several rooms per visit) → 2 Walls (draw the room with a finger in several strokes, or tap a Rectangle / L-shape picture; type each numbered wall; curved walls ask end-to-end + depth) → 3 Door (tap the plan; door width) → 4 Furniture ("what fits" list with Add, true-scale plan, drag/turn/move to wall/remove, fit check) → 5 Quote (per room + visit total, show full quote, copy as text). **More options** reveals the advanced controls (quick rectangle mode, overall size, ceiling and door height, windows/pillars/radiators/stairs/low ceilings, full catalog with CSV import, exact gap inputs, clearance zones).
+- **Rooms:** straight walls in 45-degree steps (angles of up to two diagonal walls solved from the measurements) and curved walls; checks use the real outline. Fully round rooms are refused.
+- **Units:** cm, m, mm, ft + in (shown as "14 ft 9 in"), inches; everything stored in cm.
+- **Catalog:** 13 sample pieces with typical sizes (my placeholders, not sourced); CSV import with columns `sku,name,width_cm,depth_cm,height_cm` (required) and `front_clearance_cm,price,type,rooms` (optional).
+- **Automated checks:** `tests/e2e.js`, 76 checks run in the browser (units, all picture shapes, sketch reader, angled/curved areas against hand-calculated values, containment, gaps, door tap, features, quick-rectangle conversions, multi-room quote totals, CSV import, old-save migration, steps and More options, drag snapping, phone scrolling). Run: serve the folder (`python3 -m http.server 8766`), open `http://localhost:8766/fitcheck.html`, then in the browser console `await (await import('./tests/e2e.js')).run()`. All 76 passed on 2026-10-20.
+- **Not tested by anyone yet:** a real finger on a real phone (drawing, dragging), Safari on iPhone, importing a CSV through the file picker, the claude.ai preview page since the last changes (it is a stale preview; rebuild with `tools/make_artifact.py` if it is needed again).
+- **Cross-check 2026-10-20 fixed:** dragging snapped to the outer box instead of the real walls (in L-shaped or curved rooms a piece could snap into the missing corner); tapping for the door crashed in a room with only curved walls; a window could be put on a curved wall and silently disappear; the full quote showed a made-up "150 x 150 cm" size for a room whose walls were not finished; on phones the plan blocked page scrolling on the Walls and Door steps; stale "right-angled shapes only" and "Phase 1b" texts; unused code.
+
+## Change log (oldest first)
 - `fitcheck.html`: single-file prototype, no build step. Open in any browser. Saves state in localStorage.
   - Inputs: room width/length, door wall/width/height/offset (all cm)
   - 9 **placeholder** catalog products (sizes, clearances, prices are made up)
@@ -113,14 +124,15 @@ A furniture house wants a system for its field marketers/sales reps to measure s
   - **Limits:** fully round rooms are refused; angles snap to 45-degree steps unless solvable from measurements (max two angled walls); no way yet to fix one wall of a misread drawing (only redraw); curves are circular arcs.
 - **Lift the finger and carry on drawing (added 2026-10-20, user request):** the drawing pad now takes several strokes; each new stroke continues the line from the last one (a gap between strokes is joined with a straight piece). A green dot marks the start. The drawing is read automatically when the line gets back near the start dot after going round (end within max(14 px, 7% of the drawing size) of the start and total line at least 2.2 times the drawing's diagonal), or when **Done** is tapped (the app joins the ends). **Undo** removes the last stroke, **Clear** empties the pad. If a drawing cannot be read, the strokes are kept and the message suggests Undo or Clear.
   - Verified with simulated pointer strokes at 375 px: an L in three strokes finished by itself and read as 6 walls; Undo and Clear; three sides + Done read as a rectangle; a single line + Done kept the stroke and explained. Not tested with a real finger.
-- Tested in the in-app browser: layout checks (bad and clean layouts), and the import logic (good file with BOM/CRLF/quoted comma, missing columns, bad rows, duplicates, empty file, dropping placed items, search, restore sample).
-- **Not tested:** the file-picker button itself with a real file, touch dragging on a real phone, the PDF/print output, Safari behavior.
+- **Cross-check (2026-10-20, user request "go through the work and cross check everything"):** read all of `fitcheck.html`, wrote `tests/e2e.js` (76 checks) and ran it, checked every step at 375 px in light and dark mode, and compared this file with the app. Six bugs confirmed by failing checks and fixed (listed under Current state); all 76 checks pass after the fixes; no sideways scrolling on any step at phone width.
 
 ## Not built yet
 - Laser measurer input. Android Chrome can use Web Bluetooth. iPhone Safari cannot, so iPhone needs a small native wrapper. Laser model compatibility (Leica Disto, Bosch GLM) is **unverified**: check each model's Bluetooth and data interface before buying.
 - Shared backend, rep logins, lead records, and a way for the client to update the catalog.
-- Whole-room set suggestions (bundles by room type), room style filtering, windows/columns/radiators as obstacles.
-- Richer catalog fields (category, photo, finish/variants, assembled vs flat-pack, shipping size). Only the 7 columns above exist.
+- Whole-room set suggestions (bundles by room type), pairing (nightstands beside the bed), room style filtering.
+- Richer catalog fields (category, photo, finish/variants, assembled vs flat-pack, shipping size). Nine columns exist today.
+- Fixing a single wall of a misread drawing (today: Draw again).
+- PDF quote (hosted pages cannot print; would need a server).
 - Excel (.xlsx) import. CSV only for now (Excel can save as CSV).
 - Architect file library, dashboard, LiDAR scan.
 
@@ -138,6 +150,7 @@ The four YouTube Shorts the user shared: a Leica Disto (distance measurer, best 
 - Offline use matters (basements, new builds). The prototype stores locally but the sync design is undecided.
 
 ## Outcomes we might not have considered (brainstorm 2026-10-19, from general experience, not tested)
+Status 2026-10-20: items 1 and 2 are now handled (shapes, angles, curves, fixed features, heights); 3 to 6 are still open.
 Most likely to bite:
 1. Rooms are not rectangles (L-shapes, alcoves, bay windows, out-of-square walls). App models a rectangle only.
 2. Obstacles and heights: windows, radiators, columns, stairs, sockets, sloped ceilings. No height-vs-ceiling or window-sill check.
@@ -158,10 +171,11 @@ Suggested priority: non-rectangular rooms and obstacles first, then shared backe
 5. Budget and timeline for the pilot?
 
 ## Suggested next steps
-1. Give `catalog-template.csv` to the furniture house to fill in with real dimensions. How complete it comes back tells us how ready their data is.
-2. Test the prototype on a real iPhone and Android phone (touch drag, PDF).
-3. Choose a backend for the shared catalog and visits, and add rep logins.
-4. Add laser input (Android first), then decide on an iPhone wrapper.
+1. Standard furniture sizes and adjustable furniture (user request 2026-10-20, next in line).
+2. Try the live app on a real iPhone and Android phone: drawing with a finger, dragging, the whole 5-step flow.
+3. Give `catalog-template.csv` to the furniture house to fill in with real dimensions. How complete it comes back tells us how ready their data is.
+4. Choose a backend for the shared catalog and visits, and add rep logins (proposed: Supabase, waiting for the user's OK).
+5. Add laser input (Android first), then decide on an iPhone wrapper.
 
 ## Housekeeping
 - Project folder: `furniture-fitcheck` in the user's Project folder.
