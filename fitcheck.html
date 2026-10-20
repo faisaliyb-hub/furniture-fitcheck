@@ -15,7 +15,7 @@ header,main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:m
 header{padding-block:16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 h1{font-size:18px;margin:0}h2{font-size:13px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
 main{display:grid;gap:12px;padding-block:0;max-width:760px;margin:auto}
-.col{display:grid;gap:12px;align-content:start}
+
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
 label{display:block;font-size:12px;color:var(--mute);margin-bottom:3px}
 input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:40px}
@@ -44,6 +44,13 @@ body:not(.more) .adv{display:none!important}
 .linkbtn{background:none;border:none;color:var(--accent);text-decoration:underline;padding:6px 0;min-height:36px}
 .typechips .chip{min-height:44px;font-size:15px}
 .wrow input,.wrow select{font-size:16px}
+.shapes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.shapes{display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr))}.shape{display:flex;flex-direction:column;align-items:center;gap:4px;padding:7px 4px;font-size:12px;line-height:1.2}
+.shape.on{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+.shape svg{width:100%;max-width:52px;height:auto;touch-action:auto}
+.shapebig svg{width:100%;max-width:300px;margin:0 auto 10px;touch-action:auto}
+.tw{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:8px}.tw label{font-weight:600;color:var(--ink)}
+.col{display:contents}#stephead{order:-2}#morewrap{order:9}.navbar{order:10}body[data-step="3"] #layoutcard{order:-1}body[data-step="3"] #plan{cursor:crosshair}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.chip{text-align:left;line-height:1.25;padding:7px 11px}.chip small{display:block;opacity:.75;font-size:11px}.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .sg{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sg small{display:block;color:var(--mute)}.sg .tag{color:var(--warn)}
@@ -71,8 +78,12 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
  <section class="card" data-step="2"><h2 id="roomh">Room measurements (cm)</h2>
   <div class="tools adv" style="margin:0 0 10px"><button id="modewalls" class="chip">Wall by wall</button><button id="moderect" class="chip">Quick rectangle</button></div>
   <div id="wallsbox">
+   <div id="shapes" class="shapes" role="group" aria-label="Room shape"></div>
+   <div id="shapebox"></div>
+   <div id="freebox">
    <div id="walls"></div>
    <div class="tools" style="margin-top:6px"><button id="addwall">+ Next wall</button><button id="closewall" class="primary" hidden></button></div>
+   </div>
    <div id="wallstat" class="hint" style="margin-bottom:10px"></div>
   </div>
   <div class="row adv"><div><label id="rwl">Width</label><input id="rw" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label id="rll">Length</label><input id="rl" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
@@ -80,8 +91,8 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
   <div class="hint adv">Type values now. A Bluetooth laser measurer can fill these fields later (Phase 1b). Width and length are the overall rectangle of the room.</div>
  </section>
  <section class="card" data-step="3"><h2>Door</h2>
-  <div class="row"><div><label>Wall with the door</label><select id="dwall"></select></div><div><label>Door width</label><input id="dw" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
-  <div class="row"><div><label id="doffl">Door offset from corner</label><input id="doff" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div class="adv"><label>Door height</label><input id="dh" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
+  <div class="row"><div class="adv"><label>Wall with the door</label><select id="dwall"></select></div><div><label>Door width</label><input id="dw" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
+  <div class="row"><div class="adv"><label id="doffl">Door offset from corner</label><input id="doff" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div class="adv"><label>Door height</label><input id="dh" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
  </section>
  <section class="card adv" data-step="3"><h2>Windows, pillars and other features</h2>
   <div id="feat"></div>
@@ -98,7 +109,7 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
  </section>
 </div>
 <div class="col">
- <section class="card" data-step="2 3 4"><h2 id="layouth">Layout</h2>
+ <section class="card" id="layoutcard" data-step="2 3 4"><h2 id="layouth">Layout</h2>
   <svg id="plan" viewBox="0 0 600 500"></svg>
   <div class="tools" id="plantools"><button id="rot" disabled>Rotate 90&deg;</button><button id="wall" disabled>Move to wall</button><button id="del" disabled>Remove</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
   <div class="hint adv">Drawn to scale: each piece covers only its own footprint. Tap a piece to see the free space around it. Orange zone = clearance needed in front.</div><div id="tipmsg" class="hint" style="color:var(--warn)"></div>
@@ -111,7 +122,7 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
  <section class="card" data-step="4"><h2>Fit check</h2><div id="issues"></div></section>
  <section class="card" data-step="5"><h2>Quote</h2><div id="qtable"></div><div class="tools"><button class="primary" id="showq">Show full quote</button><button id="copyq">Copy quote text</button></div><div class="hint" id="quotemsg">The full quote lists every room with its plan. Copy it as text to paste into an email or chat.</div><textarea id="copyfb" readonly rows="8" hidden style="margin-top:8px"></textarea><div id="quote" hidden></div></section>
 </div>
-<div><button id="more" class="linkbtn">More options</button></div>
+<div id="morewrap"><button id="more" class="linkbtn">More options</button></div>
 <div class="navbar"><button id="back">Back</button><button id="next" class="primary">Next</button><p id="navmsg" class="hint"></p></div>
 </main>
 <div id="ask" class="askov" hidden role="dialog" aria-modal="true" aria-labelledby="askmsg"><div class="card" style="max-width:380px"><p id="askmsg" style="margin:0 0 12px"></p><div class="tools" style="margin:0"><button id="askyes" class="primary">Continue</button><button id="askno">Cancel</button></div></div></div>
@@ -141,16 +152,18 @@ const $=id=>document.getElementById(id);
 const LS='fitcheck-v1',CK='fitcheck-catalog';
 let CATALOG=SAMPLE.slice(),usingSample=true;
 try{const c=JSON.parse(localStorage.getItem(CK));if(Array.isArray(c)&&c.length){CATALOG=c;usingSample=false}}catch(e){}
-let S={client:'',rep:'',name:'Room 1',type:'living',rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],sel:null,next:1,rooms:[],cur:0,cuts:[],obs:[],rh:260,mode:'walls',walls:[],unit:'cm',step:1,more:false};
+let S={client:'',rep:'',name:'Room 1',type:'living',rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],sel:null,next:1,rooms:[],cur:0,cuts:[],obs:[],rh:260,mode:'walls',walls:[],shape:'rect',unit:'cm',step:1,more:false};
 try{const s=JSON.parse(localStorage.getItem(LS));if(s){S=Object.assign(S,s);if(!s.rooms&&!s.mode)S.mode='rect'}}catch(e){}
 const save=()=>{stash();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}};
 const cat=k=>CATALOG.find(c=>c.k===k);
 
 // A visit has several rooms. The active room's fields live on S; the others are stored in S.rooms.
 const ROOM_TYPES={living:'Living room',bedroom:'Bedroom',dining:'Dining room',office:'Home office',kids:"Kids' room",other:'Other'};
-const RF=['name','type','rw','rl','dwall','dw','doff','dh','items','cuts','obs','rh','mode','walls'];
-const normRoom=r=>{r.mode=r.mode||'rect';r.walls=r.walls||[];r.cuts=r.cuts||[];r.obs=r.obs||[];r.rh=r.rh||260;return r};
-function fixRoom(){S.cuts=S.cuts||[];S.obs=S.obs||[];S.rh=S.rh||260;S.mode=S.mode||'rect';S.walls=S.walls||[];recomputeShape()}
+const RF=['name','type','rw','rl','dwall','dw','doff','dh','items','cuts','obs','rh','mode','walls','shape'];
+const normRoom=r=>{r.mode=r.mode||'rect';r.walls=r.walls||[];r.shape=r.shape||(r.mode==='walls'&&r.walls.length?'free':'rect');r.cuts=r.cuts||[];r.obs=r.obs||[];r.rh=r.rh||260;return r};
+function fixRoom(){S.cuts=S.cuts||[];S.obs=S.obs||[];S.rh=S.rh||260;S.mode=S.mode||'rect';S.walls=S.walls||[];S.shape=S.shape||'rect';
+ if(S.mode==='walls'&&S.shape!=='free'&&S.walls.length!==SHAPES[S.shape].turns.length)S.walls=SHAPES[S.shape].turns.map(turn=>({len:0,turn}));
+ recomputeShape()}
 const clone=o=>JSON.parse(JSON.stringify(o));
 function stash(){const o={};RF.forEach(k=>o[k]=S[k]);o.closed=S.mode==='walls'?!!S.closed:true;S.rooms[S.cur]=clone(o)}
 function loadRoom(i){S.cur=i;Object.assign(S,normRoom(clone(S.rooms[i])));fixRoom();S.sel=null}
@@ -163,6 +176,24 @@ function body(it){const {w,d}=dims(it);return{x0:it.x-w/2,y0:it.y-d/2,x1:it.x+w/
 function front(it){const b=body(it),c=cat(it.k).cl;
  return [{x0:b.x0,y0:b.y1,x1:b.x1,y1:b.y1+c},{x0:b.x0-c,y0:b.y0,x1:b.x0,y1:b.y1},{x0:b.x0,y0:b.y0-c,x1:b.x1,y1:b.y0},{x0:b.x1,y0:b.y0,x1:b.x1+c,y1:b.y1}][it.rot/90]}
 function hit(a,b){return a.x0<b.x1-.5&&a.x1>b.x0+.5&&a.y0<b.y1-.5&&a.y1>b.y0+.5}
+// ---- Room shapes: the rep taps a picture, then measures each numbered wall. The picture's walls run clockwise from the top-left,
+// so each shape is just a fixed list of turns for the outline builder below. "free" is the any-shape list (More options). ----
+const SHAPES={
+ rect:{name:'Rectangle',turns:['R','R','R','R'],pts:[[0,0],[100,0],[100,70],[0,70]]},
+ 'L-br':{name:'L-shape',turns:['R','R','L','R','R','R'],pts:[[0,0],[100,0],[100,40],[60,40],[60,70],[0,70]],rule:'Wall 1 should equal wall 3 + wall 5, and wall 6 should equal wall 2 + wall 4.'},
+ 'L-bl':{name:'L-shape',turns:['R','R','R','L','R','R'],pts:[[0,0],[100,0],[100,70],[40,70],[40,40],[0,40]],rule:'Wall 1 should equal wall 3 + wall 5, and wall 2 should equal wall 4 + wall 6.'},
+ 'L-tl':{name:'L-shape',turns:['R','R','R','R','L','R'],pts:[[40,0],[100,0],[100,70],[0,70],[0,30],[40,30]],rule:'Wall 3 should equal wall 1 + wall 5, and wall 2 should equal wall 4 + wall 6.'},
+ 'L-tr':{name:'L-shape',turns:['R','L','R','R','R','R'],pts:[[0,0],[60,0],[60,30],[100,30],[100,70],[0,70]],rule:'Wall 5 should equal wall 1 + wall 3, and wall 6 should equal wall 2 + wall 4.'}
+};
+// Small picture of a shape; big=true adds the wall numbers (or Length / Width for a rectangle).
+function shapeSvg(key,big){const pts=SHAPES[key].pts,sc=big?2.2:.5,pad=big?26:3,P=pts.map(([x,y])=>[pad+x*sc,pad+y*sc]),n=P.length,vw=100*sc+2*pad,vh=70*sc+2*pad;
+ let h=`<svg viewBox="0 0 ${vw} ${vh}" aria-hidden="true"><polygon points="${P.map(p=>p.join(',')).join(' ')}" fill="var(--room)" stroke="var(--ink)" stroke-width="${big?2.5:2}" stroke-linejoin="round"/>`;
+ if(big)P.forEach((a,i)=>{const b=P[(i+1)%n],len=Math.hypot(b[0]-a[0],b[1]-a[1]),dx=(b[0]-a[0])/len,dy=(b[1]-a[1])/len,mx=(a[0]+b[0])/2+dy*15,my=(a[1]+b[1])/2-dx*15;
+  if(key==='rect'&&i>1)return;const t=key==='rect'?(i===0?'Length':'Width'):String(i+1),r=key==='rect'?0:10;
+  h+=r?`<circle cx="${mx}" cy="${my}" r="${r}" fill="var(--accent)"/><text x="${mx}" y="${my+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent-ink)">${t}</text>`
+   :`<text x="${mx}" y="${my+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent)">${t}</text>`});
+ return h+'</svg>'}
+
 // ---- Room outline built from wall measurements ----
 // The rep measures wall after wall (right-angled corners) and says which way they turn at each corner. The first wall runs left to right
 // on the plan. When the walls come back to the start (within a small tolerance) the outline is closed and adjusted so every wall is
@@ -602,13 +633,31 @@ function fillDoor(){const sel=$('dwall'),cur=String(S.dwall);
  $('doffl').textContent=S.mode==='walls'?"Door offset from the wall's start corner":'Door offset from corner'}
 function renderWallStatus(){const el=$('wallstat'),cb=$('closewall');cb.hidden=true;
  if(S.mode!=='walls'){el.textContent='';return}
+ if(S.shape!=='free'){const need=S.shape==='rect'?2:S.walls.length,have=(S.shape==='rect'?S.walls.slice(0,2):S.walls).filter(w=>+w.len>0).length;
+  if(S.closed){el.innerHTML=`<span style="color:var(--ok)">Room measured:</span> ${UU(S.rw,S.rl)}, floor ${UA(usage().room)}.`+(S.misclose>5?` <span style="color:var(--warn)">The walls were ${U(S.misclose)} off, so re-check them.</span>`:'');return}
+  if(have<need){el.textContent=`Type ${need-have} more measurement${need-have>1?'s':''}.`;return}
+  el.innerHTML=`<span style="color:var(--err)">These measurements don't fit together.</span> ${SHAPES[S.shape].rule||''} Measure them again.`;return}
  if(!S.walls.length){el.textContent='Start at any corner and measure the first wall (it runs left to right on the plan). Then choose which way you turn at the next corner, and keep going all the way round.';return}
  if(S.closed){el.innerHTML=`<span style="color:var(--ok)">Room closed.</span> Overall ${UU(S.rw,S.rl)}, floor ${UA(usage().room)}. Error at the closing corner: ${U(S.misclose)} (the outline is adjusted by that much).${S.misclose>5?' <span style="color:var(--warn)">That is a lot, so re-check the wall lengths.</span>':''}`;return}
  let msg=S.shapeErr?`<span style="color:var(--err)">${S.shapeErr}</span> `:'';const gi=S.gapInfo;
  if(gi){msg+=`Not closed yet: the last corner is ${U(Math.abs(gi.ex))} ${gi.ex>0?'right':'left'} and ${U(Math.abs(gi.ey))} ${gi.ey>0?'below':'above'} the start. Keep adding walls until you are back at the start.`;
   if(gi.closeLen){cb.hidden=false;cb.textContent=`Add closing wall (${U(gi.closeLen)})`}}
  el.innerHTML=msg}
-function renderWalls(){
+function renderShapes(){const keys=Object.keys(SHAPES).filter(k=>true),showFree=S.more||S.shape==='free';
+ $('shapes').innerHTML=keys.map(k=>`<button class="shape${S.shape===k?' on':''}" data-shape="${k}" aria-pressed="${S.shape===k}">${shapeSvg(k)}<span>${SHAPES[k].name}</span></button>`).join('')+
+  (showFree?`<button class="shape${S.shape==='free'?' on':''}" data-shape="free" aria-pressed="${S.shape==='free'}"><svg viewBox="0 0 56 39" aria-hidden="true"><path d="M3 3h30v12h20v21H20V24H3z" fill="var(--room)" stroke="var(--ink)" stroke-width="2" stroke-dasharray="4 3"/></svg><span>Other shape</span></button>`:'')}
+function renderShapeInputs(){const free=S.shape==='free';$('freebox').hidden=!free;if(free){$('shapebox').innerHTML='';return}
+ const f=S.shape==='rect'?[[0,'Length'],[1,'Width']]:SHAPES[S.shape].pts.map((p,i)=>[i,'Wall '+(i+1)]);
+ $('shapebox').innerHTML=`<div class="shapebig">${shapeSvg(S.shape,true)}</div><div class="tw">${f.map(([i,l])=>`<div><label for="tw${i}">${l}</label><input id="tw${i}" data-tw="${i}" ${lenAttrs()} placeholder="${esc(unitHint())}" value="${S.walls[i]&&S.walls[i].len?esc(U(S.walls[i].len,true)):''}"></div>`).join('')}</div>`}
+$('shapes').onclick=e=>{const b=e.target.closest('[data-shape]');if(!b)return;const k=b.dataset.shape;if(k===S.shape)return;
+ const old=S.walls.map(w=>+w.len||0),was=S.shape;S.shape=k;S.mode='walls';
+ if(k!=='free')S.walls=SHAPES[k].turns.map((turn,i)=>({len:k==='rect'&&was==='rect'?old[i]||0:k==='rect'?0:0,turn}));
+ onShapeChange(true)};
+$('shapebox').oninput=e=>{const i=e.target.dataset.tw;if(i==null)return;const v=e.target.value,cm=parseLen(v),bad=v.trim()!==''&&!isFinite(cm);
+ e.target.classList.toggle('bad',bad);if(bad)return;const len=v.trim()===''?0:cm;
+ if(S.shape==='rect'){S.walls[+i].len=len;S.walls[+i+2].len=len}else S.walls[+i].len=len;onShapeChange(false)};
+$('shapebox').addEventListener('change',e=>{const i=e.target.dataset.tw;if(i==null)return;const w=S.walls[+i];e.target.value=w&&w.len?U(w.len,true):'';e.target.classList.remove('bad')});
+function renderWalls(){renderShapes();renderShapeInputs();
  $('walls').innerHTML=S.walls.map((w,i)=>`<div class="wrow" data-w="${i}"><b>${i+1}</b><input data-wf="len" ${lenAttrs()} placeholder="${esc(unitHint())}" value="${w.len?esc(U(w.len,true)):''}" aria-label="Wall ${i+1} length in cm"><select data-wf="turn" aria-label="Turn after wall ${i+1}"><option value="R"${w.turn!=='L'?' selected':''}>turn right</option><option value="L"${w.turn==='L'?' selected':''}>turn left</option></select><button data-wdel aria-label="Remove wall ${i+1}">&times;</button></div>`).join('');
  fillDoor();renderWallStatus()}
 function onShapeChange(rebuild){recomputeShape();if(rebuild)renderWalls();else{fillDoor();renderWallStatus()}renderFeat();render()}
@@ -627,7 +676,7 @@ async function toWalls(){ // quick rectangle -> wall by wall
  const W=+S.rw||0,L=+S.rl||0,map=(ref,off,len)=>({N:[0,off],E:[1,off],S:[2,W-off-len],W:[3,L-off-len]}[ref]||[0,0]);
  const d=map(S.dwall,S.doff,S.dw);S.dwall=String(d[0]);S.doff=Math.max(0,d[1]);
  S.obs.forEach(o=>{if(o.kind==='window'){const m=map(o.wall,o.off,o.w);o.wall=m[0];o.off=Math.max(0,m[1])}});
- S.walls=W>0&&L>0?[{len:W,turn:'R'},{len:L,turn:'R'},{len:W,turn:'R'},{len:L,turn:'R'}]:[];S.cuts=[];S.mode='walls';fillKinds();onShapeChange(true)}
+ S.walls=[{len:W,turn:'R'},{len:L,turn:'R'},{len:W,turn:'R'},{len:L,turn:'R'}];S.shape='rect';S.cuts=[];S.mode='walls';fillKinds();onShapeChange(true)}
 async function toRect(){ // wall by wall -> quick rectangle
  const rectOk=S.closed&&S.cuts.length===0&&S.walls.length===4&&S.walls.slice(0,3).every(w=>w.turn!=='L');
  if(!rectOk&&!await ask('Quick rectangle keeps only the overall width and length, so this room becomes a plain rectangle and its door and windows move to the top wall.','Switch to rectangle'))return;
@@ -640,11 +689,11 @@ $('moderect').onclick=()=>{if(S.mode!=='rect')toRect()};
 
 // ---- Simple step-by-step flow. "More options" shows the advanced controls inside each step. ----
 const STEPS=[['Room','Which room are you measuring?','Tap the room type. The name and client are optional.'],
- ['Walls','Measure the walls','Start at any corner. Type the first wall, choose which way you turn, then measure the next wall. The room closes when you get back to the start.'],
- ['Door','Where is the door?','Choose the wall with the door, then how far the door is from the corner where that wall starts.'],
+ ['Walls','What shape is the room?','Tap the shape that looks like the room, then measure each wall shown.'],
+ ['Door','Where is the door?','Tap the plan where the door is.'],
  ['Furniture','What fits','Tap Add on anything that fits. Tap a piece on the plan to turn, move or remove it.'],
  ['Quote','Quote','Check the total, then copy the quote to send it.']];
-function applyStep(){const st=Math.min(5,Math.max(1,S.step||1));S.step=st;
+function applyStep(){const st=Math.min(5,Math.max(1,S.step||1));S.step=st;document.body.dataset.step=st;
  document.querySelectorAll('[data-step]').forEach(el=>{el.hidden=!el.dataset.step.split(' ').includes(String(st))});
  $('stepnav').innerHTML=STEPS.map(([n],i)=>`<button class="stp${i+1===st?' on':''}" data-go="${i+1}"${i+1===st?' aria-current="step"':''}>${i+1}. ${n}</button>`).join('');
  $('stepttl').textContent=STEPS[st-1][1];$('stepsub').textContent=STEPS[st-1][2];
@@ -660,7 +709,7 @@ const goStep=n=>{S.step=n;render();window.scrollTo(0,0)};
 $('stepnav').onclick=e=>{const b=e.target.closest('[data-go]');if(b)goStep(+b.dataset.go)};
 $('back').onclick=()=>goStep((S.step||1)-1);
 $('next').onclick=()=>{if($('next').dataset.act==='room'){$('addroom').click();goStep(1)}else goStep((S.step||1)+1)};
-$('more').onclick=()=>{S.more=!S.more;render()};
+$('more').onclick=()=>{S.more=!S.more;renderShapes();render()};
 
 // inputs
 const bind={client:'client',rep:'rep',name:'rname',type:'rtype',rh:'rh',rw:'rw',rl:'rl',dwall:'dwall',dw:'dw',doff:'doff',dh:'dh'};
@@ -691,7 +740,7 @@ async function copyText(text,msgEl,what){const fb=$('copyfb');
  catch(e){fb.hidden=false;fb.value=text;fb.focus();fb.select();msgEl.style.color='var(--warn)';msgEl.textContent='Copying was blocked. Select the text in the box and copy it.'}}
 $('copyq').onclick=()=>copyText(quoteText(),$('quotemsg'),'Quote');
 $('rooms').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;stash();loadRoom(+b.dataset.r);load();renderCat();render()};
-$('addroom').onclick=()=>{stash();S.rooms.push({name:`Room ${S.rooms.length+1}`,type:'other',mode:'walls',walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260});loadRoom(S.rooms.length-1);load();renderCat();render();$('rname').focus();$('rname').select()};
+$('addroom').onclick=()=>{stash();S.rooms.push({name:`Room ${S.rooms.length+1}`,type:'other',mode:'walls',shape:'rect',walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260});loadRoom(S.rooms.length-1);load();renderCat();render();$('rname').focus();$('rname').select()};
 $('delroom').onclick=async()=>{if(S.rooms.length<2||!await ask(`Delete "${S.name}" and its layout?`,'Delete room'))return;S.rooms.splice(S.cur,1);loadRoom(Math.min(S.cur,S.rooms.length-1));load();renderCat();render()};
 $('wall').onclick=()=>{const i=S.items.findIndex(x=>x.id===S.sel);if(i<0)return;const it=S.items[i],c=cat(it.k);
  S.items.splice(i,1);const spot=findSpot(c,c.cl,[it.rot])||findSpot(c,c.cl);S.items.splice(i,0,it);
@@ -700,12 +749,20 @@ $('wall').onclick=()=>{const i=S.items.findIndex(x=>x.id===S.sel);if(i<0)return;
 $('showcl').onchange=e=>{S.showCl=e.target.checked;render()};
 $('px').oninput=e=>{const it=S.items.find(i=>i.id===S.sel),cm=parseLen(e.target.value);e.target.classList.toggle('bad',e.target.value.trim()!==''&&!isFinite(cm));if(it&&isFinite(cm)){it.x=cm+dims(it).w/2;render()}};
 $('py').oninput=e=>{const it=S.items.find(i=>i.id===S.sel),cm=parseLen(e.target.value);e.target.classList.toggle('bad',e.target.value.trim()!==''&&!isFinite(cm));if(it&&isFinite(cm)){it.y=cm+dims(it).d/2;render()}};
-$('reset').onclick=async()=>{if(await ask('Start a new visit? All rooms and layouts are cleared.','Start new visit')){S.rooms=[];S.cur=0;Object.assign(S,{name:'Room 1',type:'living',mode:'walls',walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,client:'',rep:''});recomputeShape();stash();load();renderCat();render()}};
+$('reset').onclick=async()=>{if(await ask('Start a new visit? All rooms and layouts are cleared.','Start new visit')){S.rooms=[];S.cur=0;Object.assign(S,{name:'Room 1',type:'living',mode:'walls',shape:'rect',walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,client:'',rep:''});fixRoom();stash();load();renderCat();render()}};
 
 // drag with wall snapping
 let drag=null;
 function pt(e){const p=$('plan'),q=p.createSVGPoint();q.x=e.clientX;q.y=e.clientY;return q.matrixTransform(p.getScreenCTM().inverse())}
-$('plan').addEventListener('pointerdown',e=>{const g=e.target.closest('[data-id]'),og=!g&&e.target.closest('[data-ob]');
+// Door step: the door goes on the wall nearest to where the plan was tapped, centred on that spot.
+function placeDoorAt(p){
+ if(S.mode==='walls'){if(!S.closed)return;let best=null;
+  S.wallGeo.forEach((g,i)=>{const t=Math.max(0,Math.min(g.len,(p.x-g.a.x)*g.dx+(p.y-g.a.y)*g.dy)),d=Math.hypot(p.x-g.a.x-g.dx*t,p.y-g.a.y-g.dy*t);if(!best||d<best.d)best={i,t,d}});
+  const g=S.wallGeo[best.i];S.dwall=String(best.i);S.doff=Math.round(Math.max(0,Math.min(g.len-S.dw,best.t-S.dw/2)))}
+ else{const W=+S.rw,L=+S.rl,c=[['N',p.y,p.x,W],['S',L-p.y,p.x,W],['W',p.x,p.y,L],['E',W-p.x,p.y,L]].sort((a,b)=>a[1]-b[1])[0];S.dwall=c[0];S.doff=Math.round(Math.max(0,Math.min(c[3]-S.dw,c[2]-S.dw/2)))}
+ $('dwall').value=S.dwall;$('doff').value=U(S.doff,true);render()}
+$('plan').addEventListener('pointerdown',e=>{if(S.step===3){placeDoorAt(pt(e));return}
+ const g=e.target.closest('[data-id]'),og=!g&&e.target.closest('[data-ob]');
  if(og){const o=S.obs.find(x=>x.id==og.dataset.ob);if(o){const p=pt(e);drag={ob:o,dx:p.x-o.x,dy:p.y-o.y};S.sel=null;$('plan').setPointerCapture(e.pointerId);render()}return}
  if(!g){S.sel=null;render();return}
  const it=S.items.find(i=>i.id==g.dataset.id);S.sel=it.id;const p=pt(e);drag={it,dx:p.x-it.x,dy:p.y-it.y};
