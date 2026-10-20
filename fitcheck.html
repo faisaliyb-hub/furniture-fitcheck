@@ -53,6 +53,8 @@ body:not(.more) .adv{display:none!important}
 .padtools{display:flex;gap:8px;justify-content:space-between;align-items:center;margin:4px 0 10px}
 .tw{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:8px}.tw label{font-weight:600;color:var(--ink)}
 .col{display:contents}#plan{touch-action:pan-y}body[data-step="4"] #plan{touch-action:none}#stephead{order:-2}#morewrap{order:9}.navbar{order:10}body[data-step="3"] #layoutcard{order:-1}body[data-step="3"] #plan{cursor:crosshair}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#sizebox{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}#sizebox .chips{margin-bottom:8px}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.chip{text-align:left;line-height:1.25;padding:7px 11px}.chip small{display:block;opacity:.75;font-size:11px}.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .sg{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sg small{display:block;color:var(--mute)}.sg .tag{color:var(--warn)}
@@ -114,6 +116,9 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
  <section class="card" id="layoutcard" data-step="2 3 4"><h2 id="layouth">Layout</h2>
   <svg id="plan" viewBox="0 0 600 500"></svg>
   <div class="tools" id="plantools"><button id="rot" disabled>Rotate 90&deg;</button><button id="wall" disabled>Move to wall</button><button id="del" disabled>Remove</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
+  <div id="sizebox" hidden><div id="sizettl" style="font-weight:600;margin-bottom:6px"></div><div id="sizechips" class="chips" role="group" aria-label="Sizes"></div>
+   <div class="row3"><div><label for="szw" id="szwl">Width</label><input id="szw" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szd" id="szdl">Depth</label><input id="szd" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szh" id="szhl">Height</label><input id="szh" type="text" inputmode="decimal" autocomplete="off"></div></div>
+   <div id="sizehint" class="hint"></div></div>
   <div class="hint adv">Drawn to scale: each piece covers only its own footprint. Tap a piece to see the free space around it. Orange zone = clearance needed in front.</div><div id="tipmsg" class="hint" style="color:var(--warn)"></div>
  </section>
  <section class="card adv" data-step="4"><h2>Space</h2><div id="space"></div>
@@ -158,6 +163,30 @@ let S={client:'',rep:'',name:'Room 1',type:'living',rw:300,rl:300,dwall:'0',dw:9
 try{const s=JSON.parse(localStorage.getItem(LS));if(s){S=Object.assign(S,s);if(!s.rooms&&!s.mode)S.mode='rect'}}catch(e){}
 const save=()=>{stash();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}};
 const cat=k=>CATALOG.find(c=>c.k===k);
+// ---- Standard sizes and adjustable pieces ----
+// A placed piece may carry its own size (it.size = {w,d,h,name}); otherwise it uses its catalog size.
+// Common sizes per kind of furniture, as [name, width, depth] in cm. Beds: the usual mattress sizes plus about 10 cm for a frame.
+// The other lists are typical sizes, not a formal standard; the maker's exact size always wins.
+const STD={
+ bed:[['Single (90 x 200)',100,210],['Small double (120 x 200)',130,210],['Double (140 x 200)',150,210],['Queen (160 x 200)',170,210],['King (180 x 200)',190,210],['US Queen (60 x 80 in)',162,213],['US King (76 x 80 in)',203,213]],
+ sofa:[['2-seat',150,90],['3-seat',210,92],['4-seat',250,95]],
+ arm:[['Compact',70,75],['Standard',76,80],['Large',90,90]],
+ coffee:[['Small',90,50],['Medium',110,60],['Large',130,70],['Square',80,80]],
+ side:[['Small',40,40],['Standard',45,45],['Large',55,55]],
+ dining:[['4 seats',120,80],['6 seats',180,90],['8 seats',220,100],['Round, 4 seats',110,110]],
+ chair:[['Standard',45,50],['With arms',55,55]],
+ night:[['Narrow',40,35],['Standard',45,40],['Wide',55,40]],
+ wardrobe:[['1 door',50,60],['2 doors',100,60],['3 doors',150,60],['4 doors',200,60],['5 doors',250,60]],
+ tv:[['120 cm wide',120,40],['160 cm wide',160,40],['200 cm wide',200,45]],
+ shelf:[['Narrow',60,30],['Standard',80,35],['Wide',100,35]],
+ desk:[['Small',100,50],['Medium',120,60],['Large',140,70],['Extra large',160,80]]
+};
+// Which size list a catalog piece uses, from its name (and type for beds).
+function family(c){const n=c.n.toLowerCase();
+ return /\bbed\b/.test(n)&&typeOf(c)==='bed'?'bed':/sofa|couch|loveseat|settee/.test(n)?'sofa':/arm ?chair/.test(n)?'arm':/coffee/.test(n)?'coffee':/nightstand|bedside/.test(n)?'night':/side table|end table/.test(n)?'side':/desk/.test(n)?'desk':/table/.test(n)?'dining':/chair|stool/.test(n)?'chair':/wardrobe|closet/.test(n)?'wardrobe':/\btv\b|media/.test(n)?'tv':/shelf|book/.test(n)?'shelf':null}
+// The piece as placed: catalog data with its own size on top.
+function spec(it){const c=cat(it.k);if(!c||!it.size)return c;return{...c,w:it.size.w,d:it.size.d,h:it.size.h||c.h,sized:it.size.name||'Custom size'}}
+const sizeKey=it=>it.size?`${it.size.w}x${it.size.d}x${it.size.h||''}`:'';
 
 // A visit has several rooms. The active room's fields live on S; the others are stored in S.rooms.
 const ROOM_TYPES={living:'Living room',bedroom:'Bedroom',dining:'Dining room',office:'Home office',kids:"Kids' room",other:'Other'};
@@ -173,9 +202,9 @@ function withRoom(r,fn){const keep={};RF.forEach(k=>keep[k]=S[k]);const sel=S.se
 // A piece suits the room if it lists no rooms, lists this room type, or the room type is "other".
 const suits=c=>!c.r||!c.r.length||S.type==='other'||c.r.includes(S.type);
 
-function dims(it){const c=cat(it.k);return it.rot%180?{w:c.d,d:c.w}:{w:c.w,d:c.d}}
+function dims(it){const c=spec(it);return it.rot%180?{w:c.d,d:c.w}:{w:c.w,d:c.d}}
 function body(it){const {w,d}=dims(it);return{x0:it.x-w/2,y0:it.y-d/2,x1:it.x+w/2,y1:it.y+d/2}}
-function front(it){const b=body(it),c=cat(it.k).cl;
+function front(it){const b=body(it),c=spec(it).cl;
  return [{x0:b.x0,y0:b.y1,x1:b.x1,y1:b.y1+c},{x0:b.x0-c,y0:b.y0,x1:b.x0,y1:b.y1},{x0:b.x0,y0:b.y0-c,x1:b.x1,y1:b.y0},{x0:b.x1,y0:b.y0,x1:b.x1+c,y1:b.y1}][it.rot/90]}
 function hit(a,b){return a.x0<b.x1-.5&&a.x1>b.x0+.5&&a.y0<b.y1-.5&&a.y1>b.y0+.5}
 // ---- Room shapes: the rep taps a picture, then measures each numbered wall. The picture's walls run clockwise from the top-left,
@@ -386,13 +415,13 @@ const winRect=o=>(wallSpan(o.wall,o.off,o.w,20)||{rect:EMPTY}).rect
 function check(){
  if(S.mode==='walls'&&!S.closed)return [['warn','The room outline is not closed yet. Finish measuring the walls to check fit.']];
  const out=[],W=S.rw,L=S.rl,dz=doorRect();
- S.items.forEach(it=>{const c=cat(it.k),b=body(it),f=front(it);
+ S.items.forEach(it=>{const c=spec(it),b=body(it),f=front(it);
   if(!rectInRoom(b))out.push(['err',`${c.n} sticks out of the room.`]);
   if(hit(b,dz))out.push(['warn',`${c.n} blocks the door swing area.`]);
   if(!rectInRoom(f))out.push(['warn',`${c.n}: front clearance (${U(c.cl)}) runs into a wall.`]);
   S.items.forEach(o=>{if(o.id===it.id)return;
-   if(o.id>it.id&&hit(b,body(o)))out.push(['err',`${c.n} overlaps ${cat(o.k).n}.`]);
-   if(hit(f,body(o)))out.push(['warn',`${cat(o.k).n} is inside the clearance zone of ${c.n}.`]);});
+   if(o.id>it.id&&hit(b,body(o)))out.push(['err',`${c.n} overlaps ${spec(o).n}.`]);
+   if(hit(f,body(o)))out.push(['warn',`${spec(o).n} is inside the clearance zone of ${c.n}.`]);});
   hardList().forEach(({r,label})=>{
    if(hit(b,r))out.push(['err',`${c.n} overlaps ${label}.`]);
    else if(hit(f,r))out.push(['warn',`${label[0].toUpperCase()+label.slice(1)} is inside the clearance zone of ${c.n}.`])});
@@ -454,7 +483,7 @@ function gaps(it){const b=body(it),W=+S.rw,L=+S.rl,o=[...S.items.filter(x=>x.id!
 // Floor areas in cm2 on a cell grid: room (minus cut-outs), fixed features, furniture, and what is free. Cached per layout.
 const uCache=new Map();
 function usage(){const W=+S.rw,L=+S.rl;if(!(W>0&&L>0))return{room:0,fixed:0,used:0,free:0,overlap:false};
- const key=W+'|'+L+'|'+JSON.stringify([S.mode==='walls'?[S.walls,S.sketch&&S.sketch.d0,S.shape]:0,S.cuts,S.obs.filter(o=>OBS[o.kind]&&OBS[o.kind].hard),S.items.map(i=>[i.k,i.x,i.y,i.rot])]);
+ const key=W+'|'+L+'|'+JSON.stringify([S.mode==='walls'?[S.walls,S.sketch&&S.sketch.d0,S.shape]:0,S.cuts,S.obs.filter(o=>OBS[o.kind]&&OBS[o.kind].hard),S.items.map(i=>[i.k,i.x,i.y,i.rot,sizeKey(i)])]);
  if(uCache.has(key))return uCache.get(key);
  const st=Math.max(1,Math.round(Math.sqrt(W*L)/300)),cuts=S.cuts.map(rectOf),fixed=S.obs.filter(o=>OBS[o.kind]&&OBS[o.kind].hard).map(rectOf),bs=S.items.map(body);
  const inn=(r,x,y)=>x>=r.x0&&x<r.x1&&y>=r.y0&&y<r.y1;let room=0,fx=0,used=0,over=0;
@@ -504,7 +533,7 @@ function drawPlan(sel,print){
  const sb=imperial()?91.44:100,sbl=imperial()?'3 ft':{m:'1 m',mm:'1000 mm',cm:'100 cm'}[S.unit];
  h+=`<g stroke="var(--mute)" stroke-width="${sw}"><line x1="0" y1="${L+24}" x2="${sb}" y2="${L+24}"/><line x1="0" y1="${L+20}" x2="0" y2="${L+28}"/><line x1="${sb}" y1="${L+20}" x2="${sb}" y2="${L+28}"/></g><text x="${sb+8}" y="${L+24+fs*.35}" font-size="${fs}" fill="var(--mute)">${sbl} scale</text>`;
  const halo=`paint-order="stroke" stroke="var(--room)" stroke-width="${u*3}" stroke-linejoin="round"`;
- S.items.forEach(it=>{const c=cat(it.k),b=body(it),f=front(it),bw=b.x1-b.x0,bh=b.y1-b.y0,on=it.id===sel,s2=on?sw*1.6:sw;
+ S.items.forEach(it=>{const c=spec(it),b=body(it),f=front(it),bw=b.x1-b.x0,bh=b.y1-b.y0,on=it.id===sel,s2=on?sw*1.6:sw;
   if(S.showCl||on)h+=`<rect x="${f.x0}" y="${f.y0}" width="${f.x1-f.x0}" height="${f.y1-f.y0}" fill="var(--warn)" fill-opacity=".08" stroke="var(--warn)" stroke-dasharray="${u*5} ${u*4}" stroke-width="${sw*.7}"/>`;
   h+=`<g data-id="${it.id}" style="cursor:grab"><rect x="${b.x0+s2/2}" y="${b.y0+s2/2}" width="${bw-s2}" height="${bh-s2}" fill="var(--accent)" fill-opacity="${on?.5:.28}" stroke="var(--accent)" stroke-width="${s2}"/>`;
   h+=`<g transform="translate(${it.x} ${it.y}) rotate(${it.rot})" fill="none" stroke="var(--ink)" stroke-opacity=".4" stroke-width="${u*1.1}" pointer-events="none">${detail(c,u)}</g>`;
@@ -519,7 +548,7 @@ function drawPlan(sel,print){
      `</g><text x="${hz?tx:tx+u*7}" y="${hz?ty-u*6:ty+fs*.35}" text-anchor="${hz?'middle':'start'}" font-size="${fs}" font-weight="600" fill="var(--ink)" ${halo} pointer-events="none">${U(v)}</text>`};
    h+=dim(g.left,it.y,b.x0,it.y,g.gl)+dim(b.x1,it.y,g.right,it.y,g.gr)+dim(it.x,g.up,it.x,b.y0,g.gu)+dim(it.x,b.y1,it.x,g.down,g.gd)}
  });
- if(ghost&&!print){const c=cat(ghost.k),w=ghost.rot%180?c.d:c.w,d=ghost.rot%180?c.w:c.d;
+ if(ghost&&!print){const c=spec(ghost),w=ghost.rot%180?c.d:c.w,d=ghost.rot%180?c.w:c.d;
   h+=`<rect x="${ghost.x-w/2+sw/2}" y="${ghost.y-d/2+sw/2}" width="${w-sw}" height="${d-sw}" fill="var(--accent)" fill-opacity=".15" stroke="var(--accent)" stroke-width="${sw}" stroke-dasharray="${u*6} ${u*4}" pointer-events="none"/><text x="${ghost.x}" y="${ghost.y}" text-anchor="middle" dominant-baseline="middle" font-size="${fs}" fill="var(--ink)" pointer-events="none">${esc(c.n)}</text>`}
  return h}
 
@@ -586,20 +615,22 @@ function renderSugg(){
   if(c.w*c.d>free){no.push([c,'Too big for the free floor space.']);return}
   const spot=findSpot(c,c.cl);
   if(spot){suggList.push({c,spot,door:doorOk(c)});return}
+  const fam=family(c),alt=fam&&STD[fam].filter(([n,w,d])=>w*d<c.w*c.d).sort((a,b)=>b[1]*b[2]-a[1]*a[2]).map(([n,w,d])=>{const sc={...c,w,d,sized:n},sp=findSpot(sc,c.cl);return sp&&{c:sc,spot:sp,door:doorOk(sc),size:{w,d,h:c.h,name:n}}}).find(Boolean);
+  if(alt){suggList.push(alt);return}
   no.push([c,findSpot(c,0)?`Fits the floor, but not with its ${U(c.cl)} front clearance.`:'Too big for the space that is left.'])});
  suggList.forEach(x=>x.suit=suits(x.c));
  suggList.sort((a,b)=>(b.suit-a.suit)||(b.door-a.door)||(b.c.w*b.c.d-a.c.w*a.c.d));
  let h=`<div class="hint adv" style="margin:0 0 6px">Largest free area: <b>${UU(fr.w,fr.d)}</b> (clearances not included). Suggestions respect clearances, the door swing and other pieces, and show pieces suited to this room type first.</div>`;
- const row=(x,i)=>`<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b><small>${UUU(x.c.w,x.c.d,x.c.h)} &middot; ${x.c.p.toLocaleString()}${x.door?'':' <span class="tag">&middot; check door access</span>'}</small></div><button data-add="${i}">Add</button></div>`;
+ const row=(x,i)=>`<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b>${x.size?`<small style="color:var(--accent)">Fits as ${esc(x.size.name)}</small>`:''}<small>${UUU(x.c.w,x.c.d,x.c.h)} &middot; ${x.c.p.toLocaleString()}${x.door?'':' <span class="tag">&middot; check door access</span>'}</small></div><button data-add="${i}">Add</button></div>`;
  const mine=suggList.map((x,i)=>x.suit?row(x,i):'').join(''),other=suggList.map((x,i)=>x.suit?'':row(x,i)).join(''),nOther=suggList.filter(x=>!x.suit).length;
  h+=mine||`<div class="issue warn">Nothing suited to a ${ROOM_TYPES[S.type].toLowerCase()} fits the space that is left.</div>`;
  if(nOther)h+=`<details><summary>Also fits, but usually for other rooms (${nOther})</summary>${other}</details>`;
  if(no.length)h+=`<details><summary>Does not fit (${no.length})</summary>${no.map(([c,r])=>`<div class="sg"><div><b>${esc(c.n)}</b><small>${UU(c.w,c.d)}. ${r}</small></div></div>`).join('')}</details>`;
  box.className='';box.innerHTML=h}
 $('sugg').onclick=e=>{const b=e.target.closest('[data-add]');if(!b)return;const x=suggList[+b.dataset.add];if(!x)return;
- ghost=null;const it={id:S.next++,k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot};S.items.push(it);S.sel=it.id;render()};
+ ghost=null;const it={id:S.next++,k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot};if(x.size)it.size={...x.size};S.items.push(it);S.sel=it.id;render()};
 $('sugg').onmouseover=e=>{const r=e.target.closest('.sg[data-i]');const x=r&&suggList[+r.dataset.i];
- const g=x?{k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot}:null;
+ const g=x?{k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot,size:x.size}:null;
  if(JSON.stringify(g)!==JSON.stringify(ghost)){ghost=g;$('plan').innerHTML=drawPlan(S.sel)}};
 $('sugg').onmouseleave=()=>{if(ghost){ghost=null;$('plan').innerHTML=drawPlan(S.sel)}};
 
@@ -614,23 +645,23 @@ function render(){
  $('space').innerHTML=`<table><tr><td>Room floor${S.cuts.length?' (without cut-outs)':''}</td><td class="n">${UA(us.room)}</td></tr>${us.fixed?`<tr><td>Fixed features (columns, radiators...)</td><td class="n">${UA(us.fixed)}</td></tr>`:''}<tr><td>Furniture footprint</td><td class="n">${UA(us.used)} (${us.room?Math.round(us.used/us.room*100):0}%)</td></tr><tr><th>Free floor space</th><th class="n">${UA(free)}</th></tr></table>${us.overlap?'<div class="hint">Some pieces overlap each other or a fixed feature, so these figures are approximate.</div>':''}`;
  syncFeat();syncDims();
  const si=S.items.find(i=>i.id===S.sel);$('selbox').hidden=!si;
- if(si){const c=cat(si.k),g=gaps(si),b=g.b;
+ if(si){const c=spec(si),g=gaps(si),b=g.b;
   $('selinfo').innerHTML=`<b>${esc(c.n)}</b>: ${UUU(c.w,c.d,c.h)} (W x D x H). Floor footprint on the plan: ${UU(b.x1-b.x0,b.y1-b.y0)}.<br>Free space around it: left <b>${U(g.gl)}</b>, right <b>${U(g.gr)}</b>, top <b>${U(g.gu)}</b>, bottom <b>${U(g.gd)}</b>.`+(Math.min(g.gl,g.gr,g.gu,g.gd)>40?'<br><span style="color:var(--warn)">This piece is away from the walls and splits the floor. Use Move to wall to keep the space free.</span>':'');
   if(document.activeElement!==$('px'))$('px').value=U(b.x0,true);
   if(document.activeElement!==$('py'))$('py').value=U(b.y0,true)}
  const grand={t:0,n:0},parts=S.rooms.map((r,i)=>{const run=()=>{const b=roomBlock(false);grand.t+=b.total;grand.n+=b.count;return b.html};return i===S.cur?run():withRoom(r,run)}).join('');
  $('qtable').innerHTML=parts+`<table style="margin-top:8px"><tr><th>Visit total (${S.rooms.length} room${S.rooms.length>1?'s':''})</th><th class="n">${grand.t.toLocaleString()}</th></tr></table>`;
  $('showq').disabled=$('copyq').disabled=!grand.n;if(!$('quote').hidden){$('quote').hidden=true;$('showq').textContent='Show full quote'}
- renderRooms();renderTypes();applyStep();
+ renderRooms();renderTypes();applyStep();renderSizebox();
  save();scheduleSugg();
 }
 
 // One room's quote block (for the room currently loaded in S). print=true adds the plan and fit notes.
 function roomBlock(print){
  const W=+S.rw||1,L=+S.rl||1,m=40,us=usage(),free=us.free;
- const g={};S.items.forEach(i=>g[i.k]=(g[i.k]||0)+1);
- const rows=Object.entries(g).map(([k,q])=>{const c=cat(k);return `<tr><td>${esc(c.n)}</td><td class="n">${q}</td><td class="n">${(c.p*q).toLocaleString()}</td></tr>`}).join('');
- const total=Object.entries(g).reduce((s,[k,q])=>s+cat(k).p*q,0);
+ const g=groupItems();
+ const rows=g.map(({c,q})=>`<tr><td>${esc(c.n)}${c.sized?`<br><small style="color:var(--mute)">${esc(c.sized)}, ${UUU(c.w,c.d,c.h)}</small>`:''}</td><td class="n">${q}</td><td class="n">${(c.p*q).toLocaleString()}</td></tr>`).join('');
+ const total=g.reduce((s,{c,q})=>s+c.p*q,0);
  const open=S.mode==='walls'&&!S.closed;
  let h=`<h3 style="margin:14px 0 4px">${esc(S.name)} <span style="font-weight:400;color:var(--mute)">${ROOM_TYPES[S.type]||''} &middot; ${open?'not measured':`${UU(W,L)} &middot; door ${UU(S.dw,S.dh)} &middot; ceiling ${U(S.rh)} &middot; free floor ${UA(free)}`}</span></h3>`;
  h+=rows?`<table><tr><th>Item</th><th class="n">Qty</th><th class="n">Price</th></tr>${rows}<tr><th>Room total</th><th></th><th class="n">${total.toLocaleString()}</th></tr></table>`:'<div class="hint">No items in this room yet.</div>';
@@ -639,6 +670,8 @@ function roomBlock(print){
   if(ft.length)h+=`<p style="font-size:13px">Room features: ${ft.map(esc).join('; ')}.</p>`}
  if(print)h+=`<svg viewBox="${-m} ${-m} ${W+2*m} ${L+2*m}" style="max-width:480px;page-break-inside:avoid">${drawPlan(null,true)}</svg><ul>${check().filter(([t])=>t!=='ok').map(([t,mm])=>`<li>${mm}</li>`).join('')||'<li>All pieces fit and clearances are respected.</li>'}</ul>`;
  return{html:h,total,count:S.items.length}}
+// Pieces of the current room grouped by product and size: [{c (spec), q}].
+function groupItems(){const m=new Map();S.items.forEach(it=>{const key=it.k+'|'+sizeKey(it);if(!m.has(key))m.set(key,{c:spec(it),q:0});m.get(key).q++});return[...m.values()]}
 function buildQuote(){stash();let body='',grand=0;
  const lines=S.rooms.map(r=>`<tr><td>${esc(r.name)}</td><td>${ROOM_TYPES[r.type]||''}</td><td>${r.closed===false?'not measured':UU(r.rw,r.rl)}</td><td>${UU(r.dw,r.dh)}</td></tr>`).join('');
  S.rooms.forEach((r,i)=>{const run=()=>{const b=roomBlock(true);body+=b.html;grand+=b.total};i===S.cur?run():withRoom(r,run)});
@@ -835,11 +868,31 @@ async function toRect(){ // wall by wall -> quick rectangle
 $('modewalls').onclick=()=>{if(S.mode!=='walls')toWalls()};
 $('moderect').onclick=()=>{if(S.mode!=='rect')toRect()};
 
+// ---- Size panel for the selected piece (furniture step) ----
+function renderSizebox(){const it=S.step===4&&S.items.find(i=>i.id===S.sel),box=$('sizebox');box.hidden=!it;if(!it)return;
+ const base=cat(it.k),c=spec(it),fam=family(base),list=fam?STD[fam]:[],cur=it.size&&it.size.name;
+ $('sizettl').textContent=`Size of the ${base.n.toLowerCase()}`;
+ $('sizechips').innerHTML=`<button class="chip${!it.size?' on':''}" data-sz="cat">Catalog size<small>${UU(base.w,base.d)}</small></button>`+
+  list.map(([n,w,d],i)=>`<button class="chip${cur===n?' on':''}" data-sz="${i}">${esc(n)}<small>${UU(w,d)}</small></button>`).join('')+
+  `<button class="chip${it.size&&!list.some(([n])=>n===cur)?' on':''}" data-sz="custom">Custom<small>type below</small></button>`;
+ [['szw',c.w],['szd',c.d],['szh',c.h]].forEach(([id,v])=>{const el=$(id);el.inputMode=imperial()?'text':'decimal';if(document.activeElement!==el){el.value=U(v,true);el.classList.remove('bad')}});
+ const un=UNITS[S.unit];$('szwl').textContent=`Width (${un})`;$('szdl').textContent=`Depth (${un})`;$('szhl').textContent=`Height (${un})`;
+ $('sizehint').textContent=fam==='bed'?'Bed sizes are the usual mattress sizes plus about 10 cm for the frame. Check the maker\'s exact size.':fam?'Typical sizes, not a formal standard. Check the maker\'s exact size.':'Type the exact size of this piece.'}
+$('sizechips').onclick=e=>{const b=e.target.closest('[data-sz]'),it=b&&S.items.find(i=>i.id===S.sel);if(!it)return;const base=cat(it.k),v=b.dataset.sz;
+ if(v==='cat')delete it.size;
+ else if(v==='custom'){const c=spec(it);it.size={w:c.w,d:c.d,h:c.h,name:'Custom size'};render();$('szw').focus();$('szw').select();return}
+ else{const [n,w,d]=STD[family(base)][+v];it.size={w,d,h:base.h,name:n}}
+ render()};
+['szw','szd','szh'].forEach((id,ix)=>{const el=$(id);
+ el.oninput=()=>{const it=S.items.find(i=>i.id===S.sel);if(!it)return;const v=el.value,cm=parseLen(v),bad=v.trim()!==''&&!(cm>=5&&cm<=1000);el.classList.toggle('bad',bad);if(bad||v.trim()==='')return;
+  const c=spec(it);it.size={w:c.w,d:c.d,h:c.h,name:'Custom size'};it.size['wdh'[ix]]=Math.round(cm*10)/10;render()};
+ el.addEventListener('change',()=>{const it=S.items.find(i=>i.id===S.sel);if(it){el.value=U(spec(it)['wdh'[ix]],true);el.classList.remove('bad')}})});
+
 // ---- Simple step-by-step flow. "More options" shows the advanced controls inside each step. ----
 const STEPS=[['Room','Which room are you measuring?','Tap the room type. The name and client are optional.'],
  ['Walls','What shape is the room?','Draw it roughly with your finger, or tap the picture that looks like it. Then measure each numbered wall.'],
  ['Door','Where is the door?','Tap the plan where the door is.'],
- ['Furniture','What fits','Tap Add on anything that fits. Tap a piece on the plan to turn, move or remove it.'],
+ ['Furniture','What fits','Tap Add on anything that fits. Tap a piece on the plan to change its size, turn, move or remove it.'],
  ['Quote','Quote','Check the total, then copy the quote to send it.']];
 function applyStep(){const st=Math.min(5,Math.max(1,S.step||1));S.step=st;document.body.dataset.step=st;
  document.querySelectorAll('[data-step]').forEach(el=>{el.hidden=!el.dataset.step.split(' ').includes(String(st))});
@@ -877,8 +930,8 @@ $('del').onclick=()=>{S.items=S.items.filter(i=>i.id!==S.sel);S.sel=null;render(
 $('showq').onclick=()=>{const q=$('quote');if(q.hidden){buildQuote();q.hidden=false;$('showq').textContent='Hide full quote'}else{q.hidden=true;$('showq').textContent='Show full quote'}};
 function quoteText(){stash();const L=[`Quote for ${S.client||'-'} (rep: ${S.rep||'-'}), ${new Date().toLocaleDateString()}`,''];let grand=0;
  S.rooms.forEach((r,i)=>{const run=()=>{L.push(`${S.name} (${ROOM_TYPES[S.type]}), ${S.closed?UU(S.rw,S.rl):'not measured'}, ceiling ${U(S.rh)}`);
-  const g={};S.items.forEach(it=>g[it.k]=(g[it.k]||0)+1);let t=0;
-  Object.entries(g).forEach(([k,q])=>{const c=cat(k);L.push(`  ${q} x ${c.n}: ${(c.p*q).toLocaleString()}`);t+=c.p*q});
+  let t=0;
+  groupItems().forEach(({c,q})=>{L.push(`  ${q} x ${c.n}${c.sized?` (${c.sized}, ${UUU(c.w,c.d,c.h)})`:''}: ${(c.p*q).toLocaleString()}`);t+=c.p*q});
   L.push(`  Room total: ${t.toLocaleString()}`);check().filter(([k])=>k!=='ok').forEach(([k,m])=>L.push('  Note: '+m));L.push('');grand+=t};
   i===S.cur?run():withRoom(r,run)});
  L.push(`Total: ${grand.toLocaleString()}`,'Indicative only. Verify on site before ordering. Prices are placeholder data.');return L.join('\n')}
@@ -890,7 +943,7 @@ $('copyq').onclick=()=>copyText(quoteText(),$('quotemsg'),'Quote');
 $('rooms').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;stash();loadRoom(+b.dataset.r);load();renderCat();render()};
 $('addroom').onclick=()=>{stash();S.rooms.push({name:`Room ${S.rooms.length+1}`,type:'other',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260});loadRoom(S.rooms.length-1);load();renderCat();render();$('rname').focus();$('rname').select()};
 $('delroom').onclick=async()=>{if(S.rooms.length<2||!await ask(`Delete "${S.name}" and its layout?`,'Delete room'))return;S.rooms.splice(S.cur,1);loadRoom(Math.min(S.cur,S.rooms.length-1));load();renderCat();render()};
-$('wall').onclick=()=>{const i=S.items.findIndex(x=>x.id===S.sel);if(i<0)return;const it=S.items[i],c=cat(it.k);
+$('wall').onclick=()=>{const i=S.items.findIndex(x=>x.id===S.sel);if(i<0)return;const it=S.items[i],c=spec(it);
  S.items.splice(i,1);const spot=findSpot(c,c.cl,[it.rot])||findSpot(c,c.cl);S.items.splice(i,0,it);
  if(spot){it.x=spot.x;it.y=spot.y;it.rot=spot.rot;$('tipmsg').textContent=''}else $('tipmsg').textContent='No wall position keeps this piece clear of the door and other pieces.';
  render()};

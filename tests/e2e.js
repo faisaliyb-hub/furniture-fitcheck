@@ -126,6 +126,26 @@ export async function run(){
  const mig=legacy.map(r=>withRoom(r,()=>({mode:S.mode,shape:S.shape,closed:S.mode==='rect'||S.closed})));
  ok('old saves: quick rectangle',mig[0].mode==='rect');ok('old saves: wall list becomes Other shape and closes',mig[1].shape==='free'&&mig[1].closed);ok('old saves: first-version sketch still closes',mig[2].shape==='sketch'&&mig[2].closed);
 
+ // ---- standard sizes and adjustable pieces ----
+ const fams=Object.fromEntries(SAMPLE.map(c=>[c.k,family(c)]));
+ ok('sizes: every sample piece has a size list',Object.values(fams).every(Boolean),fams);
+ ok('sizes: families are right',fams.bed==='bed'&&fams.night==='night'&&fams.side==='side'&&fams.dining==='dining'&&fams.chair==='chair'&&fams.coffee==='coffee'&&fams.arm==='arm',fams);
+ freshVisit();setTemplate('rect',[450,380]);S.items=[{id:80,k:'bed',x:225,y:150,rot:0}];S.sel=80;goStep(4);await wait(20);
+ ok('sizes: panel shows for the selected piece',visible('#sizebox')&&$('sizechips').children.length===STD.bed.length+2);
+ [...$('sizechips').children].find(b=>b.textContent.startsWith('King'))?.click();await wait(10);
+ ok('sizes: tapping King resizes the bed',S.items[0].size&&S.items[0].size.w===190&&near(body(S.items[0]).x1-body(S.items[0]).x0,190,.01),S.items[0].size);
+ $('szw').value='175';$('szw').dispatchEvent(new Event('input',{bubbles:true}));await wait(10);
+ ok('sizes: typing a custom width',S.items[0].size.w===175&&S.items[0].size.name==='Custom size',S.items[0].size);
+ S.unit='ftin';render();ok('sizes: panel follows the unit',/ft/.test($('szw').value)&&/ft \+ in/.test($('szwl').textContent),$('szw').value);S.unit='cm';render();
+ const q1=quoteText();ok('sizes: quote names the custom size',/Queen bed \(Custom size, 175 x 210 x 110 cm\)/.test(q1),q1);
+ [...$('sizechips').children].find(b=>b.dataset.sz==='cat').click();await wait(10);ok('sizes: back to catalog size',!S.items[0].size&&near(body(S.items[0]).x1-body(S.items[0]).x0,160,.01));
+ S.items=[];S.sel=null;render();
+ // a narrow room where the catalog bed cannot fit, but a smaller standard bed can
+ setTemplate('rect',[140,300]);S.type='bedroom';render();renderSugg();
+ const bedAlt=suggList.find(x=>x.c.k==='bed');ok('sizes: smaller standard bed suggested when the catalog bed does not fit',!!bedAlt&&!!bedAlt.size&&bedAlt.c.w<160,bedAlt&&bedAlt.size);
+ if(bedAlt){S.items.push({id:81,k:'bed',x:bedAlt.spot.x,y:bedAlt.spot.y,rot:bedAlt.spot.rot,size:{...bedAlt.size}});render();ok('sizes: the smaller bed really fits',!issues().filter(m=>!m.includes('Verify access')).length,issues())}
+ S.items=[];S.type='living';goStep(1);
+
  // ---- steps and options ----
  freshVisit();goStep(1);ok('steps: step 1 shows only room cards',visible('#typechips')&&!visible('#wallsbox'));
  goStep(2);ok('steps: advanced hidden by default',!visible('#modewalls'));S.more=true;render();ok('steps: More options shows advanced',visible('#modewalls'));S.more=false;render();
