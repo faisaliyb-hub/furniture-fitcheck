@@ -1,0 +1,14 @@
+sku,name,width_cm,depth_cm,height_cm,front_clearance_cm,price,type,rooms
+sofa3,"3-seat sofa",210,92,85,45,1450,sofa,living
+sofa2,"2-seat sofa",150,90,85,45,1050,sofa,living|office
+arm,"Armchair",76,80,85,50,520,chair,living|bedroom|office
+coffee,"Coffee table",100,55,42,35,340,table,living
+side,"Side table",45,45,50,0,120,side,living|bedroom
+dining,"Dining table (6 seats)",180,90,75,80,980,table,dining
+chair,"Dining chair",45,50,90,40,160,chair,dining|office|kids
+bed,"Queen bed",160,210,110,60,1280,bed,bedroom|kids
+night,"Nightstand",45,40,50,40,150,storage,bedroom|kids
+wardrobe,"Wardrobe",200,60,230,80,1190,storage,bedroom|kids
+tv,"TV unit",160,40,50,60,410,storage,living|bedroom
+shelf,"Bookshelf",90,35,200,60,260,storage,living|office|bedroom|kids
+desk,"Desk",140,70,75,80,390,table,office|bedroom|kids

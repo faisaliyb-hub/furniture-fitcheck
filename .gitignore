@@ -1,0 +1,6 @@
+# local tooling
+.claude/
+.DS_Store
+
+# build output (recreate with: python3 tools/make_artifact.py)
+dist/
