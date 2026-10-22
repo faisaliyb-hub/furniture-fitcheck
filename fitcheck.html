@@ -134,22 +134,40 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 </main>
 <div id="ask" class="askov" hidden role="dialog" aria-modal="true" aria-labelledby="askmsg"><div class="card" style="max-width:380px"><p id="askmsg" style="margin:0 0 12px"></p><div class="tools" style="margin:0"><button id="askyes" class="primary">Continue</button><button id="askno">Cancel</button></div></div></div>
 <script>
-// Placeholder catalog. Replace it by importing the furniture house's CSV (see catalog-template.csv).
+// Sample catalog: 26 real IKEA UK products (sizes and GBP prices as listed on ikea.com/gb on 2026-10-22; sources in docs/SAMPLE_CATALOG.md).
+// Rows that share a group (g) are sizes of one product; z names the size. Front clearances (cl) and room tags (r) are our planning guesses, not IKEA data.
+// Replace it by importing the furniture house's CSV (see catalog-template.csv).
 const SAMPLE=[
- {k:'sofa3',n:'3-seat sofa',w:210,d:92,h:85,cl:45,p:1450,t:'sofa',r:['living']},
- {k:'sofa2',n:'2-seat sofa',w:150,d:90,h:85,cl:45,p:1050,t:'sofa',r:['living','office']},
- {k:'arm',n:'Armchair',w:76,d:80,h:85,cl:50,p:520,t:'chair',r:['living','bedroom','office']},
- {k:'coffee',n:'Coffee table',w:100,d:55,h:42,cl:35,p:340,t:'table',r:['living']},
- {k:'side',n:'Side table',w:45,d:45,h:50,cl:0,p:120,t:'side',r:['living','bedroom']},
- {k:'dining',n:'Dining table (6 seats)',w:180,d:90,h:75,cl:80,p:980,t:'table',r:['dining']},
- {k:'chair',n:'Dining chair',w:45,d:50,h:90,cl:40,p:160,t:'chair',r:['dining','office','kids']},
- {k:'bed',n:'Queen bed',w:160,d:210,h:110,cl:60,p:1280,t:'bed',r:['bedroom','kids']},
- {k:'night',n:'Nightstand',w:45,d:40,h:50,cl:40,p:150,t:'storage',r:['bedroom','kids']},
- {k:'wardrobe',n:'Wardrobe',w:200,d:60,h:230,cl:80,p:1190,t:'storage',r:['bedroom','kids']},
- {k:'tv',n:'TV unit',w:160,d:40,h:50,cl:60,p:410,t:'storage',r:['living','bedroom']},
- {k:'shelf',n:'Bookshelf',w:90,d:35,h:200,cl:60,p:260,t:'storage',r:['living','office','bedroom','kids']},
- {k:'desk',n:'Desk',w:140,d:70,h:75,cl:80,p:390,t:'table',r:['office','bedroom','kids']}
+ {k:'694.405.96',n:'KIVIK 3-seat sofa',w:228,d:95,h:83,cl:45,p:449,t:'sofa',r:['living'],g:'kivik',z:'3-seat'},
+ {k:'294.405.98',n:'KIVIK 2-seat sofa',w:190,d:95,h:83,cl:45,p:349,t:'sofa',r:['living','office'],g:'kivik',z:'2-seat'},
+ {k:'992.407.89',n:'POÄNG armchair',w:68,d:82,h:100,cl:50,p:69,t:'chair',r:['living','bedroom','office']},
+ {k:'401.042.94',n:'LACK coffee table 90x55',w:90,d:55,h:45,cl:35,p:19,t:'table',r:['living'],g:'lackcoffee',z:'90x55 cm'},
+ {k:'001.042.91',n:'LACK coffee table 118x78',w:118,d:78,h:45,cl:35,p:40,t:'table',r:['living'],g:'lackcoffee',z:'118x78 cm'},
+ {k:'304.499.08',n:'LACK side table 55x55',w:55,d:55,h:45,cl:0,p:10,t:'side',r:['living','bedroom'],g:'lackside',z:'55x55 cm'},
+ {k:'305.147.91',n:'LACK side table 35x35',w:35,d:35,h:35,cl:0,p:6,t:'side',r:['living','bedroom'],g:'lackside',z:'35x35 cm'},
+ {k:'702.943.39',n:'LISABO table 140x78',w:140,d:78,h:74,cl:80,p:129,t:'table',r:['dining'],g:'lisabotable',z:'140x78 cm'},
+ {k:'405.637.76',n:'LISABO table 88x78',w:88,d:78,h:74,cl:80,p:69,t:'table',r:['dining'],g:'lisabotable',z:'88x78 cm'},
+ {k:'004.572.35',n:'LISABO chair',w:46,d:51,h:80,cl:40,p:50,t:'chair',r:['dining','office','kids']},
+ {k:'290.069.78',n:'MALM bed frame, Standard Double',w:150,d:199,h:100,cl:60,p:139,t:'bed',r:['bedroom','kids'],g:'malm',z:'Standard Double (135x190)'},
+ {k:'490.099.47',n:'MALM bed frame, Standard Single',w:107,d:199,h:100,cl:60,p:99,t:'bed',r:['bedroom','kids'],g:'malm',z:'Standard Single (90x190)'},
+ {k:'690.069.81',n:'MALM bed frame, Standard King',w:166,d:209,h:100,cl:60,p:179,t:'bed',r:['bedroom','kids'],g:'malm',z:'Standard King (150x200)'},
+ {k:'790.024.35',n:'MALM bed frame, 180x200',w:196,d:209,h:100,cl:60,p:229,t:'bed',r:['bedroom','kids'],g:'malm',z:'180x200 cm'},
+ {k:'506.107.39',n:'HEMNES bedside table',w:46,d:35,h:70,cl:40,p:55,t:'storage',r:['bedroom','kids']},
+ {k:'004.417.58',n:'KLEPPSTAD wardrobe, 3 doors',w:117,d:55,h:176,cl:80,p:129,t:'storage',r:['bedroom','kids'],g:'kleppstad',z:'3 doors'},
+ {k:'804.372.34',n:'KLEPPSTAD wardrobe, 2 doors',w:79,d:55,h:176,cl:80,p:89,t:'storage',r:['bedroom','kids'],g:'kleppstad',z:'2 doors'},
+ {k:'204.989.04',n:'LACK TV bench 160',w:160,d:35,h:36,cl:60,p:50,t:'storage',r:['living','bedroom'],g:'lacktv',z:'160 cm wide'},
+ {k:'204.989.37',n:'LACK TV bench 120',w:120,d:35,h:36,cl:60,p:40,t:'storage',r:['living','bedroom'],g:'lacktv',z:'120 cm wide'},
+ {k:'004.500.88',n:'LACK TV bench 90',w:90,d:26,h:45,cl:60,p:9,t:'storage',r:['living','bedroom'],g:'lacktv',z:'90 cm wide'},
+ {k:'002.638.50',n:'BILLY bookcase 80x202',w:80,d:28,h:202,cl:60,p:55,t:'storage',r:['living','office','bedroom','kids'],g:'billy',z:'80 wide, 202 high'},
+ {k:'502.638.38',n:'BILLY bookcase 40x202',w:40,d:28,h:202,cl:60,p:35,t:'storage',r:['living','office','bedroom','kids'],g:'billy',z:'40 wide, 202 high'},
+ {k:'302.638.44',n:'BILLY bookcase 80x106',w:80,d:28,h:106,cl:60,p:35,t:'storage',r:['living','office','bedroom','kids'],g:'billy',z:'80 wide, 106 high'},
+ {k:'802.130.74',n:'MICKE desk 105x50',w:105,d:50,h:75,cl:80,p:79,t:'table',r:['office','bedroom','kids'],g:'micke',z:'105x50 cm'},
+ {k:'302.130.76',n:'MICKE desk 73x50',w:73,d:50,h:75,cl:80,p:49,t:'table',r:['office','bedroom','kids'],g:'micke',z:'73x50 cm'},
+ {k:'902.143.08',n:'MICKE desk 142x50',w:142,d:50,h:75,cl:80,p:99,t:'table',r:['office','bedroom','kids'],g:'micke',z:'142x50 cm'}
 ];
+const SAMPLE_NOTE='Sample catalog: IKEA UK products, prices in GBP as listed on ikea.com/gb on 22 Oct 2026. FitCheck is not connected to IKEA.';
+// Visits saved with the first sample catalog used short keys; they map to the closest IKEA sample row.
+const OLD_KEYS={sofa3:'694.405.96',sofa2:'294.405.98',arm:'992.407.89',coffee:'401.042.94',side:'304.499.08',dining:'702.943.39',chair:'004.572.35',bed:'290.069.78',night:'506.107.39',wardrobe:'004.417.58',tv:'204.989.04',shelf:'002.638.50',desk:'802.130.74'};
 const TYPES=['sofa','chair','table','side','bed','storage'];
 const ROOMKEYS=['living','bedroom','dining','office','kids'];
 // Furniture type decides the top-down detail drawn inside the footprint. Optional CSV column "type"; otherwise guessed from the name.
@@ -163,27 +181,14 @@ let S={client:'',rep:'',name:'Room 1',type:'living',rw:300,rl:300,dwall:'0',dw:9
 try{const s=JSON.parse(localStorage.getItem(LS));if(s){S=Object.assign(S,s);if(!s.rooms&&!s.mode)S.mode='rect'}}catch(e){}
 const save=()=>{stash();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}};
 const cat=k=>CATALOG.find(c=>c.k===k);
-// ---- Standard sizes and adjustable pieces ----
-// A placed piece may carry its own size (it.size = {w,d,h,name}); otherwise it uses its catalog size.
-// Common sizes per kind of furniture, as [name, width, depth] in cm. Beds: the usual mattress sizes plus about 10 cm for a frame.
-// The other lists are typical sizes, not a formal standard; the maker's exact size always wins.
-const STD={
- bed:[['Single (90 x 200)',100,210],['Small double (120 x 200)',130,210],['Double (140 x 200)',150,210],['Queen (160 x 200)',170,210],['King (180 x 200)',190,210],['US Queen (60 x 80 in)',162,213],['US King (76 x 80 in)',203,213]],
- sofa:[['2-seat',150,90],['3-seat',210,92],['4-seat',250,95]],
- arm:[['Compact',70,75],['Standard',76,80],['Large',90,90]],
- coffee:[['Small',90,50],['Medium',110,60],['Large',130,70],['Square',80,80]],
- side:[['Small',40,40],['Standard',45,45],['Large',55,55]],
- dining:[['4 seats',120,80],['6 seats',180,90],['8 seats',220,100],['Round, 4 seats',110,110]],
- chair:[['Standard',45,50],['With arms',55,55]],
- night:[['Narrow',40,35],['Standard',45,40],['Wide',55,40]],
- wardrobe:[['1 door',50,60],['2 doors',100,60],['3 doors',150,60],['4 doors',200,60],['5 doors',250,60]],
- tv:[['120 cm wide',120,40],['160 cm wide',160,40],['200 cm wide',200,45]],
- shelf:[['Narrow',60,30],['Standard',80,35],['Wide',100,35]],
- desk:[['Small',100,50],['Medium',120,60],['Large',140,70],['Extra large',160,80]]
-};
-// Which size list a catalog piece uses, from its name (and type for beds).
-function family(c){const n=c.n.toLowerCase();
- return /\bbed\b/.test(n)&&typeOf(c)==='bed'?'bed':/sofa|couch|loveseat|settee/.test(n)?'sofa':/arm ?chair/.test(n)?'arm':/coffee/.test(n)?'coffee':/nightstand|bedside/.test(n)?'night':/side table|end table/.test(n)?'side':/desk/.test(n)?'desk':/table/.test(n)?'dining':/chair|stool/.test(n)?'chair':/wardrobe|closet/.test(n)?'wardrobe':/\btv\b|media/.test(n)?'tv':/shelf|book/.test(n)?'shelf':null}
+// ---- Product sizes and adjustable pieces ----
+// A product can come in several sizes: catalog rows that share a group (CSV column "group"), each with its own SKU, size and price.
+// A placed piece uses its row's size, or its own custom size on top (it.size = {w,d,h,name}, cm), which has no catalog price.
+const sizesOf=c=>c&&c.g?CATALOG.filter(x=>x.g===c.g).sort((a,b)=>a.w*a.d-b.w*b.d):[c];
+// Pieces saved with the first sample catalog get the matching IKEA sample SKU (only while the sample catalog is in use).
+const oldKeys=rooms=>{if(usingSample)rooms.forEach(r=>(r.items||[]).forEach(i=>{if(OLD_KEYS[i.k])i.k=OLD_KEYS[i.k]}))};
+// One entry per product: the first row of a group stands for the whole product (its usual size).
+const products=()=>CATALOG.filter((c,i)=>!c.g||CATALOG.findIndex(x=>x.g===c.g)===i);
 // The piece as placed: catalog data with its own size on top.
 function spec(it){const c=cat(it.k);if(!c||!it.size)return c;return{...c,w:it.size.w,d:it.size.d,h:it.size.h||c.h,sized:it.size.name||'Custom size'}}
 const sizeKey=it=>it.size?`${it.size.w}x${it.size.d}x${it.size.h||''}`:'';
@@ -611,26 +616,26 @@ function renderSugg(){
  if(S.mode==='walls'&&!S.closed){suggList=[];box.className='hint';box.textContent='Finish measuring the walls so the outline closes, then suggestions appear here.';return}
  if(W<1||L<1){box.textContent='Enter the room size to see suggestions.';return}
  const fr=freeRect(),free=usage().free;suggList=[];const no=[];
- CATALOG.forEach(c=>{
-  if(c.w*c.d>free){no.push([c,'Too big for the free floor space.']);return}
-  const spot=findSpot(c,c.cl);
+ products().forEach(c=>{
+  const spot=c.w*c.d<=free&&findSpot(c,c.cl);
   if(spot){suggList.push({c,spot,door:doorOk(c)});return}
-  const fam=family(c),alt=fam&&STD[fam].filter(([n,w,d])=>w*d<c.w*c.d).sort((a,b)=>b[1]*b[2]-a[1]*a[2]).map(([n,w,d])=>{const sc={...c,w,d,sized:n},sp=findSpot(sc,c.cl);return sp&&{c:sc,spot:sp,door:doorOk(sc),size:{w,d,h:c.h,name:n}}}).find(Boolean);
+  // The usual size does not fit: offer the largest other size of the same product that does.
+  const alt=sizesOf(c).filter(x=>x!==c&&x.w*x.d<=free).reverse().map(x=>{const sp=findSpot(x,x.cl);return sp&&{c:x,spot:sp,door:doorOk(x),from:c}}).find(Boolean);
   if(alt){suggList.push(alt);return}
-  no.push([c,findSpot(c,0)?`Fits the floor, but not with its ${U(c.cl)} front clearance.`:'Too big for the space that is left.'])});
+  no.push([c,c.w*c.d>free?'Too big for the free floor space.':findSpot(c,0)?`Fits the floor, but not with its ${U(c.cl)} front clearance.`:'Too big for the space that is left.'])});
  suggList.forEach(x=>x.suit=suits(x.c));
  suggList.sort((a,b)=>(b.suit-a.suit)||(b.door-a.door)||(b.c.w*b.c.d-a.c.w*a.c.d));
  let h=`<div class="hint adv" style="margin:0 0 6px">Largest free area: <b>${UU(fr.w,fr.d)}</b> (clearances not included). Suggestions respect clearances, the door swing and other pieces, and show pieces suited to this room type first.</div>`;
- const row=(x,i)=>`<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b>${x.size?`<small style="color:var(--accent)">Fits as ${esc(x.size.name)}</small>`:''}<small>${UUU(x.c.w,x.c.d,x.c.h)} &middot; ${x.c.p.toLocaleString()}${x.door?'':' <span class="tag">&middot; check door access</span>'}</small></div><button data-add="${i}">Add</button></div>`;
+ const row=(x,i)=>`<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b>${x.from?`<small style="color:var(--accent)">Fits as ${esc(x.c.z||x.c.n)}; ${esc(x.from.z||x.from.n)} does not</small>`:''}<small>${UUU(x.c.w,x.c.d,x.c.h)} &middot; ${x.c.p.toLocaleString()}${x.door?'':' <span class="tag">&middot; check door access</span>'}</small></div><button data-add="${i}">Add</button></div>`;
  const mine=suggList.map((x,i)=>x.suit?row(x,i):'').join(''),other=suggList.map((x,i)=>x.suit?'':row(x,i)).join(''),nOther=suggList.filter(x=>!x.suit).length;
  h+=mine||`<div class="issue warn">Nothing suited to a ${ROOM_TYPES[S.type].toLowerCase()} fits the space that is left.</div>`;
  if(nOther)h+=`<details><summary>Also fits, but usually for other rooms (${nOther})</summary>${other}</details>`;
  if(no.length)h+=`<details><summary>Does not fit (${no.length})</summary>${no.map(([c,r])=>`<div class="sg"><div><b>${esc(c.n)}</b><small>${UU(c.w,c.d)}. ${r}</small></div></div>`).join('')}</details>`;
  box.className='';box.innerHTML=h}
 $('sugg').onclick=e=>{const b=e.target.closest('[data-add]');if(!b)return;const x=suggList[+b.dataset.add];if(!x)return;
- ghost=null;const it={id:S.next++,k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot};if(x.size)it.size={...x.size};S.items.push(it);S.sel=it.id;render()};
+ ghost=null;const it={id:S.next++,k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot};S.items.push(it);S.sel=it.id;render()};
 $('sugg').onmouseover=e=>{const r=e.target.closest('.sg[data-i]');const x=r&&suggList[+r.dataset.i];
- const g=x?{k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot,size:x.size}:null;
+ const g=x?{k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot}:null;
  if(JSON.stringify(g)!==JSON.stringify(ghost)){ghost=g;$('plan').innerHTML=drawPlan(S.sel)}};
 $('sugg').onmouseleave=()=>{if(ghost){ghost=null;$('plan').innerHTML=drawPlan(S.sel)}};
 
@@ -660,7 +665,7 @@ function render(){
 function roomBlock(print){
  const W=+S.rw||1,L=+S.rl||1,m=40,us=usage(),free=us.free;
  const g=groupItems();
- const rows=g.map(({c,q})=>`<tr><td>${esc(c.n)}${c.sized?`<br><small style="color:var(--mute)">${esc(c.sized)}, ${UUU(c.w,c.d,c.h)}</small>`:''}</td><td class="n">${q}</td><td class="n">${(c.p*q).toLocaleString()}</td></tr>`).join('');
+ const rows=g.map(({c,q})=>`<tr><td>${esc(c.n)}${c.sized?`<br><small style="color:var(--mute)">${esc(c.sized)}, ${UUU(c.w,c.d,c.h)}, price to confirm</small>`:''}</td><td class="n">${q}</td><td class="n">${(c.p*q).toLocaleString()}</td></tr>`).join('');
  const total=g.reduce((s,{c,q})=>s+c.p*q,0);
  const open=S.mode==='walls'&&!S.closed;
  let h=`<h3 style="margin:14px 0 4px">${esc(S.name)} <span style="font-weight:400;color:var(--mute)">${ROOM_TYPES[S.type]||''} &middot; ${open?'not measured':`${UU(W,L)} &middot; door ${UU(S.dw,S.dh)} &middot; ceiling ${U(S.rh)} &middot; free floor ${UA(free)}`}</span></h3>`;
@@ -678,7 +683,7 @@ function buildQuote(){stash();let body='',grand=0;
  $('quote').innerHTML=`<h1>Quote</h1><p>Client: ${esc(S.client)||'-'} &middot; Rep: ${esc(S.rep)||'-'} &middot; ${new Date().toLocaleDateString()}</p>
   <h3>Room measurements</h3><table><tr><th>Room</th><th>Type</th><th>Size (W x L)</th><th>Door (W x H)</th></tr>${lines}</table>${body}
   <h2 style="text-align:right">Total: ${grand.toLocaleString()}</h2>
-  <p style="font-size:12px;color:var(--mute)">Indicative only, based on measurements entered on the visit. Verify on site before ordering. Prices are placeholder data.</p>`}
+  <p style="font-size:12px;color:var(--mute)">Indicative only, based on measurements entered on the visit. Verify on site before ordering. ${esc(priceNote())}</p>`}
 function renderRooms(){
  $('rooms').innerHTML=S.rooms.map((r,i)=>`<button class="chip${i===S.cur?' on':''}" data-r="${i}">${esc(r.name||'Room')}<small>${ROOM_TYPES[r.type]||''} &middot; ${r.closed===false?'measuring...':UU(r.rw,r.rl)}</small></button>`).join('');
  $('delroom').disabled=S.rooms.length<2;
@@ -687,8 +692,9 @@ function renderRooms(){
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // catalog
+const priceNote=()=>usingSample?SAMPLE_NOTE:'Prices from the imported catalog.';
 function renderCat(){const q=$('catq').value.trim().toLowerCase();
- $('cathead').textContent=`Catalog (${usingSample?'sample data':'imported'}, ${CATALOG.length} items)`;
+ $('cathead').textContent=`Catalog (${usingSample?'IKEA UK sample':'imported'}, ${CATALOG.length} items)`;
  const list=CATALOG.filter(c=>!q||c.n.toLowerCase().includes(q)||String(c.k).toLowerCase().includes(q)).sort((a,b)=>suits(b)-suits(a));
  $('cat').innerHTML=list.map(c=>`<button data-k="${esc(c.k)}"${suits(c)?'':' style="opacity:.5" title="Usually for other room types"'}>${esc(c.n)}<small>${UUU(c.w,c.d,c.h)}</small></button>`).join('')||'<div class="hint">No match.</div>'}
 $('cat').onclick=e=>{const b=e.target.closest('button');if(!b)return;
@@ -697,7 +703,8 @@ $('cat').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  const it={id:S.next++,k:c.k,x:spot?spot.x:S.rw/2,y:spot?spot.y:S.rl/2,rot:spot?spot.rot:0};S.items.push(it);S.sel=it.id;render()};
 $('catq').oninput=renderCat;
 
-// CSV import. Columns: sku,name,width_cm,depth_cm,height_cm (required); front_clearance_cm,price,type,rooms (optional; rooms separated by |).
+// CSV import. Columns: sku,name,width_cm,depth_cm,height_cm (required); front_clearance_cm,price,type,rooms,group,size (optional; rooms separated by |).
+// Rows with the same group are the sizes of one product (one row per size, each with its own SKU and price); size names the size, e.g. "Standard Double".
 function parseCSV(t){const rows=[];let r=[],f='',q=false;t=t.replace(/^﻿/,'');
  for(let i=0;i<t.length;i++){const c=t[i];
   if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
@@ -727,7 +734,8 @@ function buildCatalog(text){
   if(ty&&!TYPES.includes(ty))errs.push(`Row ${n} (${sku}): type must be one of ${TYPES.join(', ')} (or empty).`);
   if(isNaN(cl))cl=50;else if(cl<0||cl>300)errs.push(`Row ${n} (${sku}): front_clearance_cm must be 0-300.`);
   if(isNaN(p))p=0;else if(p<0)errs.push(`Row ${n} (${sku}): price cannot be negative.`);
-  out.push({k:sku,n:name,w,d,h,cl,p,t:ty||undefined,r:rm.length?rm:undefined})});
+  const grp=g('group'),sz=g('size');
+  out.push({k:sku,n:name,w,d,h,cl,p,t:ty||undefined,r:rm.length?rm:undefined,g:grp||undefined,z:sz||undefined})});
  return{errs,out}}
 function setCatalog(list,sample){
  CATALOG=list;usingSample=sample;
@@ -742,7 +750,7 @@ $('impfile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)retu
   m.textContent=`Imported ${out.length} products.${dropped?` ${dropped} placed item(s) were removed because their SKU is not in the new catalog.`:''}`})};
 $('sample').onclick=()=>{const d=setCatalog(SAMPLE.slice(),true);$('catmsg').style.color='';$('catmsg').textContent=`Sample catalog restored.${d?` ${d} placed item(s) removed.`:''}`};
 $('tpl').onclick=()=>{
- const csv='sku,name,width_cm,depth_cm,height_cm,front_clearance_cm,price,type,rooms\n'+SAMPLE.map(c=>[c.k,'"'+c.n+'"',c.w,c.d,c.h,c.cl,c.p,typeOf(c),(c.r||[]).join('|')].join(',')).join('\n')+'\n';
+ const csv='sku,name,width_cm,depth_cm,height_cm,front_clearance_cm,price,type,rooms,group,size\n'+SAMPLE.map(c=>[c.k,'"'+c.n+'"',c.w,c.d,c.h,c.cl,c.p,typeOf(c),(c.r||[]).join('|'),c.g||'',c.z?'"'+c.z+'"':''].join(',')).join('\n')+'\n';
  copyText(csv,$('catmsg'),'Template (paste it into a spreadsheet, fill it in, save as CSV)')};
 
 // room shape and features editor
@@ -870,18 +878,18 @@ $('moderect').onclick=()=>{if(S.mode!=='rect')toRect()};
 
 // ---- Size panel for the selected piece (furniture step) ----
 function renderSizebox(){const it=S.step===4&&S.items.find(i=>i.id===S.sel),box=$('sizebox');box.hidden=!it;if(!it)return;
- const base=cat(it.k),c=spec(it),fam=family(base),list=fam?STD[fam]:[],cur=it.size&&it.size.name;
- $('sizettl').textContent=`Size of the ${base.n.toLowerCase()}`;
- $('sizechips').innerHTML=`<button class="chip${!it.size?' on':''}" data-sz="cat">Catalog size<small>${UU(base.w,base.d)}</small></button>`+
-  list.map(([n,w,d],i)=>`<button class="chip${cur===n?' on':''}" data-sz="${i}">${esc(n)}<small>${UU(w,d)}</small></button>`).join('')+
-  `<button class="chip${it.size&&!list.some(([n])=>n===cur)?' on':''}" data-sz="custom">Custom<small>type below</small></button>`;
+ const base=cat(it.k),c=spec(it),list=sizesOf(base),many=list.length>1;
+ $('sizettl').textContent=`Size: ${base.n}`;
+ $('sizechips').innerHTML=(many?list.map(x=>`<button class="chip${!it.size&&x.k===it.k?' on':''}" data-sz="k:${esc(x.k)}">${esc(x.z||x.n)}<small>${UU(x.w,x.d)} &middot; ${x.p.toLocaleString()}</small></button>`).join('')
+   :`<button class="chip${!it.size?' on':''}" data-sz="cat">Catalog size<small>${UU(base.w,base.d)}</small></button>`)+
+  `<button class="chip${it.size?' on':''}" data-sz="custom">Custom<small>type below</small></button>`;
  [['szw',c.w],['szd',c.d],['szh',c.h]].forEach(([id,v])=>{const el=$(id);el.inputMode=imperial()?'text':'decimal';if(document.activeElement!==el){el.value=U(v,true);el.classList.remove('bad')}});
  const un=UNITS[S.unit];$('szwl').textContent=`Width (${un})`;$('szdl').textContent=`Depth (${un})`;$('szhl').textContent=`Height (${un})`;
- $('sizehint').textContent=fam==='bed'?'Bed sizes are the usual mattress sizes plus about 10 cm for the frame. Check the maker\'s exact size.':fam?'Typical sizes, not a formal standard. Check the maker\'s exact size.':'Type the exact size of this piece.'}
-$('sizechips').onclick=e=>{const b=e.target.closest('[data-sz]'),it=b&&S.items.find(i=>i.id===S.sel);if(!it)return;const base=cat(it.k),v=b.dataset.sz;
+ $('sizehint').textContent=(many?`The sizes this product comes in, each with its own catalog price.`:'This product comes in one size in the catalog.')+' A custom size (made to measure) has no catalog price: the quote marks it "price to confirm".'}
+$('sizechips').onclick=e=>{const b=e.target.closest('[data-sz]'),it=b&&S.items.find(i=>i.id===S.sel);if(!it)return;const v=b.dataset.sz;
  if(v==='cat')delete it.size;
  else if(v==='custom'){const c=spec(it);it.size={w:c.w,d:c.d,h:c.h,name:'Custom size'};render();$('szw').focus();$('szw').select();return}
- else{const [n,w,d]=STD[family(base)][+v];it.size={w,d,h:base.h,name:n}}
+ else if(v.startsWith('k:')&&cat(v.slice(2))){it.k=v.slice(2);delete it.size}
  render()};
 ['szw','szd','szh'].forEach((id,ix)=>{const el=$(id);
  el.oninput=()=>{const it=S.items.find(i=>i.id===S.sel);if(!it)return;const v=el.value,cm=parseLen(v),bad=v.trim()!==''&&!(cm>=5&&cm<=1000);el.classList.toggle('bad',bad);if(bad||v.trim()==='')return;
@@ -931,10 +939,10 @@ $('showq').onclick=()=>{const q=$('quote');if(q.hidden){buildQuote();q.hidden=fa
 function quoteText(){stash();const L=[`Quote for ${S.client||'-'} (rep: ${S.rep||'-'}), ${new Date().toLocaleDateString()}`,''];let grand=0;
  S.rooms.forEach((r,i)=>{const run=()=>{L.push(`${S.name} (${ROOM_TYPES[S.type]}), ${S.closed?UU(S.rw,S.rl):'not measured'}, ceiling ${U(S.rh)}`);
   let t=0;
-  groupItems().forEach(({c,q})=>{L.push(`  ${q} x ${c.n}${c.sized?` (${c.sized}, ${UUU(c.w,c.d,c.h)})`:''}: ${(c.p*q).toLocaleString()}`);t+=c.p*q});
+  groupItems().forEach(({c,q})=>{L.push(`  ${q} x ${c.n}${c.sized?` (${c.sized}, ${UUU(c.w,c.d,c.h)}, price to confirm)`:''}: ${(c.p*q).toLocaleString()}`);t+=c.p*q});
   L.push(`  Room total: ${t.toLocaleString()}`);check().filter(([k])=>k!=='ok').forEach(([k,m])=>L.push('  Note: '+m));L.push('');grand+=t};
   i===S.cur?run():withRoom(r,run)});
- L.push(`Total: ${grand.toLocaleString()}`,'Indicative only. Verify on site before ordering. Prices are placeholder data.');return L.join('\n')}
+ L.push(`Total: ${grand.toLocaleString()}`,'Indicative only. Verify on site before ordering. '+priceNote());return L.join('\n')}
 // Copy to the clipboard; if the browser refuses, show the text in a box to select and copy by hand.
 async function copyText(text,msgEl,what){const fb=$('copyfb');
  try{await navigator.clipboard.writeText(text);fb.hidden=true;msgEl.style.color='var(--ok)';msgEl.textContent=what+' copied.'}
@@ -984,7 +992,7 @@ $('plan').addEventListener('pointermove',e=>{if(!drag)return;const p=pt(e);
  it.x=Math.round(it.x);it.y=Math.round(it.y);render()});
 $('plan').addEventListener('pointerup',()=>{drag=null});
 if(!Array.isArray(S.rooms)||!S.rooms.length){S.rooms=[];S.cur=0;stash()}
-S.cur=Math.min(S.cur||0,S.rooms.length-1);S.rooms.forEach(r=>r.items=(r.items||[]).filter(i=>cat(i.k)));loadRoom(S.cur);
+S.cur=Math.min(S.cur||0,S.rooms.length-1);oldKeys(S.rooms);S.rooms.forEach(r=>r.items=(r.items||[]).filter(i=>cat(i.k)));loadRoom(S.cur);
 load();renderCat();render();
 </script>
 </body>

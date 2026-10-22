@@ -8,6 +8,7 @@ export async function run(){
  const wait=ms=>new Promise(r=>setTimeout(r,ms));
  const errs=[];const onErr=e=>errs.push(e.message);window.addEventListener('error',onErr);
  const near=(a,b,t)=>Math.abs(a-b)<=t;
+ const K=OLD_KEYS;   // role -> IKEA sample SKU, e.g. K.bed is the MALM Standard Double frame
  function freshVisit(over={}){S.rooms=[];S.cur=0;
   Object.assign(S,{client:'',rep:'',name:'Room 1',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,unit:'cm',more:false,step:1,showCl:false},over);
   if(!over.keepCatalog)setCatalog(SAMPLE.slice(),true);fixRoom();stash();load();renderCat();render()}
@@ -39,7 +40,7 @@ export async function run(){
  // ---- picture shapes ----
  freshVisit();setTemplate('rect',[450,380]);
  ok('rect: closes',S.closed);ok('rect: area 171000',usage().room===171000,usage().room);
- let sv=suggValid();ok('rect: all 13 suggestions valid',sv.n===13&&!sv.bad.length,sv);
+ let sv=suggValid();ok('rect: one valid suggestion per product (12)',sv.n===products().length&&sv.n===12&&!sv.bad.length,sv);
  const L={'L-br':[450,230,200,150,250,380],'L-bl':[450,380,200,150,250,230],'L-tl':[250,380,450,230,200,150],'L-tr':[250,150,200,230,450,380]};
  const AREA={'L-br':141000,'L-bl':133500,'L-tl':141000,'L-tr':141000};  // 450 x 380 minus the missing corner
  for(const [k,v] of Object.entries(L)){setTemplate(k,v);ok(k+': closes with consistent numbers',S.closed,S.mismatch);ok(k+': area '+AREA[k],usage().room===AREA[k],usage().room);sv=suggValid();ok(k+': suggestions valid',!sv.bad.length,sv.bad)}
@@ -49,8 +50,8 @@ export async function run(){
 
  // ---- containment, gaps, door ----
  setTemplate('L-br',[450,230,200,150,250,380]);
- S.items=[{id:1,k:'sofa3',x:350,y:300,rot:0}];render();ok('L: piece in missing corner flagged',issues().some(m=>m.includes('sticks out')),issues());
- S.items=[{id:2,k:'coffee',x:100,y:100,rot:0}];const g=gaps(S.items[0]);ok('L: gaps to outline',fmt(g.gl)===50&&fmt(g.gr)===300&&fmt(g.gd)===252.5,g);
+ S.items=[{id:1,k:K.sofa3,x:350,y:300,rot:0}];render();ok('L: piece in missing corner flagged',issues().some(m=>m.includes('sticks out')),issues());
+ S.items=[{id:2,k:K.coffee,x:100,y:100,rot:0}];const g=gaps(S.items[0]);ok('L: gaps to outline',fmt(g.gl)===55&&fmt(g.gr)===305&&fmt(g.gd)===252.5,g);   // LACK 90 x 55 centred at (100, 100)
  S.items=[];render();placeDoorAt({x:350,y:228});ok('door: tap on inner wall 3',S.dwall==='2'&&near(doorRect().y1,230,.5),[S.dwall,doorRect()]);
 
  // ---- angled and curved walls ----
@@ -59,14 +60,14 @@ export async function run(){
  setSketch(0,['L45','R45','R45','L45','R','R','R','R'],null,[100,75,100,75,100,300,400,300]);ok('bay 75 cm sides: closes',S.closed);
  setSketch(0,['R','R','R','R'],[{side:'out'},null,null,null],[400,300,400,300],[60]);ok('curve out: area ~136269',S.closed&&near(usage().room,136269,150),usage().room);
  sv=suggValid();ok('curve out: suggestions valid',!sv.bad.length,sv.bad);
- S.items=[{id:5,k:'tv',x:200,y:20,rot:0}];render();ok('curve out: piece in bulge flagged',issues().some(m=>m.includes('sticks out')),issues());S.items=[];
+ S.items=[{id:5,k:K.tv,x:200,y:20,rot:0}];render();ok('curve out: piece in bulge flagged',issues().some(m=>m.includes('sticks out')),issues());S.items=[];
  setSketch(0,['R','R','R','R'],[{side:'in'},null,null,null],[400,300,400,300],[60]);ok('curve in: area ~103731',S.closed&&near(usage().room,103731,150),usage().room);
  placeDoorAt({x:S.wallGeo[0].mid.x,y:S.wallGeo[0].mid.y});ok('door: tap on curve goes to a straight wall',!S.wallGeo[+S.dwall].curve);
  setSketch(0,['R135','R135','R'],[{side:'out'},{side:'out'},{side:'out'}],[300,424.26,300],[20,20,20]);ok('all-curved room closes (for the door test)',S.closed,S.mismatch);
  let crashed=false;try{placeDoorAt({x:10,y:10})}catch(e){crashed=e.message}ok('door: room with only curved walls does not crash',!crashed,crashed);
 
  // ---- dragging snaps to the real walls ----
- setTemplate('L-br',[450,230,200,150,250,380]);S.items=[{id:70,k:'tv',x:150,y:300,rot:0}];S.sel=null;goStep(4);await wait(20);
+ setTemplate('L-br',[450,230,200,150,250,380]);S.items=[{id:70,k:K.tv,x:150,y:300,rot:0}];S.sel=null;goStep(4);await wait(20);
  const plan=$('plan'),scr=(x,y)=>{const q=plan.createSVGPoint();q.x=x;q.y=y;return q.matrixTransform(plan.getScreenCTM())};
  const drag=(from,to)=>{const a=scr(...from),b=scr(...to);plan.querySelector('[data-id="70"] rect').dispatchEvent(new PointerEvent('pointerdown',{clientX:a.x,clientY:a.y,bubbles:true,pointerId:7}));
   plan.dispatchEvent(new PointerEvent('pointermove',{clientX:b.x,clientY:b.y,bubbles:true,pointerId:7}));plan.dispatchEvent(new PointerEvent('pointerup',{clientX:b.x,clientY:b.y,bubbles:true,pointerId:7}))};
@@ -87,28 +88,30 @@ export async function run(){
 
  // ---- features ----
  setTemplate('rect',[450,380]);
- S.obs=[{id:901,kind:'column',x:205,y:170,w:40,d:40,h:260}];S.items=[{id:6,k:'coffee',x:225,y:190,rot:0}];render();ok('feature: column overlap is an error',issues().some(m=>m.includes('overlaps the column')),issues());
- S.items=[];S.obs=[{id:902,kind:'window',wall:0,off:150,w:200,sill:90}];S.items=[{id:7,k:'wardrobe',x:250,y:30,rot:0}];render();ok('feature: tall piece in front of window warned',issues().some(m=>m.includes('window')),issues());
- S.items=[];S.obs=[{id:903,kind:'low',x:0,y:280,w:450,d:100,h:120}];S.items=[{id:8,k:'wardrobe',x:100,y:330,rot:0}];render();ok('feature: wardrobe under low ceiling is an error',issues().some(m=>m.includes('low ceiling')),issues());
- S.items=[];S.obs=[];S.rh=200;render();renderSugg();ok('ceiling 200: wardrobe never suggested',!suggList.some(x=>x.c.k==='wardrobe'));S.rh=260;
+ S.obs=[{id:901,kind:'column',x:205,y:170,w:40,d:40,h:260}];S.items=[{id:6,k:K.coffee,x:225,y:190,rot:0}];render();ok('feature: column overlap is an error',issues().some(m=>m.includes('overlaps the column')),issues());
+ S.items=[];S.obs=[{id:902,kind:'window',wall:0,off:150,w:200,sill:90}];S.items=[{id:7,k:K.wardrobe,x:250,y:30,rot:0}];render();ok('feature: tall piece in front of window warned',issues().some(m=>m.includes('window')),issues());
+ S.items=[];S.obs=[{id:903,kind:'low',x:0,y:280,w:450,d:100,h:120}];S.items=[{id:8,k:K.wardrobe,x:100,y:330,rot:0}];render();ok('feature: wardrobe under low ceiling is an error',issues().some(m=>m.includes('low ceiling')),issues());
+ S.items=[];S.obs=[];S.rh=170;render();renderSugg();ok('ceiling 170: nothing taller is suggested',suggList.length&&!suggList.some(x=>x.c.h>170),suggList.map(x=>x.c.n));
+ ok('ceiling 170: the low BILLY is offered instead of the tall one',suggList.some(x=>x.c.k==='302.638.44'&&x.from&&x.from.k===K.shelf));S.rh=260;
  setSketch(0,['R','R','R','R'],[{side:'out'},null,null,null],[400,300,400,300],[60]);S.more=true;S.obs=[{id:904,kind:'window',wall:1,off:50,w:100,sill:90}];renderFeat();render();
  const wsel=document.querySelector('#feat select[data-f=wall]');ok('feature: curved wall cannot hold a window',!!wsel&&wsel.options[0].disabled,wsel&&[...wsel.options].map(o=>o.textContent+(o.disabled?'(disabled)':'')));
  S.more=false;S.obs=[];render();
 
  // ---- quick rectangle mode ----
  freshVisit({mode:'rect',shape:'rect',rw:420,rl:360,dwall:'E',doff:50,cuts:[{x:300,y:260,w:120,d:100}]});
- S.items=[{id:9,k:'sofa3',x:330,y:300,rot:0}];render();ok('quick rect: piece in cut-out flagged',issues().some(m=>m.includes('cut-out')),issues());
+ S.items=[{id:9,k:K.sofa3,x:330,y:300,rot:0}];render();ok('quick rect: piece in cut-out flagged',issues().some(m=>m.includes('cut-out')),issues());
  S.items=[];S.cuts=[];render();const beforeDoor=JSON.stringify(doorRect());
  await toWalls();ok('quick rect -> wall by wall keeps the door',S.mode==='walls'&&JSON.stringify(doorRect())===beforeDoor,[beforeDoor,doorRect()]);
  await toRect();ok('wall by wall -> quick rect keeps the door',S.mode==='rect'&&JSON.stringify(doorRect())===beforeDoor);
 
  // ---- rooms and quote ----
  freshVisit({client:'Test client'});setTemplate('rect',[450,380]);
- $('cat').querySelector('[data-k=sofa3]')?.click();S.items.push({id:50,k:'coffee',x:225,y:150,rot:0});render();
+ $('cat').querySelector(`[data-k="${K.sofa3}"]`)?.click();S.items.push({id:50,k:K.coffee,x:225,y:150,rot:0});render();
  $('addroom').click();await wait(10);ok('rooms: second room added',S.rooms.length===2&&S.cur===1);
- S.type='bedroom';setTemplate('rect',[400,350]);S.items=[{id:60,k:'bed',x:200,y:120,rot:0}];render();
+ S.type='bedroom';setTemplate('rect',[400,350]);S.items=[{id:60,k:K.bed,x:200,y:120,rot:0}];render();
  $('addroom').click();await wait(10);S.type='office';render();     // third room left unmeasured
- const qt=quoteText();ok('quote: total adds up (1450+340+1280)',qt.includes('Total: 3,070'),qt);
+ const qt=quoteText();ok('quote: total adds up (449+19+139)',qt.includes('Total: 607'),qt);
+ ok('quote: says where sample prices come from',qt.includes('IKEA UK')&&qt.includes('GBP'),qt);
  ok('quote text: unmeasured room says not measured',/Room 3 \(Home office\), not measured/.test(qt),qt);
  buildQuote();ok('full quote: unmeasured room heading says not measured',/not measured/.test($('quote').innerHTML.split('Room 3')[2]||$('quote').innerHTML.split('Room 3')[1]||''),$('quote').querySelectorAll('h3')[3]?.textContent);
  $('rooms').querySelector('[data-r="0"]').click();await wait(10);ok('rooms: switching keeps data',S.items.length===2&&S.closed&&S.rw===450);
@@ -117,7 +120,10 @@ export async function run(){
  let res=buildCatalog('sku,name,width_cm,depth_cm,height_cm\nA,Sofa,200,90,80\n');ok('csv: good file',!res.errs.length&&res.out.length===1);
  res=buildCatalog('sku,name,width_cm\nA,B,1\n');ok('csv: missing columns rejected',res.errs.length===1);
  res=buildCatalog('sku,name,width_cm,depth_cm,height_cm,rooms\nA,B,10,10,10,garage\n');ok('csv: bad room type rejected',res.errs.length===1);
- const dropped=setCatalog(SAMPLE.filter(c=>c.k!=='coffee'),false);ok('csv: missing SKU removed from every room',dropped===1,dropped);setCatalog(SAMPLE.slice(),true);
+ res=buildCatalog('sku,name,width_cm,depth_cm,height_cm,group,size\nA1,Bed small,100,200,90,bedx,Small\nA2,Bed big,160,200,90,bedx,Big\nB,Chair,45,50,80,,\n');
+ ok('csv: group and size columns',!res.errs.length&&res.out[0].g==='bedx'&&res.out[1].z==='Big'&&!res.out[2].g,res.out);
+ const dropped=setCatalog(SAMPLE.filter(c=>c.k!==K.coffee),false);ok('csv: missing SKU removed from every room',dropped===1,dropped);setCatalog(SAMPLE.slice(),true);
+ setCatalog(res.out,false);ok('csv: rows of a group are sizes of one product',sizesOf(cat('A2')).length===2&&products().length===2,products());setCatalog(SAMPLE.slice(),true);
 
  // ---- old saves ----
  const legacy=[{name:'Old rect',type:'living',rw:300,rl:300,dwall:'N',dw:90,doff:40,dh:205,items:[]},
@@ -126,24 +132,33 @@ export async function run(){
  const mig=legacy.map(r=>withRoom(r,()=>({mode:S.mode,shape:S.shape,closed:S.mode==='rect'||S.closed})));
  ok('old saves: quick rectangle',mig[0].mode==='rect');ok('old saves: wall list becomes Other shape and closes',mig[1].shape==='free'&&mig[1].closed);ok('old saves: first-version sketch still closes',mig[2].shape==='sketch'&&mig[2].closed);
 
- // ---- standard sizes and adjustable pieces ----
- const fams=Object.fromEntries(SAMPLE.map(c=>[c.k,family(c)]));
- ok('sizes: every sample piece has a size list',Object.values(fams).every(Boolean),fams);
- ok('sizes: families are right',fams.bed==='bed'&&fams.night==='night'&&fams.side==='side'&&fams.dining==='dining'&&fams.chair==='chair'&&fams.coffee==='coffee'&&fams.arm==='arm',fams);
- freshVisit();setTemplate('rect',[450,380]);S.items=[{id:80,k:'bed',x:225,y:150,rot:0}];S.sel=80;goStep(4);await wait(20);
- ok('sizes: panel shows for the selected piece',visible('#sizebox')&&$('sizechips').children.length===STD.bed.length+2);
- [...$('sizechips').children].find(b=>b.textContent.startsWith('King'))?.click();await wait(10);
- ok('sizes: tapping King resizes the bed',S.items[0].size&&S.items[0].size.w===190&&near(body(S.items[0]).x1-body(S.items[0]).x0,190,.01),S.items[0].size);
+ // ---- old sample keys ----
+ const oldRooms=[{items:[{id:1,k:'bed'},{id:2,k:'unknown'}]}];oldKeys(oldRooms);
+ ok('old saves: first-sample keys map to IKEA rows',oldRooms[0].items[0].k===K.bed&&oldRooms[0].items[1].k==='unknown',oldRooms[0].items);
+ ok('old saves: every old key exists in the sample',Object.values(OLD_KEYS).every(k=>cat(k)));
+
+ // ---- product sizes and adjustable pieces ----
+ const grouped=products().filter(c=>c.g);
+ ok('sizes: 12 sample products, 9 with several sizes',products().length===12&&grouped.length===9&&grouped.every(c=>sizesOf(c).length>1),products().map(c=>c.n));
+ freshVisit();setTemplate('rect',[450,380]);S.items=[{id:80,k:K.bed,x:225,y:150,rot:0}];S.sel=80;goStep(4);await wait(20);
+ ok('sizes: panel lists every bed size plus Custom',visible('#sizebox')&&$('sizechips').children.length===sizesOf(cat(K.bed)).length+1);
+ [...$('sizechips').children].find(b=>b.textContent.startsWith('Standard King'))?.click();await wait(10);
+ ok('sizes: tapping Standard King switches to that product',S.items[0].k==='690.069.81'&&!S.items[0].size&&near(body(S.items[0]).x1-body(S.items[0]).x0,166,.01),S.items[0]);
+ ok('sizes: quote uses the King price',/1 x MALM bed frame, Standard King: 179/.test(quoteText()),quoteText());
  $('szw').value='175';$('szw').dispatchEvent(new Event('input',{bubbles:true}));await wait(10);
  ok('sizes: typing a custom width',S.items[0].size.w===175&&S.items[0].size.name==='Custom size',S.items[0].size);
  S.unit='ftin';render();ok('sizes: panel follows the unit',/ft/.test($('szw').value)&&/ft \+ in/.test($('szwl').textContent),$('szw').value);S.unit='cm';render();
- const q1=quoteText();ok('sizes: quote names the custom size',/Queen bed \(Custom size, 175 x 210 x 110 cm\)/.test(q1),q1);
- [...$('sizechips').children].find(b=>b.dataset.sz==='cat').click();await wait(10);ok('sizes: back to catalog size',!S.items[0].size&&near(body(S.items[0]).x1-body(S.items[0]).x0,160,.01));
+ const q1=quoteText();ok('sizes: quote marks a custom size price to confirm',/Standard King \(Custom size, 175 x 209 x 100 cm, price to confirm\)/.test(q1),q1);
+ [...$('sizechips').children].find(b=>b.dataset.sz==='k:'+K.bed).click();await wait(10);
+ ok('sizes: back to Standard Double',S.items[0].k===K.bed&&!S.items[0].size&&near(body(S.items[0]).x1-body(S.items[0]).x0,150,.01),S.items[0]);
+ S.items=[{id:82,k:'992.407.89',x:225,y:150,rot:0}];S.sel=82;render();
+ ok('sizes: one-size product offers catalog size and Custom',$('sizechips').children.length===2&&$('sizechips').children[0].dataset.sz==='cat');
  S.items=[];S.sel=null;render();
- // a narrow room where the catalog bed cannot fit, but a smaller standard bed can
+ // a narrow room where the usual bed cannot fit, but a smaller size of the same bed can
  setTemplate('rect',[140,300]);S.type='bedroom';render();renderSugg();
- const bedAlt=suggList.find(x=>x.c.k==='bed');ok('sizes: smaller standard bed suggested when the catalog bed does not fit',!!bedAlt&&!!bedAlt.size&&bedAlt.c.w<160,bedAlt&&bedAlt.size);
- if(bedAlt){S.items.push({id:81,k:'bed',x:bedAlt.spot.x,y:bedAlt.spot.y,rot:bedAlt.spot.rot,size:{...bedAlt.size}});render();ok('sizes: the smaller bed really fits',!issues().filter(m=>!m.includes('Verify access')).length,issues())}
+ const bedAlt=suggList.find(x=>x.c.g==='malm');ok('sizes: a smaller bed size is suggested when the usual one does not fit',!!bedAlt&&!!bedAlt.from&&bedAlt.c.k==='490.099.47',bedAlt&&bedAlt.c.n);
+ if(bedAlt){$('sugg').querySelector(`[data-add="${suggList.indexOf(bedAlt)}"]`).click();await wait(10);
+  ok('sizes: Add places the smaller bed and it really fits',S.items.length===1&&S.items[0].k==='490.099.47'&&!issues().filter(m=>!m.includes('Verify access')).length,issues())}
  S.items=[];S.type='living';goStep(1);
 
  // ---- steps and options ----
