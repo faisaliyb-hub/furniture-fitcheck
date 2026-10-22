@@ -1,6 +1,6 @@
 # FitCheck: Handoff
 
-Last updated: 2026-10-20. Phase: **Phase 1 prototype, live on GitHub Pages**, not yet shown to the client, not yet tried on a real phone by the user.
+Last updated: 2026-10-22. Phase: **Phase 1 prototype, live on GitHub Pages**, tried on a real phone by the user (worked), not yet shown to the client.
 
 ## Goal
 A furniture house wants a system for its field marketers/sales reps to measure spaces and show which products fit. Wider hopes: architect-friendly files, marketing visibility. The client's name, furniture category, and team size are **not yet known**.
@@ -27,7 +27,8 @@ This section is the up-to-date summary. The change log further down is history: 
 - **Catalog:** 13 sample pieces with typical sizes (my placeholders, not sourced); CSV import with columns `sku,name,width_cm,depth_cm,height_cm` (required) and `front_clearance_cm,price,type,rooms` (optional).
 - **Standard sizes and adjustable pieces:** tap a placed piece (step 4) for a Size panel: catalog size, the common sizes for that kind of furniture, or Custom width / depth / height. "What fits" offers a smaller standard size ("Fits as Double") when the catalog size does not fit. The quote names the size of each resized piece. Bed sizes are the usual mattress sizes plus about 10 cm for a frame; all other size lists are typical sizes from general knowledge, not a formal standard, and the app says so. Price stays the catalog price whatever the size.
 - **Automated checks:** `tests/e2e.js`, 86 checks run in the browser (units, all picture shapes, sketch reader, angled/curved areas against hand-calculated values, containment, gaps, door tap, features, quick-rectangle conversions, multi-room quote totals, CSV import, old-save migration, steps and More options, drag snapping, phone scrolling, sizes). Run: serve the folder (`python3 -m http.server 8766`), open `http://localhost:8766/fitcheck.html`, then in the browser console `await (await import('./tests/e2e.js')).run()`. All 86 passed on 2026-10-20.
-- **Not tested by anyone yet:** a real finger on a real phone (drawing, dragging), Safari on iPhone, importing a CSV through the file picker, the claude.ai preview page since the last changes (it is a stale preview; rebuild with `tools/make_artifact.py` if it is needed again).
+- **Real phone test (reported by the user 2026-10-22):** drawing with a finger, dragging furniture, page scrolling and the 5-step flow all worked. Phone model, browser and which version (live `main` or a branch) were not recorded.
+- **Not tested by anyone yet:** importing a CSV through the file picker, the claude.ai preview page since the last changes (it is a stale preview; rebuild with `tools/make_artifact.py` if it is needed again).
 - **Cross-check 2026-10-20 fixed:** dragging snapped to the outer box instead of the real walls (in L-shaped or curved rooms a piece could snap into the missing corner); tapping for the door crashed in a room with only curved walls; a window could be put on a curved wall and silently disappear; the full quote showed a made-up "150 x 150 cm" size for a room whose walls were not finished; on phones the plan blocked page scrolling on the Walls and Door steps; stale "right-angled shapes only" and "Phase 1b" texts; unused code.
 
 ## Change log (oldest first)
@@ -176,10 +177,9 @@ Suggested priority: non-rectangular rooms and obstacles first, then shared backe
 
 ## Suggested next steps
 1. Decide whether a resized piece changes the price, and whether the furniture house can supply real sizes per product.
-2. Try the live app on a real iPhone and Android phone: drawing with a finger, dragging, the whole 5-step flow.
-3. Give `catalog-template.csv` to the furniture house to fill in with real dimensions. How complete it comes back tells us how ready their data is.
-4. Choose a backend for the shared catalog and visits, and add rep logins (proposed: Supabase, waiting for the user's OK).
-5. Add laser input (Android first), then decide on an iPhone wrapper.
+2. Give `catalog-template.csv` to the furniture house to fill in with real dimensions. How complete it comes back tells us how ready their data is.
+3. Choose a backend for the shared catalog and visits, and add rep logins (proposed: Supabase, waiting for the user's OK).
+4. Add laser input (Android first), then decide on an iPhone wrapper.
 
 ## Housekeeping
 - Project folder: `furniture-fitcheck` in the user's Project folder.
