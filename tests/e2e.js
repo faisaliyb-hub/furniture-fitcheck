@@ -10,7 +10,7 @@ export async function run(){
  const near=(a,b,t)=>Math.abs(a-b)<=t;
  const K=OLD_KEYS;   // role -> IKEA sample SKU, e.g. K.bed is the MALM Standard Double frame
  function freshVisit(over={}){S.rooms=[];S.cur=0;
-  Object.assign(S,{client:'',rep:'',name:'Room 1',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,unit:'cm',more:false,step:1,showCl:false},over);
+  Object.assign(S,{client:'',rep:'',name:'Room 1',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,unit:'cm',more:false,step:1,showCl:false,doorSet:true},over);
   if(!over.keepCatalog)setCatalog(SAMPLE.slice(),true);fixRoom();stash();load();renderCat();render()}
  function setTemplate(shape,lens){S.mode='walls';S.shape=shape;S.walls=wallsFor(shapeDef(shape));
   if(shape==='rect'){S.walls[0].len=S.walls[2].len=lens[0];S.walls[1].len=S.walls[3].len=lens[1]}else lens.forEach((l,i)=>S.walls[i].len=l);S.items=[];S.obs=[];onShapeChange(true)}
@@ -46,7 +46,7 @@ export async function run(){
  for(const [k,v] of Object.entries(L)){setTemplate(k,v);ok(k+': closes with consistent numbers',S.closed,S.mismatch);ok(k+': area '+AREA[k],usage().room===AREA[k],usage().room);sv=suggValid();ok(k+': suggestions valid',!sv.bad.length,sv.bad)}
  setTemplate('L-br',[480,230,200,150,250,380]);ok('L-br: wrong number does not close',!S.closed);
  ok('L-br: rule message',/Wall 1 should equal wall 3 \+ wall 5/.test($('wallstat').textContent),$('wallstat').textContent);
- ok('steps: Next locked while open',(goStep(2),$('next').disabled));
+ ok('screens: Next locked while the room is not measured',(goStep(1),$('next').disabled));
 
  // ---- containment, gaps, door ----
  setTemplate('L-br',[450,230,200,150,250,380]);
@@ -67,7 +67,7 @@ export async function run(){
  let crashed=false;try{placeDoorAt({x:10,y:10})}catch(e){crashed=e.message}ok('door: room with only curved walls does not crash',!crashed,crashed);
 
  // ---- dragging snaps to the real walls ----
- setTemplate('L-br',[450,230,200,150,250,380]);S.items=[{id:70,k:K.tv,x:150,y:300,rot:0}];S.sel=null;goStep(4);await wait(20);
+ setTemplate('L-br',[450,230,200,150,250,380]);S.items=[{id:70,k:K.tv,x:150,y:300,rot:0}];S.sel=null;goStep(2);await wait(20);
  const plan=$('plan'),scr=(x,y)=>{const q=plan.createSVGPoint();q.x=x;q.y=y;return q.matrixTransform(plan.getScreenCTM())};
  const drag=(from,to)=>{const a=scr(...from),b=scr(...to);plan.querySelector('[data-id="70"] rect').dispatchEvent(new PointerEvent('pointerdown',{clientX:a.x,clientY:a.y,bubbles:true,pointerId:7}));
   plan.dispatchEvent(new PointerEvent('pointermove',{clientX:b.x,clientY:b.y,bubbles:true,pointerId:7}));plan.dispatchEvent(new PointerEvent('pointerup',{clientX:b.x,clientY:b.y,bubbles:true,pointerId:7}))};
@@ -76,8 +76,8 @@ export async function run(){
  const it=S.items[0];it.x=150;it.y=300;render();drag([150,300],[367,300]);   // into the missing corner, near the outer box edge
  ok('drag: does not snap into the missing corner',body(S.items[0]).x1<449,body(S.items[0]));
  S.items=[];goStep(1);
- ok('phone: plan lets the page scroll on the walls step',(goStep(2),['pan-y','auto','manipulation'].includes(getComputedStyle($('plan')).touchAction)),getComputedStyle($('plan')).touchAction);
- ok('phone: plan captures touch on the furniture step',(goStep(4),getComputedStyle($('plan')).touchAction==='none'),getComputedStyle($('plan')).touchAction);goStep(1);
+ ok('phone: plan lets the page scroll on the measure screen',(goStep(1),['pan-y','auto','manipulation'].includes(getComputedStyle($('plan')).touchAction)),getComputedStyle($('plan')).touchAction);
+ ok('phone: plan captures touch on the furniture screen',(goStep(2),getComputedStyle($('plan')).touchAction==='none'),getComputedStyle($('plan')).touchAction);goStep(1);
 
  // ---- sketch reader ----
  ok('sketch: rectangle',sk(sketchToShape(stroke([30,30],[[270,30],[270,185],[30,185],[30,30]])))==='R R R R');
@@ -140,7 +140,7 @@ export async function run(){
  // ---- product sizes and adjustable pieces ----
  const grouped=products().filter(c=>c.g);
  ok('sizes: 12 sample products, 9 with several sizes',products().length===12&&grouped.length===9&&grouped.every(c=>sizesOf(c).length>1),products().map(c=>c.n));
- freshVisit();setTemplate('rect',[450,380]);S.items=[{id:80,k:K.bed,x:225,y:150,rot:0}];S.sel=80;goStep(4);await wait(20);
+ freshVisit();setTemplate('rect',[450,380]);S.items=[{id:80,k:K.bed,x:225,y:150,rot:0}];S.sel=80;goStep(2);await wait(20);$('sizebtn').click();await wait(10);
  ok('sizes: panel lists every bed size plus Custom',visible('#sizebox')&&$('sizechips').children.length===sizesOf(cat(K.bed)).length+1);
  [...$('sizechips').children].find(b=>b.textContent.startsWith('Standard King'))?.click();await wait(10);
  ok('sizes: tapping Standard King switches to that product',S.items[0].k==='690.069.81'&&!S.items[0].size&&near(body(S.items[0]).x1-body(S.items[0]).x0,166,.01),S.items[0]);
@@ -151,7 +151,7 @@ export async function run(){
  const q1=quoteText();ok('sizes: quote marks a custom size price to confirm',/Standard King \(Custom size, 175 x 209 x 100 cm, price to confirm\)/.test(q1),q1);
  [...$('sizechips').children].find(b=>b.dataset.sz==='k:'+K.bed).click();await wait(10);
  ok('sizes: back to Standard Double',S.items[0].k===K.bed&&!S.items[0].size&&near(body(S.items[0]).x1-body(S.items[0]).x0,150,.01),S.items[0]);
- S.items=[{id:82,k:'992.407.89',x:225,y:150,rot:0}];S.sel=82;render();
+ S.items=[{id:82,k:'992.407.89',x:225,y:150,rot:0}];S.sel=82;render();$('sizebtn').click();await wait(10);
  ok('sizes: one-size product offers catalog size and Custom',$('sizechips').children.length===2&&$('sizechips').children[0].dataset.sz==='cat');
  S.items=[];S.sel=null;render();
  // a narrow room where the usual bed cannot fit, but a smaller size of the same bed can
@@ -197,10 +197,36 @@ export async function run(){
  ok('3D: refuses a room whose walls are not finished',!view3d&&$('v3dwrap').hidden&&/not closed/.test($('tipmsg').textContent));
  freshVisit();
 
- // ---- steps and options ----
- freshVisit();goStep(1);ok('steps: step 1 shows only room cards',visible('#typechips')&&!visible('#wallsbox'));
- goStep(2);ok('steps: advanced hidden by default',!visible('#modewalls'));S.more=true;render();ok('steps: More options shows advanced',visible('#modewalls'));S.more=false;render();
- goStep(4);ok('steps: furniture step shows suggestions',visible('#sugg'));goStep(1);
+ // ---- three screens: Measure, Furniture, Quote ----
+ freshVisit({doorSet:false,name:'Living room'});goStep(1);
+ ok('screens: three screens',$('stepnav').children.length===3&&$('stepttl').textContent==='Measure the room',$('stepnav').textContent);
+ ok('screens: Measure shows room type and size, not the plan or suggestions',visible('#typechips')&&visible('#wallsbox')&&!visible('#layoutcard')&&!visible('#sugg'));   // an <svg> has no offsetParent, so check its card
+ ok('screens: a rectangle asks only Length and Width',!!$('tw0')&&!!$('tw1')&&!$('tw2')&&!visible('#shapes')&&visible('#notrect'));
+ ok('screens: advanced controls hidden by default',!visible('#modewalls')&&!visible('#setcard')&&!visible('#unit'));
+ $('gear').click();ok('screens: the settings icon shows the advanced controls',S.more&&visible('#modewalls')&&visible('#setcard')&&visible('#unit'));$('gear').click();
+ const typeIn=(el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}))};
+ typeIn($('tw0'),'450');typeIn($('tw1'),'380');ok('screens: Next unlocks once the size is typed',S.closed&&!$('next').disabled);
+ $('typechips').querySelector('[data-t=bedroom]').click();ok('screens: the room type names the room',S.name==='Bedroom',S.name);
+ $('notrect').click();ok('screens: "Not a rectangle? Draw it" opens the drawing pad and the shape pictures',S.shape==='sketch'&&!!$('pad')&&visible('#shapes'));
+ $('shapes').querySelector('[data-shape=rect]').click();typeIn($('tw0'),'450');typeIn($('tw1'),'380');
+ $('next').click();await wait(20);
+ ok('screens: Furniture asks once where the door is',S.step===2&&visible('#doorbar')&&document.body.classList.contains('doormode')&&!visible('#movedoor'));
+ {const q=plan.createSVGPoint();q.x=200;q.y=378;const p=q.matrixTransform(plan.getScreenCTM());plan.dispatchEvent(new PointerEvent('pointerdown',{clientX:p.x,clientY:p.y,bubbles:true,pointerId:9}));plan.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:9}))}
+ ok('screens: tapping the plan places the door and stops asking',S.doorSet&&S.dwall==='2'&&!visible('#doorbar')&&visible('#movedoor'),[S.dwall,S.doff]);
+ $('movedoor').click();ok('screens: Move door asks again; Cancel keeps the door',visible('#doorbar')&&($('doorskip').click(),!visible('#doorbar')&&S.dwall==='2'));
+ ok('screens: Furniture shows the plan, the 3D button and the fits-here list, not the fit-check list',visible('#layoutcard')&&visible('#v3d')&&visible('#sugg')&&!visible('#issues'));
+ const nAdd=$('sugg').querySelectorAll('[data-add]').length;$('sugg').querySelector('[data-add]').click();await wait(10);
+ ok('screens: + adds a piece and shows Turn, Size and Remove',nAdd>0&&S.items.length===1&&visible('#rot')&&visible('#sizebtn')&&visible('#del')&&!visible('#sizebox'));
+ const p0=S.items[0];S.items.push({id:S.next++,k:K.coffee,x:p0.x,y:p0.y,rot:0});S.sel=null;render();
+ const strokeOf=id=>plan.querySelector(`[data-id="${id}"] > rect`).getAttribute('stroke');
+ ok('screens: a problem turns the pieces red with one short line',strokeOf(p0.id)==='var(--err)'&&strokeOf(S.items[1].id)==='var(--err)'&&visible('#probline')&&/overlaps/.test($('probline').textContent),$('probline').textContent);
+ S.items.pop();render();ok('screens: no problem, no red',strokeOf(p0.id)==='var(--accent)'&&!visible('#probline'));
+ $('next').click();await wait(10);const tot=groupItems().reduce((a,{c,q})=>a+c.p*q,0);
+ ok('screens: Quote shows one big total and one line per room',S.step===3&&$('qtotal').textContent===tot.toLocaleString()&&$('qrooms').children.length===1&&!visible('#next')&&visible('#copyq'),[$('qtotal').textContent,tot]);
+ $('qaddroom').click();await wait(10);ok('screens: + Room adds a room and opens Measure',S.rooms.length===2&&S.cur===1&&S.step===1);
+ $('typechips').querySelector('[data-t=bedroom]').click();ok('screens: a second bedroom is named Bedroom 2',S.name==='Bedroom 2',S.name);
+ goStep(3);$('qrooms').querySelector('[data-qr="0"]').click();await wait(10);ok('screens: tapping a room line opens that room',S.cur===0&&S.step===2&&S.items.length===1);
+ S.step=5;render();ok('screens: an old saved step number lands on a real screen',S.step===3);goStep(1);
 
  window.removeEventListener('error',onErr);
  ok('no page errors during the run',!errs.length,errs);
