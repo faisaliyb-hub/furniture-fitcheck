@@ -226,7 +226,7 @@ export async function open(container,R){
   sh.rotation.x=-Math.PI/2;sh.position.y=.002;g.add(sh);pieces.push(g)}
  // camera and controls
  const camera=new THREE.PerspectiveCamera(45,1,.05,200),controls=new OrbitControls(camera,renderer.domElement);
- controls.enableDamping=true;controls.maxPolarAngle=Math.PI*.495;controls.minDistance=.3;controls.maxDistance=size*4;controls.screenSpacePanning=true;
+ controls.enableDamping=true;controls.maxPolarAngle=Math.PI*.495;controls.minDistance=.1;controls.maxDistance=size*8;controls.zoomSpeed=1.4;controls.zoomToCursor=true;controls.screenSpacePanning=true;   // zoom goes where you pinch or point
  // Overview looks from the side opposite the door, so the door's wall stays solid; "from the door" stands just past the open leaf.
  const de=R.door?room.out[R.door.edge]:{x:0,y:-1,dx:1,dy:0};
  function setView(v){if(v==='eye'&&R.door){const a=room.loop[R.door.edge],t=(R.door.t0+R.door.t1)/2*M+(R.door.t1-R.door.t0)*M*.35,inn=(R.door.t1-R.door.t0)*M+.35;

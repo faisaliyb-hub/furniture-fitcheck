@@ -68,7 +68,7 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 .v3d #v3dcanvas canvas{display:block;touch-action:none}
 .v3d .v3dnote{position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));margin:0;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.88);color:#1f1d1a;font-size:13px;pointer-events:none}
 .iconbtn{width:44px;padding:0;display:grid;place-items:center}.iconbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-#layoutcard{position:relative}#layouth{padding-right:56px}.corner{position:absolute;top:8px;right:8px;min-height:36px;padding:4px 12px;font-weight:600}
+#layoutcard{position:relative}#layouth{padding-right:120px}.corner{position:absolute;top:8px;right:8px;min-height:36px;padding:4px 12px;font-weight:600}.corner2{right:64px}
 .doorbar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:600}.doorbar button{min-height:34px;padding:4px 12px}
 .probline{margin:8px 0 0;color:var(--err);font-size:14px}
 .qbig{text-align:center;margin:4px 0 14px}.qbig small{display:block;color:var(--mute);font-size:13px}.qbig b{display:block;font-size:40px;line-height:1.15}
@@ -125,7 +125,7 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
  </section>
 </div>
 <div class="col">
- <section class="card" id="layoutcard" data-step="2"><h2 id="layouth">Layout</h2><button id="v3d" class="corner" aria-label="3D view">3D</button>
+ <section class="card" id="layoutcard" data-step="2"><h2 id="layouth">Layout</h2><button id="v3d" class="corner" aria-label="3D view">3D</button><button id="fit" class="corner corner2" hidden>Fit</button>
   <div id="doorbar" class="doorbar" hidden><span>Tap the wall where the door is</span><button id="doorskip">Skip</button></div>
   <svg id="plan" viewBox="0 0 600 500"></svg>
   <p id="probline" class="probline" hidden></p>
@@ -669,7 +669,7 @@ $('sugg').onmouseleave=()=>{if(ghost){ghost=null;$('plan').innerHTML=drawPlan(S.
 
 function render(){
  const W=+S.rw||1,L=+S.rl||1,m=40,plan=$('plan');
- plan.setAttribute('viewBox',`${-m} ${-m} ${W+2*m} ${L+2*m}`);
+ setPlanBox();
  plan.innerHTML=drawPlan(S.sel);
  $('issues').innerHTML=check().map(([t,m])=>`<div class="issue ${t}">${m}</div>`).join('');
  // piece tools show when a piece is selected; otherwise only "Move door"
@@ -954,7 +954,7 @@ function roomModel(){
   obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
   items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:c.m||''}})}}
 // Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
-const V3D='2026-10-23b';
+const V3D='2026-10-23c';
 let view3d=null,v3dTimer=0;
 async function open3d(){
  if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
@@ -1053,13 +1053,34 @@ function placeDoorAt(p){
   if(!best)return;const g=S.wallGeo[best.i];S.dwall=String(best.i);S.doff=Math.round(Math.max(0,Math.min(g.len-S.dw,best.t-S.dw/2)))}
  else{const W=+S.rw,L=+S.rl,c=[['N',p.y,p.x,W],['S',L-p.y,p.x,W],['W',p.x,p.y,L],['E',W-p.x,p.y,L]].sort((a,b)=>a[1]-b[1])[0];S.dwall=c[0];S.doff=Math.round(Math.max(0,Math.min(c[3]-S.dw,c[2]-S.dw/2)))}
  $('dwall').value=S.dwall;$('doff').value=U(S.doff,true);render()}
-$('plan').addEventListener('pointerdown',e=>{if(doorAsk()){S.doorSet=true;moveDoor=false;placeDoorAt(pt(e));return}
+// ---- Zooming the plan: pinch (two fingers) or the mouse wheel; one finger on empty floor moves a zoomed plan; Fit shows it all. ----
+// pv is the visible part of the plan in cm (z = zoom, 1 = whole room). It resets when the room or its size changes.
+let pv={z:1,x:0,y:0,key:''},pinch=null,pan=null;const ptrs=new Map();
+function planFull(){const W=+S.rw||1,L=+S.rl||1,m=40;return{x:-m,y:-m,w:W+2*m,h:L+2*m}}
+function setPlanBox(){const F=planFull(),key=`${S.cur}|${F.w}x${F.h}`;if(pv.key!==key)pv={z:1,x:F.x,y:F.y,key};
+ const w=F.w/pv.z,h=F.h/pv.z;pv.x=Math.min(Math.max(pv.x,F.x),F.x+F.w-w);pv.y=Math.min(Math.max(pv.y,F.y),F.y+F.h-h);
+ $('plan').setAttribute('viewBox',`${pv.x} ${pv.y} ${w} ${h}`);$('fit').hidden=pv.z<=1.01||S.step!==2}
+// zoom to z, keeping plan point P under the screen point (cx, cy)
+function zoomAt(z,P,cx,cy){const F=planFull(),r=$('plan').getBoundingClientRect();pv.z=Math.min(8,Math.max(1,z));
+ const w=F.w/pv.z,h=F.h/pv.z;pv.x=P.x-(cx-r.left)/r.width*w;pv.y=P.y-(cy-r.top)/r.height*h;setPlanBox()}
+$('fit').onclick=()=>{pv.z=1;setPlanBox()};
+$('plan').addEventListener('wheel',e=>{if(S.step!==2)return;e.preventDefault();zoomAt(pv.z*Math.exp(-e.deltaY*.0015),pt(e),e.clientX,e.clientY)},{passive:false});
+const endPtr=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size)pan=null};
+$('plan').addEventListener('pointerup',endPtr);$('plan').addEventListener('pointercancel',endPtr);
+$('plan').addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(ptrs.size===2&&S.step===2){const [a,b]=[...ptrs.values()],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;drag=null;pan=null;   // a second finger: pinch instead of drag
+  pinch={d0:Math.hypot(a.x-b.x,a.y-b.y)||1,z0:pv.z,P:pt({clientX:mx,clientY:my})};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}return}
+ if(ptrs.size>2||pinch)return;
+ if(doorAsk()){S.doorSet=true;moveDoor=false;placeDoorAt(pt(e));return}
  const g=e.target.closest('[data-id]'),og=!g&&e.target.closest('[data-ob]');
  if(og){const o=S.obs.find(x=>x.id==og.dataset.ob);if(o){const p=pt(e);drag={ob:o,dx:p.x-o.x,dy:p.y-o.y};S.sel=null;try{$('plan').setPointerCapture(e.pointerId)}catch(_){}render()}return}
- if(!g){S.sel=null;render();return}
+ if(!g){if(pv.z>1.01&&S.step===2){pan={sx:e.clientX,sy:e.clientY,x0:pv.x,y0:pv.y};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}}S.sel=null;render();return}
  const it=S.items.find(i=>i.id==g.dataset.id);S.sel=it.id;const p=pt(e);drag={it,dx:p.x-it.x,dy:p.y-it.y};
  try{$('plan').setPointerCapture(e.pointerId)}catch(_){}render()});
-$('plan').addEventListener('pointermove',e=>{if(!drag)return;const p=pt(e);
+$('plan').addEventListener('pointermove',e=>{if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(pinch&&ptrs.size>=2){const [a,b]=[...ptrs.values()];zoomAt(pinch.z0*Math.hypot(a.x-b.x,a.y-b.y)/pinch.d0,pinch.P,(a.x+b.x)/2,(a.y+b.y)/2);return}
+ if(pan){const r=$('plan').getBoundingClientRect(),F=planFull();pv.x=pan.x0-(e.clientX-pan.sx)*F.w/pv.z/r.width;pv.y=pan.y0-(e.clientY-pan.sy)*F.h/pv.z/r.height;setPlanBox();return}
+ if(!drag)return;const p=pt(e);
  if(drag.ob){const o=drag.ob;o.x=Math.round(Math.min(Math.max(0,p.x-drag.dx),Math.max(0,S.rw-o.w)));o.y=Math.round(Math.min(Math.max(0,p.y-drag.dy),Math.max(0,S.rl-o.d)));render();return}
  const it=drag.it;
  it.x=p.x-drag.dx;it.y=p.y-drag.dy;
