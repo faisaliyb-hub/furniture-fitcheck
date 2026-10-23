@@ -185,9 +185,20 @@ Suggested priority: non-rectangular rooms and obstacles first, then shared backe
 4. Rep count and phone models? Are they willing to carry a Bluetooth laser?
 5. Budget and timeline for the pilot?
 
+## Planned: simpler 3-screen version (proposed 2026-10-23, not built yet)
+User feedback after trying the live app with the 3D view: the 3D view is smooth, but **the whole app is still too complicated** (asked which part: "whole app"). Proposal shown to the user as a mockup and recommended:
+- **3 screens instead of 5**, one main action each, very little text:
+  1. **Measure:** room type chips (the type becomes the room's name), then a rectangle picture with **Length** and **Width** boxes. "Not a rectangle? Draw it" opens the drawing pad and the L-shape pictures. The separate Room and Door steps go away.
+  2. **Add furniture:** the plan plus a short "fits here" list with a **+** per product. Tap a placed piece for turn / size / remove. The first time this screen opens it asks once to tap where the door is. 3D is a small button in the corner.
+  3. **Quote:** one big total, one line per room, optional client name, **Copy quote** and **+ Room**.
+- **Out of sight:** the fit-check warning list (a problem shows as a red piece on the plan with one short line instead), most hint sentences, the rep name, the room-name box and visible room list, and "More options". Windows, pillars, ceiling height, CSV import, quick rectangle mode and the other advanced controls move behind a small settings icon.
+- **Nothing removed underneath:** measuring engine, checks, sizes, suggestions and 3D stay as they are; only the screens change. All 104 automated checks must still pass, plus new ones for the 3 screens.
+- **Rollout:** build it on its own branch and publish it first at a separate preview address (e.g. `https://faisaliyb-hub.github.io/furniture-fitcheck/preview/`) so the main link stays unchanged while the user tries it on a phone; replace the main app only after the user approves.
+- Status: the user replied "ok" and asked for this to be recorded here. Building has not started; confirm before starting.
+
 ## Suggested next steps
-1. Merge `feat/ikea-sample` into `main` so the live site shows the IKEA sample catalog (ask first: it changes the live site).
-2. Give `catalog-template.csv` to the furniture house to fill in with real dimensions, one row per size (`group` and `size` columns). How complete it comes back tells us how ready their data is.
+1. Build the simpler 3-screen version on a preview address (see the plan above) and let the user try it on a phone.
+2. Show it to the furniture house and give them `catalog-template.csv` to fill in with real dimensions, one row per size (`group` and `size` columns). How complete it comes back tells us how ready their data is.
 3. Choose a backend for the shared catalog and visits, and add rep logins (proposed: Supabase, waiting for the user's OK).
 4. Add laser input (Android first), then decide on an iPhone wrapper.
 
