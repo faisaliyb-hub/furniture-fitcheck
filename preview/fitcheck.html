@@ -1,0 +1,1082 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FitCheck Preview</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<style>
+:root{--bg:#f6f3ee;--card:#fff;--ink:#1f1d1a;--mute:#7a746a;--line:#e3ded5;--accent:#2f6f5e;--accent-ink:#fff;--warn:#c9821a;--err:#c0392b;--ok:#2f6f5e;--room:#fbfaf7;--info:#3b78b4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161513;--card:#1f1e1b;--ink:#f0ece4;--mute:#a49d90;--line:#34312c;--accent:#5fb89f;--accent-ink:#10231d;--warn:#e0a040;--err:#e5685a;--ok:#5fb89f;--room:#252420;--info:#79b4e8;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#161513;--card:#1f1e1b;--ink:#f0ece4;--mute:#a49d90;--line:#34312c;--accent:#5fb89f;--accent-ink:#10231d;--warn:#e0a040;--err:#e5685a;--ok:#5fb89f;--room:#252420;--info:#79b4e8;color-scheme:dark}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header,main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{padding-block:16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+h1{font-size:18px;margin:0}h2{font-size:13px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
+main{display:grid;gap:12px;padding-block:0;max-width:760px;margin:auto}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+label{display:block;font-size:12px;color:var(--mute);margin-bottom:3px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:40px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:9px 12px;min-height:40px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:disabled{opacity:.4}
+.cat{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.cat button{text-align:left;line-height:1.3}.cat small{display:block;color:var(--mute)}
+svg{width:100%;height:auto;display:block;touch-action:none;user-select:none;-webkit-user-select:none}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.issue{padding:8px 10px;border-radius:8px;margin-bottom:6px;border-left:4px solid;background:var(--bg);font-size:14px}
+.issue.err{border-color:var(--err)}.issue.warn{border-color:var(--warn)}.issue.ok{border-color:var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}td.n,th.n{text-align:right}
+.hint{color:var(--mute);font-size:12px;margin-top:6px}
+.frow{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px;align-items:end;margin-bottom:10px;padding:8px;border:1px solid var(--line);border-radius:8px}.frow>b{grid-column:1/-1;font-size:13px}.frow label{margin:0}.frow input,.frow select{min-height:34px;padding:6px 8px}.frow button{min-height:34px;padding:4px 8px}
+.wrow{display:grid;grid-template-columns:28px 1fr 1.5fr 40px;gap:6px;align-items:center;margin-bottom:6px}.wrow>b{text-align:center;color:var(--mute)}.wrow input,.wrow select,.wrow button{min-height:38px}
+input.bad{border-color:var(--err)!important;outline-color:var(--err)}
+.unitsel{display:flex;gap:8px;align-items:center}.unitsel button{white-space:nowrap}.unitsel label{margin:0}.unitsel select{width:auto;min-height:38px;padding:6px 8px}
+body:not(.more) .adv{display:none!important}
+.steps{display:flex;flex-wrap:wrap;gap:5px}.stp{flex:0 0 auto;padding:5px 9px;min-height:32px;font-size:12.5px;border-radius:999px}.stp.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.stepttl{font-size:21px;line-height:1.25;text-transform:none;letter-spacing:0;color:var(--ink);margin:14px 0 2px;text-wrap:balance}
+.navbar{position:sticky;bottom:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line)}
+.navbar button{flex:1;min-height:48px;font-size:16px}#navmsg{flex-basis:100%;margin:0;text-align:center}
+.linkbtn{background:none;border:none;color:var(--accent);text-decoration:underline;padding:6px 0;min-height:36px}
+.typechips .chip{min-height:44px;font-size:15px}
+.wrow input,.wrow select{font-size:16px}
+.shapes{margin-bottom:12px}
+.shapes{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px}.shape{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 2px;font-size:11px;line-height:1.2}
+.shape.on{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+.shape svg{width:100%;max-width:46px;height:auto;touch-action:auto}
+.shapebig svg{width:100%;max-width:300px;margin:0 auto 10px;touch-action:auto}
+.pad{width:100%;height:auto;display:block;border:1px dashed var(--line);border-radius:10px;background:var(--room);touch-action:none;cursor:crosshair}
+.padtools{display:flex;gap:8px;justify-content:space-between;align-items:center;margin:4px 0 10px}
+.tw{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:8px}.tw label{font-weight:600;color:var(--ink)}
+.col{display:contents}#plan{touch-action:pan-y}body[data-step="2"] #plan{touch-action:none}#stephead{order:-2}#setcard{order:-1}.navbar{order:10}body[data-step="2"] #layoutcard{order:-1}body.doormode #plan{cursor:crosshair}
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#sizebox{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}#sizebox .chips{margin-bottom:8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.chip{text-align:left;line-height:1.25;padding:7px 11px}.chip small{display:block;opacity:.75;font-size:11px}.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.sg{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.sg small{display:block;color:var(--mute)}.sg .tag{color:var(--warn)}
+.sg button{white-space:nowrap}.sg .addbtn{min-width:44px;min-height:44px;font-size:22px;line-height:1;padding:0}
+details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
+#quote{margin-top:14px;padding-top:6px;border-top:1px solid var(--line)}
+.v3d{position:fixed;inset:0;z-index:40;background:#e7e9ea;display:flex;flex-direction:column}
+.v3d .v3dbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:calc(8px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));background:var(--card);border-bottom:1px solid var(--line)}
+.v3d .v3dbar{flex-wrap:nowrap}.v3d .v3dbar b{flex:1;min-width:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v3d .v3dbar button{min-height:38px;padding:6px 10px;white-space:nowrap}
+.v3d #v3dcanvas{flex:1;min-height:0;position:relative;touch-action:none}
+.v3d #v3dcanvas canvas{display:block;touch-action:none}
+.v3d .v3dnote{position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));margin:0;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.88);color:#1f1d1a;font-size:13px;pointer-events:none}
+.iconbtn{width:44px;padding:0;display:grid;place-items:center}.iconbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+#layoutcard{position:relative}#layouth{padding-right:56px}.corner{position:absolute;top:8px;right:8px;min-height:36px;padding:4px 12px;font-weight:600}
+.doorbar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:600}.doorbar button{min-height:34px;padding:4px 12px}
+.probline{margin:8px 0 0;color:var(--err);font-size:14px}
+.qbig{text-align:center;margin:4px 0 14px}.qbig small{display:block;color:var(--mute);font-size:13px}.qbig b{display:block;font-size:40px;line-height:1.15}
+.qroom{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;margin-bottom:6px}.qroom small{display:block;color:var(--mute);font-size:12px}
+.steps .stp{flex:1}
+.askov{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.45);z-index:50;padding:16px}
+</style>
+</head>
+<body>
+<header><h1>FitCheck</h1><button id="gear" class="iconbtn" aria-label="Settings and advanced controls" aria-pressed="false" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M10.3 3h3.4l.5 2.4 1.6.9 2.3-.8 1.7 2.9-1.8 1.6v1.9l1.8 1.6-1.7 2.9-2.3-.8-1.6.9-.5 2.4h-3.4l-.5-2.4-1.6-.9-2.3.8-1.7-2.9 1.8-1.6v-1.9L4.1 8.4l1.7-2.9 2.3.8 1.6-.9z"/></svg></button></header>
+<main>
+<div id="stephead"><nav id="stepnav" class="steps" aria-label="Screens"></nav><h2 id="stepttl" class="stepttl"></h2></div>
+<div class="col">
+ <section class="card adv" id="setcard" data-step="1 2 3"><h2>Settings</h2>
+  <div class="row"><div><label for="unit">Units</label><select id="unit"><option value="cm">cm</option><option value="m">m</option><option value="mm">mm</option><option value="ftin">ft + in</option><option value="in">inches</option></select></div><div><label for="rep">Rep</label><input id="rep" placeholder="Your name"></div></div>
+  <div class="row"><div><label for="rname">Room name</label><input id="rname" placeholder="e.g. Master bedroom"></div><div><label for="rtype">Room type</label><select id="rtype"></select></div></div>
+  <label>Rooms in this visit</label><div id="rooms" class="chips"></div>
+  <div class="tools" style="margin-top:0"><button id="addroom">+ Add room</button><button id="delroom">Delete room</button></div>
+  <div class="hint">Settings are on, so the advanced controls show on every screen. Tap the settings icon again to hide them.</div>
+ </section>
+ <section class="card" data-step="1"><h2>Room</h2><div id="typechips" class="chips typechips"></div></section>
+ <section class="card" data-step="1"><h2 id="roomh">Size</h2>
+  <div class="tools adv" style="margin:0 0 10px"><button id="modewalls" class="chip">Wall by wall</button><button id="moderect" class="chip">Quick rectangle</button></div>
+  <div id="wallsbox">
+   <div id="shapes" class="shapes" role="group" aria-label="Room shape"></div>
+   <div id="shapebox"></div>
+   <button id="notrect" class="linkbtn">Not a rectangle? Draw it</button>
+   <div id="freebox">
+   <div id="walls"></div>
+   <div class="tools" style="margin-top:6px"><button id="addwall">+ Next wall</button><button id="closewall" class="primary" hidden></button></div>
+   </div>
+   <div id="wallstat" class="hint" style="margin-bottom:10px"></div>
+  </div>
+  <div class="row adv" id="rwrow"><div><label id="rwl">Width</label><input id="rw" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label id="rll">Length</label><input id="rl" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
+  <div class="row adv"><div><label>Ceiling height</label><input id="rh" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div></div></div>
+  <div class="hint adv">Width and length are the overall size of the room (worked out from the walls, or typed in quick rectangle mode).</div>
+ </section>
+ <section class="card adv" data-step="2"><h2>Door</h2>
+  <div class="row"><div><label>Wall with the door</label><select id="dwall"></select></div><div><label>Door width</label><input id="dw" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
+  <div class="row"><div><label id="doffl">Door offset from corner</label><input id="doff" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label>Door height</label><input id="dh" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
+ </section>
+ <section class="card adv" data-step="2"><h2>Windows, pillars and other features</h2>
+  <div id="feat"></div>
+  <div class="row" style="margin-top:6px"><div><select id="addkind"></select></div><div><button id="addfeat" style="width:100%">+ Add</button></div></div>
+  <div class="hint">Position is measured on the plan: <b>From left side</b> and <b>From top side</b> go to the feature's top-left corner. Or drag the feature on the plan and the numbers fill in. Width runs left to right on the plan, depth top to bottom. For a window, <b>From wall corner</b> is measured from the corner where that wall starts.</div>
+  <div class="hint">Columns, radiators, built-ins, stairs and other doors block the floor. Low ceiling zones limit how tall a piece can be. Windows flag tall pieces in front of them. Cut-outs (quick rectangle mode only) make L, U or T shaped rooms.</div>
+ </section>
+ <section class="card adv" data-step="2"><h2 id="cathead">Catalog</h2>
+  <input id="catq" placeholder="Search name or SKU" style="margin-bottom:8px">
+  <div class="cat" id="cat" style="max-height:320px;overflow:auto"></div>
+  <div class="tools"><button id="imp">Import CSV</button><button id="tpl">Copy template</button><button id="sample">Use sample</button></div>
+  <input id="impfile" type="file" accept=".csv,text/csv" hidden>
+  <div id="catmsg" class="hint"></div>
+ </section>
+</div>
+<div class="col">
+ <section class="card" id="layoutcard" data-step="2"><h2 id="layouth">Layout</h2><button id="v3d" class="corner" aria-label="3D view">3D</button>
+  <div id="doorbar" class="doorbar" hidden><span>Tap the wall where the door is</span><button id="doorskip">Skip</button></div>
+  <svg id="plan" viewBox="0 0 600 500"></svg>
+  <p id="probline" class="probline" hidden></p>
+  <div class="tools" id="plantools"><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
+  <div id="sizebox" hidden><div id="sizettl" style="font-weight:600;margin-bottom:6px"></div><div id="sizechips" class="chips" role="group" aria-label="Sizes"></div>
+   <div class="row3"><div><label for="szw" id="szwl">Width</label><input id="szw" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szd" id="szdl">Depth</label><input id="szd" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szh" id="szhl">Height</label><input id="szh" type="text" inputmode="decimal" autocomplete="off"></div></div>
+   <div id="sizehint" class="hint"></div></div>
+  <div class="hint adv">Drawn to scale: each piece covers only its own footprint. Tap a piece to see the free space around it. Orange zone = clearance needed in front.</div><div id="tipmsg" class="hint" style="color:var(--warn)"></div>
+ </section>
+ <section class="card adv" data-step="2"><h2>Space</h2><div id="space"></div>
+  <div id="selbox" hidden style="margin-top:10px"><div id="selinfo" class="hint" style="font-size:14px;color:var(--ink);margin:0 0 8px"></div>
+   <div class="row"><div><label id="pxl">Gap from left wall</label><input id="px" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label id="pyl">Gap from top wall</label><input id="py" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div></div>
+ </section>
+ <section class="card" data-step="2"><h2 id="sgh">Fits here</h2><div id="sugg" class="hint">Calculating...</div></section>
+ <section class="card adv" data-step="2"><h2>Fit check</h2><div id="issues"></div></section>
+ <section class="card" data-step="3">
+  <div class="qbig"><small>Total</small><b id="qtotal">0</b><small id="qnote"></small></div>
+  <div id="qrooms"></div>
+  <label for="client" style="margin-top:12px">Client (optional)</label><input id="client" placeholder="Client name">
+  <div class="tools"><button class="primary" id="copyq">Copy quote</button><button id="qaddroom">+ Room</button></div>
+  <div class="hint" id="quotemsg"></div><textarea id="copyfb" readonly rows="8" hidden style="margin-top:8px"></textarea>
+  <div class="adv"><div id="qtable"></div><div class="tools"><button id="showq">Show full quote</button></div></div>
+  <div id="quote" hidden></div>
+  <button id="reset" class="linkbtn">New visit</button>
+ </section>
+</div>
+<div class="navbar"><button id="back">Back</button><button id="next" class="primary">Next</button><p id="navmsg" class="hint"></p></div>
+</main>
+<div id="v3dwrap" class="v3d" hidden role="dialog" aria-modal="true" aria-labelledby="v3dttl"><div class="v3dbar"><b id="v3dttl">3D view</b><button id="v3dov">Overview</button><button id="v3deye">Door view</button><button id="v3dx" class="primary">Close</button></div><div id="v3dcanvas"><p class="v3dnote" id="v3dmsg"></p></div></div>
+<div id="ask" class="askov" hidden role="dialog" aria-modal="true" aria-labelledby="askmsg"><div class="card" style="max-width:380px"><p id="askmsg" style="margin:0 0 12px"></p><div class="tools" style="margin:0"><button id="askyes" class="primary">Continue</button><button id="askno">Cancel</button></div></div></div>
+<script>
+// Sample catalog: 26 real IKEA UK products (sizes and GBP prices as listed on ikea.com/gb on 2026-10-22; sources in docs/SAMPLE_CATALOG.md).
+// Rows that share a group (g) are sizes of one product; z names the size; f is the finish from the IKEA listing (colours the 3D view). Front clearances (cl) and room tags (r) are our planning guesses, not IKEA data.
+// Replace it by importing the furniture house's CSV (see catalog-template.csv).
+const SAMPLE=[
+ {k:'694.405.96',n:'KIVIK 3-seat sofa',w:228,d:95,h:83,cl:45,p:449,t:'sofa',r:['living'],g:'kivik',z:'3-seat',f:'beige-grey fabric'},
+ {k:'294.405.98',n:'KIVIK 2-seat sofa',w:190,d:95,h:83,cl:45,p:349,t:'sofa',r:['living','office'],g:'kivik',z:'2-seat',f:'beige-grey fabric'},
+ {k:'992.407.89',n:'POÄNG armchair',w:68,d:82,h:100,cl:50,p:69,t:'chair',r:['living','bedroom','office'],f:'birch, light beige fabric'},
+ {k:'401.042.94',n:'LACK coffee table 90x55',w:90,d:55,h:45,cl:35,p:19,t:'table',r:['living'],g:'lackcoffee',z:'90x55 cm',f:'black-brown'},
+ {k:'001.042.91',n:'LACK coffee table 118x78',w:118,d:78,h:45,cl:35,p:40,t:'table',r:['living'],g:'lackcoffee',z:'118x78 cm',f:'black-brown'},
+ {k:'304.499.08',n:'LACK side table 55x55',w:55,d:55,h:45,cl:0,p:10,t:'side',r:['living','bedroom'],g:'lackside',z:'55x55 cm',f:'white'},
+ {k:'305.147.91',n:'LACK side table 35x35',w:35,d:35,h:35,cl:0,p:6,t:'side',r:['living','bedroom'],g:'lackside',z:'35x35 cm',f:'white'},
+ {k:'702.943.39',n:'LISABO table 140x78',w:140,d:78,h:74,cl:80,p:129,t:'table',r:['dining'],g:'lisabotable',z:'140x78 cm',f:'ash'},
+ {k:'405.637.76',n:'LISABO table 88x78',w:88,d:78,h:74,cl:80,p:69,t:'table',r:['dining'],g:'lisabotable',z:'88x78 cm',f:'ash'},
+ {k:'004.572.35',n:'LISABO chair',w:46,d:51,h:80,cl:40,p:50,t:'chair',r:['dining','office','kids'],f:'ash'},
+ {k:'290.069.78',n:'MALM bed frame, Standard Double',w:150,d:199,h:100,cl:60,p:139,t:'bed',r:['bedroom','kids'],g:'malm',z:'Standard Double (135x190)',f:'white'},
+ {k:'490.099.47',n:'MALM bed frame, Standard Single',w:107,d:199,h:100,cl:60,p:99,t:'bed',r:['bedroom','kids'],g:'malm',z:'Standard Single (90x190)',f:'white'},
+ {k:'690.069.81',n:'MALM bed frame, Standard King',w:166,d:209,h:100,cl:60,p:179,t:'bed',r:['bedroom','kids'],g:'malm',z:'Standard King (150x200)',f:'white'},
+ {k:'790.024.35',n:'MALM bed frame, 180x200',w:196,d:209,h:100,cl:60,p:229,t:'bed',r:['bedroom','kids'],g:'malm',z:'180x200 cm',f:'white'},
+ {k:'506.107.39',n:'HEMNES bedside table',w:46,d:35,h:70,cl:40,p:55,t:'storage',r:['bedroom','kids'],f:'grey-green, light brown'},
+ {k:'004.417.58',n:'KLEPPSTAD wardrobe, 3 doors',w:117,d:55,h:176,cl:80,p:129,t:'storage',r:['bedroom','kids'],g:'kleppstad',z:'3 doors',f:'white'},
+ {k:'804.372.34',n:'KLEPPSTAD wardrobe, 2 doors',w:79,d:55,h:176,cl:80,p:89,t:'storage',r:['bedroom','kids'],g:'kleppstad',z:'2 doors',f:'white'},
+ {k:'204.989.04',n:'LACK TV bench 160',w:160,d:35,h:36,cl:60,p:50,t:'storage',r:['living','bedroom'],g:'lacktv',z:'160 cm wide',f:'black-brown'},
+ {k:'204.989.37',n:'LACK TV bench 120',w:120,d:35,h:36,cl:60,p:40,t:'storage',r:['living','bedroom'],g:'lacktv',z:'120 cm wide',f:'black-brown'},
+ {k:'004.500.88',n:'LACK TV bench 90',w:90,d:26,h:45,cl:60,p:9,t:'storage',r:['living','bedroom'],g:'lacktv',z:'90 cm wide',f:'white'},
+ {k:'002.638.50',n:'BILLY bookcase 80x202',w:80,d:28,h:202,cl:60,p:55,t:'storage',r:['living','office','bedroom','kids'],g:'billy',z:'80 wide, 202 high',f:'white'},
+ {k:'502.638.38',n:'BILLY bookcase 40x202',w:40,d:28,h:202,cl:60,p:35,t:'storage',r:['living','office','bedroom','kids'],g:'billy',z:'40 wide, 202 high',f:'white'},
+ {k:'302.638.44',n:'BILLY bookcase 80x106',w:80,d:28,h:106,cl:60,p:35,t:'storage',r:['living','office','bedroom','kids'],g:'billy',z:'80 wide, 106 high',f:'white'},
+ {k:'802.130.74',n:'MICKE desk 105x50',w:105,d:50,h:75,cl:80,p:79,t:'table',r:['office','bedroom','kids'],g:'micke',z:'105x50 cm',f:'white'},
+ {k:'302.130.76',n:'MICKE desk 73x50',w:73,d:50,h:75,cl:80,p:49,t:'table',r:['office','bedroom','kids'],g:'micke',z:'73x50 cm',f:'white'},
+ {k:'902.143.08',n:'MICKE desk 142x50',w:142,d:50,h:75,cl:80,p:99,t:'table',r:['office','bedroom','kids'],g:'micke',z:'142x50 cm',f:'white'}
+];
+const SAMPLE_NOTE='Sample catalog: IKEA UK products, prices in GBP as listed on ikea.com/gb on 22 Oct 2026. FitCheck is not connected to IKEA.';
+// Visits saved with the first sample catalog used short keys; they map to the closest IKEA sample row.
+const OLD_KEYS={sofa3:'694.405.96',sofa2:'294.405.98',arm:'992.407.89',coffee:'401.042.94',side:'304.499.08',dining:'702.943.39',chair:'004.572.35',bed:'290.069.78',night:'506.107.39',wardrobe:'004.417.58',tv:'204.989.04',shelf:'002.638.50',desk:'802.130.74'};
+const TYPES=['sofa','chair','table','side','bed','storage'];
+const ROOMKEYS=['living','bedroom','dining','office','kids'];
+// Furniture type decides the top-down detail drawn inside the footprint. Optional CSV column "type"; otherwise guessed from the name.
+function typeOf(c){if(c.t)return c.t;const n=c.n.toLowerCase();
+ return /sofa|couch|loveseat|settee/.test(n)?'sofa':/side table|end table|bedside|nightstand/.test(n)?'side':/bed/.test(n)?'bed':/chair|stool|bench/.test(n)?'chair':/table|desk/.test(n)?'table':/ward|cabinet|unit|shelf|book|dresser|drawer|sideboard|storage/.test(n)?'storage':'box'}
+const $=id=>document.getElementById(id);
+const LS='fitcheck-v1',CK='fitcheck-catalog';
+let CATALOG=SAMPLE.slice(),usingSample=true;
+try{const c=JSON.parse(localStorage.getItem(CK));if(Array.isArray(c)&&c.length){CATALOG=c;usingSample=false}}catch(e){}
+let S={client:'',rep:'',name:'Living room',type:'living',rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],sel:null,next:1,rooms:[],cur:0,cuts:[],obs:[],rh:260,mode:'walls',walls:[],shape:'rect',unit:'cm',step:1,more:false};
+try{const s=JSON.parse(localStorage.getItem(LS));if(s){S=Object.assign(S,s);if(!s.rooms&&!s.mode)S.mode='rect'}}catch(e){}
+const save=()=>{stash();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}};
+const cat=k=>CATALOG.find(c=>c.k===k);
+// ---- Product sizes and adjustable pieces ----
+// A product can come in several sizes: catalog rows that share a group (CSV column "group"), each with its own SKU, size and price.
+// A placed piece uses its row's size, or its own custom size on top (it.size = {w,d,h,name}, cm), which has no catalog price.
+const sizesOf=c=>c&&c.g?CATALOG.filter(x=>x.g===c.g).sort((a,b)=>a.w*a.d-b.w*b.d):[c];
+// Pieces saved with the first sample catalog get the matching IKEA sample SKU (only while the sample catalog is in use).
+const oldKeys=rooms=>{if(usingSample)rooms.forEach(r=>(r.items||[]).forEach(i=>{if(OLD_KEYS[i.k])i.k=OLD_KEYS[i.k]}))};
+// One entry per product: the first row of a group stands for the whole product (its usual size).
+const products=()=>CATALOG.filter((c,i)=>!c.g||CATALOG.findIndex(x=>x.g===c.g)===i);
+// The piece as placed: catalog data with its own size on top.
+function spec(it){const c=cat(it.k);if(!c||!it.size)return c;return{...c,w:it.size.w,d:it.size.d,h:it.size.h||c.h,sized:it.size.name||'Custom size'}}
+const sizeKey=it=>it.size?`${it.size.w}x${it.size.d}x${it.size.h||''}`:'';
+
+// A visit has several rooms. The active room's fields live on S; the others are stored in S.rooms.
+const ROOM_TYPES={living:'Living room',bedroom:'Bedroom',dining:'Dining room',office:'Home office',kids:"Kids' room",other:'Other'};
+const RF=['name','type','rw','rl','dwall','dw','doff','dh','items','cuts','obs','rh','mode','walls','shape','sketch','doorSet'];
+const normRoom=r=>{r.doorSet=!!r.doorSet;r.mode=r.mode||'rect';r.walls=r.walls||[];r.shape=r.shape||(r.mode==='walls'&&r.walls.length?'free':'rect');r.sketch=r.sketch||null;r.cuts=r.cuts||[];r.obs=r.obs||[];r.rh=r.rh||260;return r};
+function fixRoom(){S.cuts=S.cuts||[];S.obs=S.obs||[];S.rh=S.rh||260;S.mode=S.mode||'rect';S.walls=S.walls||[];S.shape=S.shape||'rect';
+ const def=shapeDef(S.shape);if(S.mode==='walls'&&def&&S.walls.length!==def.turns.length)S.walls=wallsFor(def);
+ recomputeShape()}
+const clone=o=>JSON.parse(JSON.stringify(o));
+function stash(){const o={};RF.forEach(k=>o[k]=S[k]);o.closed=S.mode==='walls'?!!S.closed:true;S.rooms[S.cur]=clone(o)}
+function loadRoom(i){S.cur=i;Object.assign(S,normRoom(clone(S.rooms[i])));fixRoom();S.sel=null}
+function withRoom(r,fn){const keep={};RF.forEach(k=>keep[k]=S[k]);const sel=S.sel;Object.assign(S,normRoom(clone(r)));fixRoom();S.sel=null;try{return fn()}finally{Object.assign(S,keep);recomputeShape();S.sel=sel}}
+// A piece suits the room if it lists no rooms, lists this room type, or the room type is "other".
+const suits=c=>!c.r||!c.r.length||S.type==='other'||c.r.includes(S.type);
+
+function dims(it){const c=spec(it);return it.rot%180?{w:c.d,d:c.w}:{w:c.w,d:c.d}}
+function body(it){const {w,d}=dims(it);return{x0:it.x-w/2,y0:it.y-d/2,x1:it.x+w/2,y1:it.y+d/2}}
+function front(it){const b=body(it),c=spec(it).cl;
+ return [{x0:b.x0,y0:b.y1,x1:b.x1,y1:b.y1+c},{x0:b.x0-c,y0:b.y0,x1:b.x0,y1:b.y1},{x0:b.x0,y0:b.y0-c,x1:b.x1,y1:b.y0},{x0:b.x1,y0:b.y0,x1:b.x1+c,y1:b.y1}][it.rot/90]}
+function hit(a,b){return a.x0<b.x1-.5&&a.x1>b.x0+.5&&a.y0<b.y1-.5&&a.y1>b.y0+.5}
+// ---- Room shapes: the rep taps a picture, then measures each numbered wall. The picture's walls run clockwise from the top-left,
+// so each shape is just a fixed list of turns for the outline builder below. "free" is the any-shape list (More options). ----
+const SHAPES={
+ rect:{name:'Rectangle',turns:['R','R','R','R'],pts:[[0,0],[100,0],[100,70],[0,70]]},
+ 'L-br':{name:'L-shape',turns:['R','R','L','R','R','R'],pts:[[0,0],[100,0],[100,40],[60,40],[60,70],[0,70]],rule:'Wall 1 should equal wall 3 + wall 5, and wall 6 should equal wall 2 + wall 4.'},
+ 'L-bl':{name:'L-shape',turns:['R','R','R','L','R','R'],pts:[[0,0],[100,0],[100,70],[40,70],[40,40],[0,40]],rule:'Wall 1 should equal wall 3 + wall 5, and wall 2 should equal wall 4 + wall 6.'},
+ 'L-tl':{name:'L-shape',turns:['R','R','R','R','L','R'],pts:[[40,0],[100,0],[100,70],[0,70],[0,30],[40,30]],rule:'Wall 3 should equal wall 1 + wall 5, and wall 2 should equal wall 4 + wall 6.'},
+ 'L-tr':{name:'L-shape',turns:['R','L','R','R','R','R'],pts:[[0,0],[60,0],[60,30],[100,30],[100,70],[0,70]],rule:'Wall 5 should equal wall 1 + wall 3, and wall 6 should equal wall 2 + wall 4.'}
+};
+// A shape's definition: one of the pictures, or the rep's own straightened sketch.
+const shapeDef=k=>k==='sketch'?(S.sketch?{name:'Your drawing',turns:S.sketch.turns,curves:S.sketch.curves,pts:S.sketch.preview?S.sketch.preview.pts:S.sketch.pts,labels:S.sketch.preview&&S.sketch.preview.labels}:null):SHAPES[k]||null;
+// Empty wall list for a shape: one entry per wall, curved walls carry which way they bow and a depth to measure.
+const wallsFor=def=>def.turns.map((turn,i)=>({len:0,turn,curve:def.curves&&def.curves[i]?{side:def.curves[i].side,depth:0}:null}));
+// Plain rule for any shape: walls running one way must add up to the walls running the opposite way.
+function shapeRule(turns){let d=0;const g=[[],[],[],[]];turns.forEach((t,i)=>{g[d].push(i+1);d=(d+(t==='L'?3:1))%4});
+ const side=a=>a.length>1?'walls '+a.join(' + '):'wall '+a[0],cap=x=>x[0].toUpperCase()+x.slice(1);
+ return `${cap(side(g[0]))} should equal ${side(g[2])}, and ${side(g[1])} should equal ${side(g[3])}.`}
+// Small picture of a shape; big=true adds the wall numbers (or Length / Width for a rectangle).
+function shapeSvg(key,big){const pts=shapeDef(key).pts,sc=big?2.2:.5,pad=big?26:3,P=pts.map(([x,y])=>[pad+x*sc,pad+y*sc]),n=P.length,vw=100*sc+2*pad,vh=70*sc+2*pad;
+ let h=`<svg viewBox="0 0 ${vw} ${vh}" aria-hidden="true"><polygon points="${P.map(p=>p.join(',')).join(' ')}" fill="var(--room)" stroke="var(--ink)" stroke-width="${big?2.5:2}" stroke-linejoin="round"/>`;
+ const lab=shapeDef(key).labels;
+ if(big&&lab)lab.forEach(([x,y],i)=>{const mx=pad+x*sc,my=pad+y*sc;h+=`<circle cx="${mx}" cy="${my}" r="10" fill="var(--accent)"/><text x="${mx}" y="${my+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent-ink)">${i+1}</text>`});
+ if(big&&!lab)P.forEach((a,i)=>{const b=P[(i+1)%n],len=Math.hypot(b[0]-a[0],b[1]-a[1]),dx=(b[0]-a[0])/len,dy=(b[1]-a[1])/len,mx=(a[0]+b[0])/2+dy*15,my=(a[1]+b[1])/2-dx*15;
+  if(key==='rect'&&i>1)return;const t=key==='rect'?(i===0?'Length':'Width'):String(i+1),r=key==='rect'?0:10;
+  h+=r?`<circle cx="${mx}" cy="${my}" r="${r}" fill="var(--accent)"/><text x="${mx}" y="${my+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent-ink)">${t}</text>`
+   :`<text x="${mx}" y="${my+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent)"${i===1?` transform="rotate(90 ${mx} ${my})"`:''}>${t}</text>`});   // Width runs down the right wall
+ return h+'</svg>'}
+
+// ---- Room outlines with straight, angled and curved walls ----
+// Directions come in 45-degree steps (E, SE, S, SW, W, NW, N, NE, clockwise on screen). Each wall has a length; a curved wall's
+// length is the straight distance between its ends, plus how deep the curve is. When the measured walls come back to the start
+// the outline is closed and stored as a polygon (curves become many short points), and every fit check tests against it.
+const D8=[[1,0],[Math.SQRT1_2,Math.SQRT1_2],[0,1],[-Math.SQRT1_2,Math.SQRT1_2],[-1,0],[-Math.SQRT1_2,-Math.SQRT1_2],[0,-1],[Math.SQRT1_2,-Math.SQRT1_2]];
+const TURN8={S:0,R45:1,R:2,R135:3,L45:-1,L:-2,L135:-3},TURNNAME={0:'S',1:'R45',2:'R',3:'R135','-1':'L45','-2':'L','-3':'L135'};
+const RECTW={N:'Top',S:'Bottom',W:'Left',E:'Right'};
+// Points strictly between a and b on a circular arc that bulges s cm towards (nx,ny).
+function arcPts(a,b,s,nx,ny){const dx=b.x-a.x,dy=b.y-a.y,c=Math.hypot(dx,dy);if(c<1||!(s>0))return[];s=Math.min(s,c/2);
+ const R=(c*c/4+s*s)/(2*s),ux=dx/c,uy=dy/c,N=Math.max(8,Math.round(c/20)),out=[];
+ for(let k=1;k<N;k++){const t=k/N,x=(t-.5)*c,h=Math.sqrt(Math.max(0,R*R-x*x))-(R-s);out.push({x:a.x+ux*t*c+nx*h,y:a.y+uy*t*c+ny*h})}return out}
+function arcLen(c,s){if(!(s>0))return c;s=Math.min(s,c/2);const R=(c*c/4+s*s)/(2*s);return 2*R*Math.asin(Math.min(1,c/(2*R)))}
+function segX(a,b,c,d){const o=(p,q,r)=>Math.sign(Math.round(((q.x-p.x)*(r.y-p.y)-(q.y-p.y)*(r.x-p.x))*1e6)/1e6);
+ const on=(p,q,r)=>Math.min(p.x,q.x)-1e-6<=r.x&&r.x<=Math.max(p.x,q.x)+1e-6&&Math.min(p.y,q.y)-1e-6<=r.y&&r.y<=Math.max(p.y,q.y)+1e-6;
+ const o1=o(a,b,c),o2=o(a,b,d),o3=o(c,d,a),o4=o(c,d,b);
+ if(o1!==o2&&o3!==o4)return true;
+ return (o1===0&&on(a,b,c))||(o2===0&&on(a,b,d))||(o3===0&&on(c,d,a))||(o4===0&&on(c,d,b))}
+// True when no two non-neighbouring edges of the closed outline cross or touch.
+function simplePoly(P){const n=P.length;for(let i=0;i<n;i++){const a=P[i],b=P[(i+1)%n];for(let j=i+2;j<n;j++){if(i===0&&j===n-1)continue;if(segX(a,b,P[j],P[(j+1)%n]))return false}}return true}
+// Inside intervals of the outline for each 1 cm row (row i covers y=i..i+1, sampled at its middle).
+function buildSpan(P,L){const rows=[];for(let i=0;i<Math.ceil(L);i++){const y=i+.5,xs=[];
+ for(let k=0,j=P.length-1;k<P.length;j=k++){const a=P[k],b=P[j];if((a.y>y)!==(b.y>y))xs.push(a.x+(y-a.y)*(b.x-a.x)/(b.y-a.y))}
+ xs.sort((p,q)=>p-q);const iv=[];for(let k=0;k+1<xs.length;k+=2)iv.push([xs[k],xs[k+1]]);rows.push(iv)}return rows}
+const insideAt=(px,py)=>{const row=S.span&&S.span[Math.floor(py)];return !!row&&row.some(([a,b])=>px>=a&&px<b)};
+// Is the rectangle inside the room? Outline rooms use the row table (0.5 cm tolerance, so pieces may touch walls);
+// quick rectangles use the overall box (their cut-outs are checked as fixed blocks).
+function rectInRoom(r){if(!S.span)return !(r.x0<-.5||r.y0<-.5||r.x1>S.rw+.5||r.y1>S.rl+.5);
+ if(r.y0<-.5||r.y1>S.rl+.5||r.x0<-.5||r.x1>S.rw+.5)return false;
+ const y0=Math.max(0,Math.floor(r.y0+.5)),y1=Math.min(S.span.length-1,Math.ceil(r.y1-.5)-1),ok=i=>S.span[i].some(([a,b])=>a<=r.x0+.5&&b>=r.x1-.5);
+ for(let i=y0;i<=y1;i+=2)if(!ok(i))return false;return y1<y0||ok(y1)}
+// Distance from a point to the outline along a ray (Infinity if none).
+function rayDist(ox,oy,dx,dy){let best=Infinity;const P=S.poly;if(!P)return best;
+ for(let k=0,j=P.length-1;k<P.length;j=k++){const a=P[j],b=P[k],ex=b.x-a.x,ey=b.y-a.y,den=dx*ey-dy*ex;if(Math.abs(den)<1e-9)continue;
+  const t=((a.x-ox)*ey-(a.y-oy)*ex)/den,u=((a.x-ox)*dy-(a.y-oy)*dx)/den;if(t>1e-6&&u>=-1e-9&&u<=1+1e-9&&t<best)best=t}return best}
+
+// ---- Rough sketch -> clean outline ----
+// The finger path is resampled and smoothed; corners are where it turns sharply. Each piece between corners becomes a straight wall
+// (direction snapped to the nearest 45 degrees) or, if it bows clearly away from the line between its ends, a curved wall.
+// The loop is made clockwise and numbered from the top-left wall. Lengths never come from the drawing: the rep types them.
+const SKETCH_FAIL="I couldn't read that shape. Draw it again with clear corners, or tap one of the pictures.";
+function sketchToShape(raw){
+ if(raw.length<8)return{err:'Draw the outline of the room in one line, all the way round.'};
+ const X=raw.map(p=>p[0]),Y=raw.map(p=>p[1]),diag=Math.hypot(Math.max(...X)-Math.min(...X),Math.max(...Y)-Math.min(...Y));
+ if(diag<60)return{err:'Draw bigger: use most of the box.'};
+ const loop=raw.concat([raw[0]]),step=diag/100;let P=[loop[0]],prev=loop[0],need=step;
+ for(let i=1;i<loop.length;i++){const cur=loop[i];let seg=Math.hypot(cur[0]-prev[0],cur[1]-prev[1]);
+  while(seg>=need&&seg>0){const t=need/seg,p=[prev[0]+(cur[0]-prev[0])*t,prev[1]+(cur[1]-prev[1])*t];P.push(p);prev=p;seg=Math.hypot(cur[0]-prev[0],cur[1]-prev[1]);need=step}
+  need-=seg;prev=cur}
+ if(P.length>2&&Math.hypot(P[P.length-1][0]-P[0][0],P[P.length-1][1]-P[0][1])<step)P.pop();
+ const n=P.length;if(n<24)return{err:SKETCH_FAIL};
+ for(let pass=0;pass<3;pass++)P=P.map((p,i)=>{const a=P[(i-1+n)%n],b=P[(i+1)%n];return[(a[0]+2*p[0]+b[0])/4,(a[1]+2*p[1]+b[1])/4]});
+ // corners: sharp turns measured over a stretch of about 6% of the drawing on each side
+ const k=Math.max(4,Math.round(n*.022)),ang=P.map((p,i)=>{const a=P[(i-k+n)%n],b=P[(i+k)%n],v1=[p[0]-a[0],p[1]-a[1]],v2=[b[0]-p[0],b[1]-p[1]];return Math.abs(Math.atan2(v1[0]*v2[1]-v1[1]*v2[0],v1[0]*v2[0]+v1[1]*v2[1])*180/Math.PI)});
+ let corners=[];for(let i=0;i<n;i++){const a=ang[i];if(a<30)continue;let peak=true;for(let j=1;j<=k;j++)if(ang[(i+j)%n]>a||ang[(i-j+n)%n]>a){peak=false;break}
+  if(peak&&(!corners.length||i-corners[corners.length-1]>k))corners.push(i)}
+ if(corners.length>1&&n-corners[corners.length-1]+corners[0]<=k)corners.pop();
+ if(corners.length<3)return{err:corners.length?SKETCH_FAIL:"Fully round rooms can't be drawn yet. Draw the room with a few straight walls."};
+ const snap=an=>((Math.round(an/(Math.PI/4))%8)+8)%8;
+ // each piece between corners: straight, or curved when the points follow a smooth arc (fitted bulge, not just wobble)
+ let pieces=corners.map((c,ci)=>{const e=corners[(ci+1)%corners.length],pts=[];for(let i=c;;i=(i+1)%n){pts.push(P[i]);if(i===e)break}
+  const a=pts[0],b=pts[pts.length-1],dx=b[0]-a[0],dy=b[1]-a[1],ch=Math.hypot(dx,dy)||1e-9;let num=0,den=0,ss=0;
+  const dv=pts.map(p=>{const t=((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(ch*ch),dev=(dx*(p[1]-a[1])-dy*(p[0]-a[0]))/ch,f=4*t*(1-t);num+=dev*f;den+=f*f;ss+=dev*dev;return[t,dev]});
+  const sf=den?num/den:0;let res=0;dv.forEach(([t,dev])=>{const e=dev-4*sf*t*(1-t);res+=e*e});const r2=ss?1-res/ss:0;
+  const curved=Math.abs(sf)>=.06*ch&&Math.abs(sf)>=.035*diag&&r2>=.6;
+  const an=Math.atan2(dy,dx);return{a,b,an,d:snap(an),len:ch,curve:curved?{right:sf>0,ratio:Math.min(.5,Math.abs(sf)/ch)}:null}});
+ // join straight pieces that are nearly in line (a wobble, not a corner), then pieces snapped the same way; drop tiny ones
+ const joinAt=i=>{const j=(i+1)%pieces.length,A=pieces[i],B=pieces[j],dx=B.b[0]-A.a[0],dy=B.b[1]-A.a[1],an=Math.atan2(dy,dx);
+  pieces[i]={a:A.a,b:B.b,an,d:snap(an),len:Math.hypot(dx,dy),curve:null};pieces.splice(j,1)};
+ const minLen=diag*.06;let changed=true,guard=0;
+ while(changed&&guard++<200&&pieces.length>3){changed=false;
+  for(let i=0;i<pieces.length;i++){const j=(i+1)%pieces.length,A=pieces[i],B=pieces[j];if(A.curve||B.curve)continue;
+   let da=Math.abs(B.an-A.an)%(2*Math.PI);if(da>Math.PI)da=2*Math.PI-da;
+   if(da<22*Math.PI/180||A.d===B.d){joinAt(i);changed=true;break}}
+  if(changed)continue;const t=pieces.findIndex(p=>p.len<minLen&&!p.curve);if(t>=0){pieces.splice(t,1);changed=true}}
+ const m=pieces.length;if(m<3)return{err:SKETCH_FAIL};
+ let sum=0;for(let i=0;i<m;i++){let t=(pieces[(i+1)%m].d-pieces[i].d+8)%8;if(t===4)return{err:SKETCH_FAIL};if(t>4)t-=8;sum+=t}
+ if(Math.abs(sum)!==8)return{err:SKETCH_FAIL};
+ const cw=sum>0;pieces.forEach(p=>{if(p.curve)p.curve.side=p.curve.right===cw?'in':'out'});
+ if(!cw)pieces=pieces.reverse().map(p=>({d:(p.d+4)%8,len:p.len,curve:p.curve}));
+ const walk=list=>{let x=0,y=0;return list.map(p=>{const q={x,y};x+=D8[p.d][0]*p.len;y+=D8[p.d][1]*p.len;return q})};
+ let v=walk(pieces);const tol=(Math.max(...v.map(p=>p.y))-Math.min(...v.map(p=>p.y)))*.04;let start=-1;
+ pieces.forEach((p,i)=>{if(p.d!==0||p.curve)return;if(start<0||v[i].y<v[start].y-tol||(Math.abs(v[i].y-v[start].y)<=tol&&v[i].x<v[start].x))start=i});
+ if(start<0)pieces.forEach((p,i)=>{if(start<0||v[i].y<v[start].y-tol||(Math.abs(v[i].y-v[start].y)<=tol&&v[i].x<v[start].x))start=i});
+ pieces=pieces.slice(start).concat(pieces.slice(0,start));v=walk(pieces);
+ // preview: close the rough drawing (spread the gap over the walls) and draw curves
+ const tot=pieces.reduce((a,p)=>a+p.len,0);let gx=0,gy=0;pieces.forEach(p=>{gx+=D8[p.d][0]*p.len;gy+=D8[p.d][1]*p.len});
+ let cum=0;v.forEach((q,i)=>{q.x-=gx*cum/tot;q.y-=gy*cum/tot;cum+=pieces[i].len});
+ const poly=[],labels=[];
+ pieces.forEach((p,i)=>{const a=v[i],b=v[(i+1)%m],c=Math.hypot(b.x-a.x,b.y-a.y)||1,ux=(b.x-a.x)/c,uy=(b.y-a.y)/c,ox=uy,oy=-ux;poly.push({x:a.x,y:a.y});
+  let mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+  if(p.curve){const s=p.curve.ratio*c,sg=p.curve.side==='in'?-1:1;poly.push(...arcPts(a,b,s,ox*sg,oy*sg));mx+=ox*sg*Math.min(s,c/2);my+=oy*sg*Math.min(s,c/2)}
+  labels.push({x:mx,y:my,ox,oy})});
+ if(!simplePoly(poly))return{err:SKETCH_FAIL};
+ const x0=Math.min(...poly.map(q=>q.x)),y0=Math.min(...poly.map(q=>q.y)),w=Math.max(...poly.map(q=>q.x))-x0,h=Math.max(...poly.map(q=>q.y))-y0,sc=Math.min(100/w,70/h);
+ const N=q=>[Math.round((q.x-x0)*sc*10)/10,Math.round((q.y-y0)*sc*10)/10];
+ return{d0:pieces[0].d,turns:pieces.map((p,i)=>TURNNAME[(()=>{let t=(pieces[(i+1)%m].d-p.d+8)%8;return t>4?t-8:t})()]),
+  curves:pieces.map(p=>p.curve?{side:p.curve.side}:null),preview:{pts:poly.map(N),labels:labels.map(l=>{const q=N(l);return[q[0]+l.ox*7,q[1]+l.oy*7]})}}}
+
+function recomputeShape(){
+ S.poly=null;S.wallGeo=[];S.closed=false;S.misclose=0;S.shapeErr='';S.gapInfo=null;S.pathPts=null;S.span=null;S.mismatch=0;
+ if(S.mode!=='walls')return;
+ const ws=S.walls,n=ws.length;
+ if(!n){S.rw=300;S.rl=300;S.cuts=[];return}
+ let d=(S.shape==='sketch'&&S.sketch&&S.sketch.d0)||0;const dirs=[];
+ ws.forEach(w=>{dirs.push(d);d=(d+(TURN8[w.turn]??2)+8)%8});
+ const lens=ws.map(w=>Math.max(0,+w.len||0)),vs=lens.map((l,i)=>[D8[dirs[i]][0]*l,D8[dirs[i]][1]*l]);
+ const perim=lens.reduce((a,b)=>a+b,0),tol=Math.max(8,.015*perim);
+ const filled=ws.every((w,i)=>lens[i]>0&&(!w.curve||+w.curve.depth>0));
+ let V=null;
+ if(filled&&n>=3){
+  // walls at an angle (not along the room's main directions) take their exact angle from the other measurements
+  const free=dirs.map((x,i)=>x%2?i:-1).filter(i=>i>=0);
+  const rest=vs.reduce((a,v,i)=>free.includes(i)?a:[a[0]+v[0],a[1]+v[1]],[0,0]),T=[-rest[0],-rest[1]],tl=Math.hypot(T[0],T[1]);
+  if(free.length===1){const i=free[0],mis=Math.abs(tl-lens[i]);S.mismatch=mis;if(mis<=tol&&tl>0){V=vs.slice();V[i]=T;S.misclose=mis}}
+  else if(free.length===2){const [i,j]=free,L1=lens[i],L2=lens[j];
+   if(tl>0){const a=(L1*L1-L2*L2+tl*tl)/(2*tl),h=Math.sqrt(Math.max(0,L1*L1-a*a)),ux=T[0]/tl,uy=T[1]/tl,w1=D8[dirs[i]];
+    const A=[[ux*a-uy*h,uy*a+ux*h],[ux*a+uy*h,uy*a-ux*h]].sort((p,q)=>(q[0]*w1[0]+q[1]*w1[1])-(p[0]*w1[0]+p[1]*w1[1]))[0],B=[T[0]-A[0],T[1]-A[1]];
+    const mis=Math.abs(Math.hypot(A[0],A[1])-L1)+Math.abs(Math.hypot(B[0],B[1])-L2);S.mismatch=mis;if(mis<=tol){V=vs.slice();V[i]=A;V[j]=B;S.misclose=mis}}}
+  else{const gx=vs.reduce((a,v)=>a+v[0],0),gy=vs.reduce((a,v)=>a+v[1],0),gap=Math.hypot(gx,gy);S.mismatch=gap;if(gap<=tol){V=vs.slice();S.misclose=gap}}}
+ if(V){let x=0,y=0;const v=[{x:0,y:0}];V.forEach(q=>{x+=q[0];y+=q[1];v.push({x,y})});
+  const gx=v[n].x,gy=v[n].y;
+  if(Math.hypot(gx,gy)>1e-6){
+   if(dirs.every(x=>x%2===0)){if(dirs[n-1]%4===0)v[n-1].y=0;else v[n-1].x=0}   // square rooms: keep every wall straight
+   else{let cum=0;for(let k=1;k<n;k++){cum+=Math.hypot(V[k-1][0],V[k-1][1]);v[k].x-=gx*cum/perim;v[k].y-=gy*cum/perim}}}
+  v.length=n;
+  let area=0;v.forEach((p,i)=>{const q=v[(i+1)%n];area+=p.x*q.y-q.x*p.y});const cw=area>0;
+  const poly=[],geo=[];
+  v.forEach((a,i)=>{const b=v[(i+1)%n],c=Math.hypot(b.x-a.x,b.y-a.y)||1,dx=(b.x-a.x)/c,dy=(b.y-a.y)/c,inx=cw?-dy:dy,iny=cw?dx:-dx,w=ws[i];
+   poly.push({x:a.x,y:a.y});const g={a,b,len:c,dx,dy,nx:inx,ny:iny,mid:{x:(a.x+b.x)/2,y:(a.y+b.y)/2}};
+   if(w.curve&&+w.curve.depth>0){const s=+w.curve.depth,sg=w.curve.side==='in'?1:-1,nx=inx*sg,ny=iny*sg;poly.push(...arcPts(a,b,s,nx,ny));
+    g.curve={depth:s,side:w.curve.side,arc:arcLen(c,s)};g.mid.x+=nx*Math.min(s,c/2);g.mid.y+=ny*Math.min(s,c/2)}
+   geo.push(g)});
+  if(!simplePoly(poly))S.shapeErr='The walls cross or touch each other. Check the measurements and the drawing.';
+  else{const mx=Math.min(...poly.map(p=>p.x)),my=Math.min(...poly.map(p=>p.y));
+   poly.forEach(p=>{p.x-=mx;p.y-=my});v.forEach(p=>{p.x-=mx;p.y-=my});geo.forEach(g=>{g.mid.x-=mx;g.mid.y-=my});
+   S.poly=poly;S.wallGeo=geo;S.rw=Math.max(...poly.map(p=>p.x));S.rl=Math.max(...poly.map(p=>p.y));S.cuts=[];S.span=buildSpan(poly,S.rl);S.closed=true;
+   const g=S.wallGeo[+S.dwall];if(!g||g.curve)S.dwall=String(Math.max(0,S.wallGeo.findIndex(x=>!x.curve)));return}}
+ // not closed yet: draw the path so far
+ let x=0,y=0;const pts=[{x:0,y:0}];vs.forEach(q=>{x+=q[0];y+=q[1];pts.push({x,y})});
+ const mx=Math.min(...pts.map(p=>p.x)),my=Math.min(...pts.map(p=>p.y));
+ S.pathPts=pts.map(p=>({x:p.x-mx,y:p.y-my}));S.rw=Math.max(150,Math.ceil(Math.max(...S.pathPts.map(p=>p.x))));S.rl=Math.max(150,Math.ceil(Math.max(...S.pathPts.map(p=>p.y))));S.cuts=[];
+ const end=pts[n],dir=D8[d],vx=-end.x,vy=-end.y,dot=vx*dir[0]+vy*dir[1],cross=Math.abs(vx*dir[1]-vy*dir[0]);
+ S.gapInfo={ex:end.x,ey:end.y,closeLen:dot>=1&&cross<=tol?Math.round(dot):0}}
+// A stretch of wall: ref is a wall index (wall by wall mode) or N/E/S/W (quick rectangle). Returns its floor rectangle `depth` cm into the room and the wall line.
+function wallSpan(ref,off,len,depth){
+ if(S.mode==='walls'){const g=S.wallGeo[+ref];if(!g||g.curve)return null;const t0=Math.max(0,off),t1=Math.min(g.len,off+len);
+  const p0={x:g.a.x+g.dx*t0,y:g.a.y+g.dy*t0},p1={x:g.a.x+g.dx*t1,y:g.a.y+g.dy*t1},q0={x:p0.x+g.nx*depth,y:p0.y+g.ny*depth},q1={x:p1.x+g.nx*depth,y:p1.y+g.ny*depth};
+  const xs=[p0.x,p1.x,q0.x,q1.x],ys=[p0.y,p1.y,q0.y,q1.y];
+  return{rect:{x0:Math.min(...xs),y0:Math.min(...ys),x1:Math.max(...xs),y1:Math.max(...ys)},line:[p0.x,p0.y,p1.x,p1.y],n:{x:g.nx,y:g.ny}}}
+ const W=+S.rw,L=+S.rl,a=off,b=off+len,t=depth;
+ return{rect:{N:{x0:a,y0:0,x1:b,y1:t},S:{x0:a,y0:L-t,x1:b,y1:L},W:{x0:0,y0:a,x1:t,y1:b},E:{x0:W-t,y0:a,x1:W,y1:b}}[ref]||{x0:0,y0:0,x1:0,y1:0},
+  line:{N:[a,0,b,0],S:[a,L,b,L],W:[0,a,0,b],E:[W,a,W,b]}[ref]||[0,0,0,0],n:{N:{x:0,y:1},S:{x:0,y:-1},W:{x:1,y:0},E:{x:-1,y:0}}[ref]||{x:0,y:0}}}
+const EMPTY={x0:0,y0:0,x1:0,y1:0};
+const doorRect=()=>(wallSpan(S.dwall,S.doff,S.dw,S.dw)||{rect:EMPTY}).rect;
+
+// ---- Room shape and fixed features ----
+// Cut-outs remove parts of the overall rectangle (L/U/T shapes). Columns, radiators, built-ins, stairs and other doors block the floor.
+// Low-ceiling zones limit a piece's height. A piece taller than a window's sill standing in front of it is flagged.
+const OBS={
+ column:{label:'Column',hard:true,w:40,d:40,h:260},
+ radiator:{label:'Radiator',hard:true,w:100,d:12,h:60},
+ builtin:{label:'Built-in / fixed unit',hard:true,w:100,d:50,h:220},
+ stairs:{label:'Stairs',hard:true,w:100,d:250,h:0},
+ xdoor:{label:'Other door (swing area)',hard:true,w:90,d:90,h:0},
+ low:{label:'Low ceiling zone',hard:false,w:200,d:100,h:120},
+ window:{label:'Window',wall:true,w:120,sill:90}
+};
+const WALLS={N:'top',S:'bottom',W:'left',E:'right'};
+const rectOf=o=>({x0:o.x,y0:o.y,x1:o.x+o.w,y1:o.y+o.d});
+function hardList(){return [...S.cuts.map(c=>({r:rectOf(c),label:'the cut-out (outside) part of the room'})),
+ ...S.obs.filter(o=>OBS[o.kind]&&OBS[o.kind].hard).map(o=>({r:rectOf(o),label:'the '+OBS[o.kind].label.toLowerCase()}))]}
+const hardRects=()=>hardList().map(x=>x.r);
+const lowZones=()=>S.obs.filter(o=>o.kind==='low');
+const windows=()=>S.obs.filter(o=>o.kind==='window');
+// Strip a window occupies in front of its wall (20 cm deep) for "is a piece standing in front of it".
+const winRect=o=>(wallSpan(o.wall,o.off,o.w,20)||{rect:EMPTY}).rect
+
+// Problems shown on the simple screens: errors, and a piece in the door swing. Each is [type, message, piece ids].
+const problems=()=>check().filter(p=>p[2]&&(p[0]==='err'||p[3]));
+function check(){
+ if(S.mode==='walls'&&!S.closed)return [['warn','The room outline is not closed yet. Finish measuring the walls to check fit.']];
+ const out=[],W=S.rw,L=S.rl,dz=doorRect();
+ S.items.forEach(it=>{const c=spec(it),b=body(it),f=front(it);
+  if(!rectInRoom(b))out.push(['err',`${c.n} sticks out of the room.`,[it.id]]);
+  if(hit(b,dz))out.push(['warn',`${c.n} blocks the door swing area.`,[it.id],1]);
+  if(!rectInRoom(f))out.push(['warn',`${c.n}: front clearance (${U(c.cl)}) runs into a wall.`]);
+  S.items.forEach(o=>{if(o.id===it.id)return;
+   if(o.id>it.id&&hit(b,body(o)))out.push(['err',`${c.n} overlaps ${spec(o).n}.`,[it.id,o.id]]);
+   if(hit(f,body(o)))out.push(['warn',`${spec(o).n} is inside the clearance zone of ${c.n}.`]);});
+  hardList().forEach(({r,label})=>{
+   if(hit(b,r))out.push(['err',`${c.n} overlaps ${label}.`,[it.id]]);
+   else if(hit(f,r))out.push(['warn',`${label[0].toUpperCase()+label.slice(1)} is inside the clearance zone of ${c.n}.`])});
+  lowZones().forEach(o=>{if(c.h>o.h&&hit(b,rectOf(o)))out.push(['err',`${c.n} (${U(c.h)} high) is under a low ceiling area that allows ${U(o.h)}.`,[it.id]])});
+  windows().forEach(o=>{if(c.h>o.sill&&hit(b,winRect(o)))out.push(['warn',`${c.n} (${U(c.h)} high) stands in front of a window with a ${U(o.sill)} sill and will block it.`])});
+  if(c.h>S.rh)out.push(['err',`${c.n} (${U(c.h)}) is taller than the ${U(S.rh)} ceiling.`,[it.id]]);
+  const s=[c.w,c.d,c.h].sort((a,b)=>a-b);
+  if(s[0]>S.dw-5||s[1]>S.dh-5)out.push(['warn',`${c.n} (${UUU(c.w,c.d,c.h)}) may not get through the ${UU(S.dw,S.dh)} door. Verify access.`]);
+ });
+ if(!S.items.length)out.push(['ok','Add products from the catalog to check fit.']);
+ else if(!out.length)out.push(['ok','All pieces fit, clearances are respected and the door is clear.']);
+ return out;
+}
+
+const fmt=n=>Math.round(n*10)/10;
+// ---- Units: lengths are always stored in cm; only what people type and read is converted ----
+const UNITS={cm:'cm',m:'m',mm:'mm',ftin:'ft + in',in:'inches'};
+const imperial=()=>S.unit==='ftin'||S.unit==='in';
+function frac8(x){const e=Math.round(x*8),w=Math.floor(e/8);let n=e%8,d=8;if(!n)return String(w);while(n%2===0){n/=2;d/=2}return (w?w+' ':'')+n+'/'+d}
+// A length in the chosen unit. bare=true leaves off the unit for metric input boxes.
+function U(cm,bare){if(cm==null||!isFinite(cm))return '';const neg=cm<0?'-':'';cm=Math.abs(cm);let t;
+ if(S.unit==='m')t=+(cm/100).toFixed(2)+(bare?'':' m');
+ else if(S.unit==='mm')t=Math.round(cm*10)+(bare?'':' mm');
+ else if(S.unit==='in')t=frac8(cm/2.54)+' in';
+ else if(S.unit==='ftin'){const tot=Math.round(cm/2.54*8)/8,ft=Math.floor(tot/12),inch=tot-ft*12;t=ft?(inch?`${ft} ft ${frac8(inch)} in`:`${ft} ft`):`${frac8(inch)} in`}
+ else t=fmt(cm)+(bare?'':' cm');
+ return neg+t}
+const UU=(a,b)=>imperial()?`${U(a)} x ${U(b)}`:`${U(a,true)} x ${U(b)}`;
+const UUU=(a,b,c)=>imperial()?`${U(a)} x ${U(b)} x ${U(c)}`:`${U(a,true)} x ${U(b,true)} x ${U(c)}`;
+const UA=cm2=>imperial()?`${(cm2/929.0304).toFixed(1)} ft&sup2;`:`${(cm2/10000).toFixed(2)} m&sup2;`;
+// Text typed in any unit -> cm (NaN if not understood). A unit written in the text wins over the setting:
+// "4.5m", "450cm", "12' 6\"", "12 ft 6 in", "150\"". Without one the setting decides; in ft + in, "12 6" means 12 ft 6 in.
+function parseLen(str){let s=String(str).trim().toLowerCase().replace(/,/g,'.').replace(/[\u2019\u2032]/g,"'").replace(/[\u201d\u2033]/g,'"');
+ if(!s)return NaN;
+ const m=s.match(/^(\d+(?:\.\d+)?)\s*(mm|cm|m)$/);if(m)return +m[1]*{mm:.1,cm:1,m:100}[m[2]];
+ s=s.replace(/\s*\b(feet|foot|ft)\b\.?/g,"'").replace(/\s*\b(inches|inch|in)\b\.?/g,'"').replace(/''/g,'"');
+ const mark=/['"]/.test(s);
+ if(!mark&&!imperial())return /^\d+(\.\d+)?$/.test(s)?+s*{cm:1,m:100,mm:.1}[S.unit]:NaN;
+ let ft=0,rest=s;const fm=rest.match(/^(\d+(?:\.\d+)?)\s*'\s*/);
+ if(fm){ft=+fm[1];rest=rest.slice(fm[0].length)}
+ else if(!mark&&S.unit==='ftin'){const t=rest.match(/^(\d+(?:\.\d+)?)(?:\s+(.*))?$/);if(!t)return NaN;ft=+t[1];rest=t[2]||''}
+ rest=rest.replace(/"\s*$/,'').trim();if(/['"]/.test(rest))return NaN;let inch=0;
+ if(rest){const im=rest.match(/^(?:(\d+(?:\.\d+)?)(?:\s+(\d+)\/(\d+))?|(\d+)\/(\d+))$/);if(!im)return NaN;
+  inch=im[1]!=null?+im[1]+(im[2]?im[2]/im[3]:0):im[4]/im[5]}
+ const cm=(ft*12+inch)*2.54;return isFinite(cm)?cm:NaN}
+// Input boxes for lengths: phone keyboard and hint follow the unit.
+const lenAttrs=()=>`type="text" inputmode="${imperial()?'text':'decimal'}" autocomplete="off"`;
+const unitHint=()=>({cm:'e.g. 450',m:'e.g. 4.5',mm:'e.g. 4500',ftin:'e.g. 14 ft 9 in',in:'e.g. 177 in'})[S.unit];
+// Free distance from a piece to the nearest wall or neighbouring piece in each direction (cm).
+function gaps(it){const b=body(it),W=+S.rw,L=+S.rl,o=[...S.items.filter(x=>x.id!==it.id).map(body),...hardRects()];
+ const ys=q=>q.y0<b.y1-.5&&q.y1>b.y0+.5,xs=q=>q.x0<b.x1-.5&&q.x1>b.x0+.5;
+ let left=Math.max(0,...o.filter(q=>ys(q)&&q.x1<=b.x0+.5).map(q=>q.x1)),
+  right=Math.min(W,...o.filter(q=>ys(q)&&q.x0>=b.x1-.5).map(q=>q.x0)),
+  up=Math.max(0,...o.filter(q=>xs(q)&&q.y1<=b.y0+.5).map(q=>q.y1)),
+  down=Math.min(L,...o.filter(q=>xs(q)&&q.y0>=b.y1-.5).map(q=>q.y0));
+ if(S.poly){const cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2,r=(dx,dy)=>rayDist(cx,cy,dx,dy);
+  left=Math.max(left,cx-r(-1,0));right=Math.min(right,cx+r(1,0));up=Math.max(up,cy-r(0,-1));down=Math.min(down,cy+r(0,1))}
+ return{b,left,right,up,down,gl:Math.max(0,b.x0-left),gr:Math.max(0,right-b.x1),gu:Math.max(0,b.y0-up),gd:Math.max(0,down-b.y1)}}
+// Floor areas in cm2 on a cell grid: room (minus cut-outs), fixed features, furniture, and what is free. Cached per layout.
+const uCache=new Map();
+function usage(){const W=+S.rw,L=+S.rl;if(!(W>0&&L>0))return{room:0,fixed:0,used:0,free:0,overlap:false};
+ const key=W+'|'+L+'|'+JSON.stringify([S.mode==='walls'?[S.walls,S.sketch&&S.sketch.d0,S.shape]:0,S.cuts,S.obs.filter(o=>OBS[o.kind]&&OBS[o.kind].hard),S.items.map(i=>[i.k,i.x,i.y,i.rot,sizeKey(i)])]);
+ if(uCache.has(key))return uCache.get(key);
+ const st=Math.max(1,Math.round(Math.sqrt(W*L)/300)),cuts=S.cuts.map(rectOf),fixed=S.obs.filter(o=>OBS[o.kind]&&OBS[o.kind].hard).map(rectOf),bs=S.items.map(body);
+ const inn=(r,x,y)=>x>=r.x0&&x<r.x1&&y>=r.y0&&y<r.y1;let room=0,fx=0,used=0,over=0;
+ for(let y=0;y<L;y+=st)for(let x=0;x<W;x+=st){const px=x+st/2,py=y+st/2;if(S.span?!insideAt(px,py):cuts.some(r=>inn(r,px,py)))continue;room++;
+  const n=bs.reduce((a,r)=>a+(inn(r,px,py)?1:0),0);
+  if(fixed.some(r=>inn(r,px,py))){fx++;if(n)over++;continue}
+  if(n)used++;if(n>1)over++}
+ const a=st*st,res={room:room*a,fixed:fx*a,used:used*a,free:Math.max(0,(room-fx-used)*a),overlap:over>0||bs.some((b,i)=>bs.slice(i+1).some(o=>hit(b,o)))};
+ if(uCache.size>60)uCache.clear();uCache.set(key,res);return res}
+
+// Plan drawn at true scale: each piece covers exactly its footprint (stroke is kept inside the edge).
+let ghost=null,suggTimer=null,suggList=[];
+// While the walls are still being measured: draw the path so far, no furniture.
+function drawOpen(W,L,u,sw,fs){
+ const pts=S.pathPts;let h='';
+ if(!pts){return `<text x="${W/2}" y="${L/2}" text-anchor="middle" font-size="${fs*1.3}" fill="var(--mute)">Measure the first wall to start</text>`}
+ h+=`<polyline points="${pts.map(p=>p.x+','+p.y).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="${sw*1.4}" stroke-linejoin="round" stroke-linecap="round"/>`;
+ pts.slice(0,-1).forEach((a,i)=>{const b=pts[i+1],len=Math.hypot(b.x-a.x,b.y-a.y);if(len<1)return;
+  h+=`<text x="${(a.x+b.x)/2}" y="${(a.y+b.y)/2-u*6}" text-anchor="middle" font-size="${fs*.85}" fill="var(--mute)" paint-order="stroke" stroke="var(--card)" stroke-width="${u*3}">${i+1}: ${U(len)}</text>`});
+ const e=pts[pts.length-1],s0=pts[0];
+ h+=`<circle cx="${s0.x}" cy="${s0.y}" r="${u*5}" fill="var(--accent)"/><text x="${s0.x}" y="${s0.y-u*9}" text-anchor="middle" font-size="${fs*.85}" fill="var(--accent)">start</text>`;
+ h+=`<circle cx="${e.x}" cy="${e.y}" r="${u*5}" fill="var(--warn)"/>`;
+ return h}
+function drawPlan(sel,print){
+ const W=+S.rw||1,L=+S.rl||1,dz=doorRect(),u=Math.max(W,L)/400,sw=u*1.5,fs=u*11;
+ if(S.mode==='walls'&&!S.closed)return drawOpen(W,L,u,sw,fs);
+ let h;
+ if(S.poly){const pp=S.poly.map(p=>`${p.x},${p.y}`).join(' ');
+  h=`<path d="M0 0H${W}V${L}H0Z M${S.poly.map(p=>`${p.x} ${p.y}`).join(' L')}Z" fill="url(#hatch)" fill-rule="evenodd" opacity=".7"/><polygon points="${pp}" fill="var(--room)" stroke="var(--ink)" stroke-width="${sw}" stroke-linejoin="round"/>`}
+ else h=`<rect x="0" y="0" width="${W}" height="${L}" fill="var(--room)"/><rect x="${-sw/2}" y="${-sw/2}" width="${W+sw}" height="${L+sw}" fill="none" stroke="var(--ink)" stroke-width="${sw}"/>`;
+ h+=`<rect x="${dz.x0}" y="${dz.y0}" width="${dz.x1-dz.x0}" height="${dz.y1-dz.y0}" fill="var(--accent)" opacity=".12"/>`;
+ const ds=wallSpan(S.dwall,S.doff,S.dw,S.dw),dl=ds?ds.line:[0,0,0,0];
+ h+=`<line x1="${dl[0]}" y1="${dl[1]}" x2="${dl[2]}" y2="${dl[3]}" stroke="var(--accent)" stroke-width="${u*4}"/>`;
+ h+=`<defs><pattern id="hatch" width="${u*8}" height="${u*8}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${u*8}" stroke="var(--mute)" stroke-width="${u*1.2}" stroke-opacity=".55"/></pattern></defs>`;
+ S.cuts.forEach(c=>{h+=`<rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.d}" fill="var(--card)"/><rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.d}" fill="url(#hatch)" stroke="var(--ink)" stroke-width="${sw}"/>`});
+ S.obs.forEach(o=>{const k=OBS[o.kind];if(!k)return;
+  if(k.wall){const sp=wallSpan(o.wall,o.off,o.w,20);if(!sp)return;const wl=sp.line,cx=(wl[0]+wl[2])/2+sp.n.x*u*14,cy=(wl[1]+wl[3])/2+sp.n.y*u*14+fs*.3,f=fs*.8;
+   h+=`<line x1="${wl[0]}" y1="${wl[1]}" x2="${wl[2]}" y2="${wl[3]}" stroke="var(--info)" stroke-width="${u*5}" pointer-events="none"/>`;
+   h+=`<text x="${cx}" y="${cy}" text-anchor="middle" font-size="${f}" fill="var(--info)" pointer-events="none">Window, sill ${U(o.sill)}</text>`;return}
+  const r=rectOf(o),lab=k.hard?k.label.replace(' / fixed unit','').replace(' (swing area)',' swing'):`Low ceiling: max ${U(o.h)}`,f=Math.max(u*6,Math.min(fs*.8,o.w*.95/Math.max(lab.length*.68,1)));
+  if(k.hard)h+=`<g data-ob="${o.id}" style="cursor:grab"><rect x="${o.x}" y="${o.y}" width="${o.w}" height="${o.d}" fill="var(--mute)" fill-opacity=".3" stroke="var(--ink)" stroke-width="${sw*.8}"/>`+(o.kind==='column'?`<line x1="${o.x}" y1="${o.y}" x2="${o.x+o.w}" y2="${o.y+o.d}" stroke="var(--ink)" stroke-width="${sw*.6}"/><line x1="${o.x+o.w}" y1="${o.y}" x2="${o.x}" y2="${o.y+o.d}" stroke="var(--ink)" stroke-width="${sw*.6}"/>`:'')+`<text x="${o.x+o.w/2}" y="${o.y+o.d/2}" text-anchor="middle" dominant-baseline="middle" font-size="${f}" fill="var(--ink)" pointer-events="none">${esc(lab)}</text></g>`;
+  else h+=`<g data-ob="${o.id}" style="cursor:grab"><rect x="${o.x}" y="${o.y}" width="${o.w}" height="${o.d}" fill="var(--warn)" fill-opacity=".07" stroke="var(--warn)" stroke-dasharray="${u*3} ${u*3}" stroke-width="${sw*.8}"/><text x="${o.x+o.w/2}" y="${o.y+o.d/2}" text-anchor="middle" dominant-baseline="middle" font-size="${f}" fill="var(--warn)" pointer-events="none">${esc(lab)}</text></g>`});
+ h+=`<text x="${W/2}" y="${-12}" text-anchor="middle" font-size="${fs}" fill="var(--mute)">${U(W)}</text>`;
+ h+=`<text x="${-12}" y="${L/2}" text-anchor="middle" font-size="${fs}" fill="var(--mute)" transform="rotate(-90 -12 ${L/2})">${U(L)}</text>`;
+ if(S.mode==='walls')S.wallGeo.forEach((g,i)=>{const mx=g.mid.x+g.nx*u*13,my=g.mid.y+g.ny*u*13+fs*.3;
+  h+=`<text x="${mx}" y="${my}" text-anchor="middle" font-size="${fs*.8}" fill="var(--mute)" pointer-events="none">${i+1}: ${U(g.len)}${g.curve?' curve':''}</text>`});
+ const sb=imperial()?91.44:100,sbl=imperial()?'3 ft':{m:'1 m',mm:'1000 mm',cm:'100 cm'}[S.unit];
+ h+=`<g stroke="var(--mute)" stroke-width="${sw}"><line x1="0" y1="${L+24}" x2="${sb}" y2="${L+24}"/><line x1="0" y1="${L+20}" x2="0" y2="${L+28}"/><line x1="${sb}" y1="${L+20}" x2="${sb}" y2="${L+28}"/></g><text x="${sb+8}" y="${L+24+fs*.35}" font-size="${fs}" fill="var(--mute)">${sbl} scale</text>`;
+ const halo=`paint-order="stroke" stroke="var(--room)" stroke-width="${u*3}" stroke-linejoin="round"`;
+ const bad=new Set(problems().flatMap(p=>p[2]));
+ S.items.forEach(it=>{const c=spec(it),b=body(it),f=front(it),bw=b.x1-b.x0,bh=b.y1-b.y0,on=it.id===sel,s2=on?sw*1.6:sw,col=bad.has(it.id)?'var(--err)':'var(--accent)';
+  if(S.showCl||on)h+=`<rect x="${f.x0}" y="${f.y0}" width="${f.x1-f.x0}" height="${f.y1-f.y0}" fill="var(--warn)" fill-opacity=".08" stroke="var(--warn)" stroke-dasharray="${u*5} ${u*4}" stroke-width="${sw*.7}"/>`;
+  h+=`<g data-id="${it.id}" style="cursor:grab"><rect x="${b.x0+s2/2}" y="${b.y0+s2/2}" width="${bw-s2}" height="${bh-s2}" fill="${col}" fill-opacity="${on?.5:.28}" stroke="${col}" stroke-width="${s2}"/>`;
+  h+=`<g transform="translate(${it.x} ${it.y}) rotate(${it.rot})" fill="none" stroke="var(--ink)" stroke-opacity=".4" stroke-width="${u*1.1}" pointer-events="none">${detail(c,u)}</g>`;
+  const e=sw*2.2,fx={0:[b.x0+e,b.y1-e,b.x1-e,b.y1-e],90:[b.x0+e,b.y0+e,b.x0+e,b.y1-e],180:[b.x0+e,b.y0+e,b.x1-e,b.y0+e],270:[b.x1-e,b.y0+e,b.x1-e,b.y1-e]}[it.rot];
+  h+=`<line x1="${fx[0]}" y1="${fx[1]}" x2="${fx[2]}" y2="${fx[3]}" stroke="var(--ink)" stroke-opacity=".55" stroke-width="${u*2.5}"/>`;
+  const f1=Math.max(u*6,Math.min(fs,bw*.9/Math.max(c.n.length*.68,1)));
+  h+=`<text x="${it.x}" y="${it.y-f1*.15}" text-anchor="middle" font-size="${f1}" font-weight="600" fill="var(--ink)" pointer-events="none">${esc(c.n)}</text>`;
+  h+=`<text x="${it.x}" y="${it.y+f1*1.05}" text-anchor="middle" font-size="${f1*.85}" fill="var(--ink)" pointer-events="none">${UU(bw,bh)}</text></g>`;
+  if(on){const g=gaps(it),dim=(x1,y1,x2,y2,v)=>{if(v<.5)return '';const tx=(x1+x2)/2,ty=(y1+y2)/2,hz=y1===y2;
+    return `<g stroke="var(--ink)" stroke-width="${sw*.7}"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`+
+     (hz?`<line x1="${x1}" y1="${y1-u*4}" x2="${x1}" y2="${y1+u*4}"/><line x1="${x2}" y1="${y2-u*4}" x2="${x2}" y2="${y2+u*4}"/>`:`<line x1="${x1-u*4}" y1="${y1}" x2="${x1+u*4}" y2="${y1}"/><line x1="${x2-u*4}" y1="${y2}" x2="${x2+u*4}" y2="${y2}"/>`)+
+     `</g><text x="${hz?tx:tx+u*7}" y="${hz?ty-u*6:ty+fs*.35}" text-anchor="${hz?'middle':'start'}" font-size="${fs}" font-weight="600" fill="var(--ink)" ${halo} pointer-events="none">${U(v)}</text>`};
+   h+=dim(g.left,it.y,b.x0,it.y,g.gl)+dim(b.x1,it.y,g.right,it.y,g.gr)+dim(it.x,g.up,it.x,b.y0,g.gu)+dim(it.x,b.y1,it.x,g.down,g.gd)}
+ });
+ if(ghost&&!print){const c=spec(ghost),w=ghost.rot%180?c.d:c.w,d=ghost.rot%180?c.w:c.d;
+  h+=`<rect x="${ghost.x-w/2+sw/2}" y="${ghost.y-d/2+sw/2}" width="${w-sw}" height="${d-sw}" fill="var(--accent)" fill-opacity=".15" stroke="var(--accent)" stroke-width="${sw}" stroke-dasharray="${u*6} ${u*4}" pointer-events="none"/><text x="${ghost.x}" y="${ghost.y}" text-anchor="middle" dominant-baseline="middle" font-size="${fs}" fill="var(--ink)" pointer-events="none">${esc(c.n)}</text>`}
+ return h}
+
+// Simple top-down detail of a piece in local coordinates (front = +y), so a sofa does not look like a blank box.
+function detail(c,u){const w=c.w,d=c.d,t=typeOf(c),hw=w/2,hd=d/2,ins=Math.min(w,d)*.07;let g='';
+ const ln=(x1,y1,x2,y2)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`,rc=(x,y,ww,hh,r)=>`<rect x="${x}" y="${y}" width="${ww}" height="${hh}" rx="${r||0}"/>`;
+ if(t==='sofa'||t==='chair'){const big=Math.min(w,d)>=60,aw=big?Math.min(Math.max(w*.09,9),18):0,bk=d*.26;
+  g+=rc(-hw+ins,-hd+ins,w-2*ins,bk-ins,bk*.25);
+  if(big){g+=rc(-hw+ins,-hd+bk,aw,d-bk-ins,aw*.4)+rc(hw-ins-aw,-hd+bk,aw,d-bk-ins,aw*.4);
+   const n=t==='sofa'?Math.max(1,Math.round((w-2*aw)/65)):1;for(let i=1;i<n;i++){const x=-hw+ins+aw+(w-2*ins-2*aw)*i/n;g+=ln(x,-hd+bk,x,hd-ins)}}}
+ else if(t==='bed'){const pw=w*.4;g+=rc(-hw+w*.06,-hd+ins,pw,d*.1,5)+rc(hw-w*.06-pw,-hd+ins,pw,d*.1,5)+ln(-hw+ins,-hd+d*.32,hw-ins,-hd+d*.32)}
+ else if(t==='side'){g+=`<circle cx="0" cy="0" r="${Math.max(2,Math.min(w,d)/2-ins)}"/>`}
+ else if(t==='table'){g+=rc(-hw+ins,-hd+ins,w-2*ins,d-2*ins,ins)}
+ else if(t==='storage'){const n=Math.max(1,Math.round(w/55));g+=ln(-hw+ins,hd-d*.3,hw-ins,hd-d*.3);for(let i=1;i<n;i++){const x=-hw+w*i/n;g+=ln(x,hd-d*.3,x,hd-ins)}}
+ return g}
+
+// ---- Automatic suggestions: which catalog pieces fit in the space that is left ----
+const ov=(a,b)=>a.x0<b.x1&&a.x1>b.x0&&a.y0<b.y1&&a.y1>b.y0;
+// Largest empty rectangle (cm, 1 cm grid) ignoring clearances. Door swing area counts as blocked.
+function freeRect(){const W=Math.floor(S.rw),L=Math.floor(S.rl);if(W<1||L<1)return{w:0,d:0,a:0};
+ const bl=[...S.items.map(body),doorRect(),...hardRects()],hgt=new Array(W).fill(0);let best={w:0,d:0,a:0};
+ for(let j=0;j<L;j++){
+  for(let i=0;i<W;i++)hgt[i]=(S.span&&!insideAt(i+.5,j+.5))||bl.some(b=>ov({x0:i,y0:j,x1:i+1,y1:j+1},b))?0:hgt[i]+1;
+  const st=[];for(let i=0;i<=W;i++){const h=i<W?hgt[i]:0;let start=i;
+   while(st.length&&st[st.length-1].h>=h){const t=st.pop(),a=t.h*(i-t.s);if(a>best.a)best={w:i-t.s,d:t.h,a};start=t.s}
+   st.push({s:start,h})}}
+ return best}
+// Distance from a piece's back edge to the nearest wall or fixed block behind it (ri: 0 back is up, 1 right, 2 down, 3 left).
+function backGap(b,ri,hr,W,L){const r=backGapRects(b,ri,hr,W,L);if(!S.poly)return r;
+ const cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2,half=ri%2?(b.x1-b.x0)/2:(b.y1-b.y0)/2,d=[[0,-1],[1,0],[0,1],[-1,0]][ri];return Math.min(r,rayDist(cx,cy,d[0],d[1])-half)}
+function backGapRects(b,ri,hr,W,L){const ys=q=>q.y0<b.y1-.5&&q.y1>b.y0+.5,xs=q=>q.x0<b.x1-.5&&q.x1>b.x0+.5;
+ if(ri===0)return b.y0-Math.max(0,...hr.filter(q=>xs(q)&&q.y1<=b.y0+.5).map(q=>q.y1));
+ if(ri===1)return Math.min(W,...hr.filter(q=>ys(q)&&q.x0>=b.x1-.5).map(q=>q.x0))-b.x1;
+ if(ri===2)return Math.min(L,...hr.filter(q=>xs(q)&&q.y0>=b.y1-.5).map(q=>q.y0))-b.y1;
+ return b.x0-Math.max(0,...hr.filter(q=>ys(q)&&q.x1<=b.x0+.5).map(q=>q.x1))}
+// Best valid spot for catalog piece c (back to a wall when possible), or null. Same rules as check().
+function findSpot(c,cl,rots=[0,90,180,270]){const W=+S.rw,L=+S.rl,ob=S.items.map(body),of=S.items.map(front),dz=doorRect(),hr=hardRects(),lows=lowZones(),wins=windows(),step=CATALOG.length>40?10:5;let best=null;
+ if(c.h>S.rh)return null;
+ for(const rot of rots){const w=rot%180?c.d:c.w,d=rot%180?c.w:c.d;if(w>W||d>L)continue;
+  const xs=new Set([W-w]),ys=new Set([L-d]);
+  for(let x=0;x<=W-w;x+=step)xs.add(x);for(let y=0;y<=L-d;y+=step)ys.add(y);
+  [...ob,...hr].forEach(b=>{xs.add(b.x1);xs.add(b.x0-w);ys.add(b.y1);ys.add(b.y0-d)});
+  S.wallGeo.forEach(g=>{xs.add(g.a.x);xs.add(g.a.x-w);ys.add(g.a.y);ys.add(g.a.y-d)});
+  for(const x of xs){if(x<-.01||x>W-w+.01)continue;
+   for(const y of ys){if(y<-.01||y>L-d+.01)continue;
+    const b={x0:x,y0:y,x1:x+w,y1:y+d};
+    if(hit(b,dz)||ob.some(o=>hit(b,o))||hr.some(o=>hit(b,o))||!rectInRoom(b))continue;
+    if(lows.some(o=>c.h>o.h&&hit(b,rectOf(o)))||wins.some(o=>c.h>o.sill&&hit(b,winRect(o))))continue;
+    const f=[{x0:b.x0,y0:b.y1,x1:b.x1,y1:b.y1+cl},{x0:b.x0-cl,y0:b.y0,x1:b.x0,y1:b.y1},{x0:b.x0,y0:b.y0-cl,x1:b.x1,y1:b.y0},{x0:b.x1,y0:b.y0,x1:b.x1+cl,y1:b.y1}][rot/90];
+    if(!rectInRoom(f))continue;
+    if(ob.some(o=>hit(f,o))||hr.some(o=>hit(f,o))||of.some(o=>hit(b,o)))continue;
+    const back=backGap(b,rot/90,hr,W,L),score=back*3+Math.min(b.x0,W-b.x1)+Math.min(b.y0,L-b.y1);
+    if(!best||score<best.score)best={x:x+w/2,y:y+d/2,rot,score}}}}
+ return best}
+function doorOk(c){const s=[c.w,c.d,c.h].sort((a,b)=>a-b);return s[0]<=S.dw-5&&s[1]<=S.dh-5}
+function scheduleSugg(){clearTimeout(suggTimer);suggTimer=setTimeout(renderSugg,120)}
+function renderSugg(){
+ const W=+S.rw,L=+S.rl,box=$('sugg');
+ if(S.mode==='walls'&&!S.closed){suggList=[];box.className='hint';box.textContent='Measure the room first.';return}
+ if(W<1||L<1){box.textContent='Enter the room size to see suggestions.';return}
+ const fr=freeRect(),free=usage().free;suggList=[];const no=[];
+ products().forEach(c=>{
+  const spot=c.w*c.d<=free&&findSpot(c,c.cl);
+  if(spot){suggList.push({c,spot,door:doorOk(c)});return}
+  // The usual size does not fit: offer the largest other size of the same product that does.
+  const alt=sizesOf(c).filter(x=>x!==c&&x.w*x.d<=free).reverse().map(x=>{const sp=findSpot(x,x.cl);return sp&&{c:x,spot:sp,door:doorOk(x),from:c}}).find(Boolean);
+  if(alt){suggList.push(alt);return}
+  no.push([c,c.w*c.d>free?'Too big for the free floor space.':findSpot(c,0)?`Fits the floor, but not with its ${U(c.cl)} front clearance.`:'Too big for the space that is left.'])});
+ suggList.forEach(x=>x.suit=suits(x.c));
+ suggList.sort((a,b)=>(b.suit-a.suit)||(b.door-a.door)||(b.c.w*b.c.d-a.c.w*a.c.d));
+ let h=`<div class="hint adv" style="margin:0 0 6px">Largest free area: <b>${UU(fr.w,fr.d)}</b> (clearances not included). Suggestions respect clearances, the door swing and other pieces, and show pieces suited to this room type first.</div>`;
+ // One short row per product: name, size and price, and a + button. The details stay behind the settings icon.
+ const row=(x,i)=>`<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b>${x.from?`<small style="color:var(--accent)">Smaller size: ${esc(x.c.z||x.c.n)}</small>`:''}<small>${UU(x.c.w,x.c.d)} &middot; ${x.c.p.toLocaleString()}${x.door?'':' <span class="tag adv">&middot; check door access</span>'}</small></div><button data-add="${i}" class="addbtn" aria-label="Add ${esc(x.c.n)}">+</button></div>`;
+ const mine=suggList.map((x,i)=>x.suit?row(x,i):'').join(''),other=suggList.map((x,i)=>x.suit?'':row(x,i)).join(''),nOther=suggList.filter(x=>!x.suit).length;
+ h+=mine||`<div class="hint">Nothing for a ${ROOM_TYPES[S.type].toLowerCase()} fits the space that is left.</div>`;
+ if(nOther)h+=`<details><summary>Also fits, usually for other rooms (${nOther})</summary>${other}</details>`;
+ if(no.length)h+=`<details class="adv"><summary>Does not fit (${no.length})</summary>${no.map(([c,r])=>`<div class="sg"><div><b>${esc(c.n)}</b><small>${UU(c.w,c.d)}. ${r}</small></div></div>`).join('')}</details>`;
+ box.className='';box.innerHTML=h}
+// The list refreshes 120 ms after a change, so the spot is worked out again on the tap (the room may have just changed).
+$('sugg').onclick=e=>{const b=e.target.closest('[data-add]');if(!b)return;const x=suggList[+b.dataset.add];if(!x)return;
+ if(S.mode==='walls'&&!S.closed)return;const c=x.c,sp=findSpot(c,c.cl)||findSpot(c,0);
+ ghost=null;const it={id:S.next++,k:c.k,x:sp?sp.x:S.rw/2,y:sp?sp.y:S.rl/2,rot:sp?sp.rot:0};S.items.push(it);S.sel=it.id;render()};
+$('sugg').onmouseover=e=>{const r=e.target.closest('.sg[data-i]');const x=r&&suggList[+r.dataset.i];
+ const g=x?{k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot}:null;
+ if(JSON.stringify(g)!==JSON.stringify(ghost)){ghost=g;$('plan').innerHTML=drawPlan(S.sel)}};
+$('sugg').onmouseleave=()=>{if(ghost){ghost=null;$('plan').innerHTML=drawPlan(S.sel)}};
+
+function render(){
+ const W=+S.rw||1,L=+S.rl||1,m=40,plan=$('plan');
+ plan.setAttribute('viewBox',`${-m} ${-m} ${W+2*m} ${L+2*m}`);
+ plan.innerHTML=drawPlan(S.sel);
+ $('issues').innerHTML=check().map(([t,m])=>`<div class="issue ${t}">${m}</div>`).join('');
+ // piece tools show when a piece is selected; otherwise only "Move door"
+ if(S.sel!==lastSel){sizeOpen=false;lastSel=S.sel}
+ const has=S.items.some(i=>i.id===S.sel);['rot','sizebtn','del','wall'].forEach(id=>$(id).hidden=!has);$('movedoor').hidden=has||doorAsk();
+ $('sizebtn').setAttribute('aria-expanded',String(has&&sizeOpen));$('sizebtn').classList.toggle('on',has&&sizeOpen);
+ const pr=problems();$('probline').hidden=!pr.length;$('probline').textContent=pr.length?pr[0][1]+(pr.length>1?` (+${pr.length-1} more)`:''):'';
+ const asking=doorAsk();document.body.classList.toggle('doormode',asking);$('doorbar').hidden=!asking;$('doorskip').textContent=S.doorSet?'Cancel':'Skip';
+ $('showcl').checked=!!S.showCl;
+ const us=usage(),free=us.free;
+ $('space').innerHTML=`<table><tr><td>Room floor${S.cuts.length?' (without cut-outs)':''}</td><td class="n">${UA(us.room)}</td></tr>${us.fixed?`<tr><td>Fixed features (columns, radiators...)</td><td class="n">${UA(us.fixed)}</td></tr>`:''}<tr><td>Furniture footprint</td><td class="n">${UA(us.used)} (${us.room?Math.round(us.used/us.room*100):0}%)</td></tr><tr><th>Free floor space</th><th class="n">${UA(free)}</th></tr></table>${us.overlap?'<div class="hint">Some pieces overlap each other or a fixed feature, so these figures are approximate.</div>':''}`;
+ syncFeat();syncDims();
+ const si=S.items.find(i=>i.id===S.sel);$('selbox').hidden=!si;
+ if(si){const c=spec(si),g=gaps(si),b=g.b;
+  $('selinfo').innerHTML=`<b>${esc(c.n)}</b>: ${UUU(c.w,c.d,c.h)} (W x D x H). Floor footprint on the plan: ${UU(b.x1-b.x0,b.y1-b.y0)}.<br>Free space around it: left <b>${U(g.gl)}</b>, right <b>${U(g.gr)}</b>, top <b>${U(g.gu)}</b>, bottom <b>${U(g.gd)}</b>.`+(Math.min(g.gl,g.gr,g.gu,g.gd)>40?'<br><span style="color:var(--warn)">This piece is away from the walls and splits the floor. Use Move to wall to keep the space free.</span>':'');
+  if(document.activeElement!==$('px'))$('px').value=U(b.x0,true);
+  if(document.activeElement!==$('py'))$('py').value=U(b.y0,true)}
+ const grand={t:0,n:0},lines=[],parts=S.rooms.map((r,i)=>{const run=()=>{const b=roomBlock(false);grand.t+=b.total;grand.n+=b.count;
+   lines.push({i,name:S.name,n:b.count,t:b.total,open:S.mode==='walls'&&!S.closed});return b.html};return i===S.cur?run():withRoom(r,run)}).join('');
+ // quote screen: one big total and one line per room (tap a line to open that room)
+ $('qtotal').textContent=grand.t.toLocaleString();$('qnote').textContent=usingSample?'Sample prices: IKEA UK, in £':'';
+ $('qrooms').innerHTML=lines.map(x=>`<button class="qroom" data-qr="${x.i}"><span>${esc(x.name||'Room')}<small>${x.open?'not measured yet':`${x.n} piece${x.n===1?'':'s'}`}</small></span><b>${x.t.toLocaleString()}</b></button>`).join('');
+ $('qtable').innerHTML=parts+`<table style="margin-top:8px"><tr><th>Visit total (${S.rooms.length} room${S.rooms.length>1?'s':''})</th><th class="n">${grand.t.toLocaleString()}</th></tr></table>`;
+ $('showq').disabled=$('copyq').disabled=!grand.n;if(!$('quote').hidden){$('quote').hidden=true;$('showq').textContent='Show full quote'}
+ renderRooms();renderTypes();applyStep();renderSizebox();
+ save();scheduleSugg();
+}
+
+// One room's quote block (for the room currently loaded in S). print=true adds the plan and fit notes.
+function roomBlock(print){
+ const W=+S.rw||1,L=+S.rl||1,m=40,us=usage(),free=us.free;
+ const g=groupItems();
+ const rows=g.map(({c,q})=>`<tr><td>${esc(c.n)}${c.sized?`<br><small style="color:var(--mute)">${esc(c.sized)}, ${UUU(c.w,c.d,c.h)}, price to confirm</small>`:''}</td><td class="n">${q}</td><td class="n">${(c.p*q).toLocaleString()}</td></tr>`).join('');
+ const total=g.reduce((s,{c,q})=>s+c.p*q,0);
+ const open=S.mode==='walls'&&!S.closed;
+ let h=`<h3 style="margin:14px 0 4px">${esc(S.name)} <span style="font-weight:400;color:var(--mute)">${ROOM_TYPES[S.type]||''} &middot; ${open?'not measured':`${UU(W,L)} &middot; door ${UU(S.dw,S.dh)} &middot; ceiling ${U(S.rh)} &middot; free floor ${UA(free)}`}</span></h3>`;
+ h+=rows?`<table><tr><th>Item</th><th class="n">Qty</th><th class="n">Price</th></tr>${rows}<tr><th>Room total</th><th></th><th class="n">${total.toLocaleString()}</th></tr></table>`:'<div class="hint">No items in this room yet.</div>';
+ if(print&&S.mode==='walls'&&S.closed)h+=`<p style="font-size:13px">Walls, in measuring order: ${S.wallGeo.map((g,i)=>`${i+1}: ${U(g.len)}${g.curve?` (curved, ${U(g.curve.depth)} deep)`:''}`).join(', ')}. Floor area ${UA(us.room)}.</p>`;
+ if(print){const ft=[...S.cuts.map(c=>`Cut-out ${UU(c.w,c.d)}`),...S.obs.map(o=>{const k=OBS[o.kind];return !k?'':k.wall?`Window ${U(o.w)} wide, sill ${U(o.sill)} (${S.mode==='walls'?'wall '+((+o.wall)+1):WALLS[o.wall]+' wall'})`:`${k.label} ${UU(o.w,o.d)}${o.kind==='low'?`, max height ${U(o.h)}`:''}`})].filter(Boolean);
+  if(ft.length)h+=`<p style="font-size:13px">Room features: ${ft.map(esc).join('; ')}.</p>`}
+ if(print)h+=`<svg viewBox="${-m} ${-m} ${W+2*m} ${L+2*m}" style="max-width:480px;page-break-inside:avoid">${drawPlan(null,true)}</svg><ul>${check().filter(([t])=>t!=='ok').map(([t,mm])=>`<li>${mm}</li>`).join('')||'<li>All pieces fit and clearances are respected.</li>'}</ul>`;
+ return{html:h,total,count:S.items.length}}
+// Pieces of the current room grouped by product and size: [{c (spec), q}].
+function groupItems(){const m=new Map();S.items.forEach(it=>{const key=it.k+'|'+sizeKey(it);if(!m.has(key))m.set(key,{c:spec(it),q:0});m.get(key).q++});return[...m.values()]}
+function buildQuote(){stash();let body='',grand=0;
+ const lines=S.rooms.map(r=>`<tr><td>${esc(r.name)}</td><td>${ROOM_TYPES[r.type]||''}</td><td>${r.closed===false?'not measured':UU(r.rw,r.rl)}</td><td>${UU(r.dw,r.dh)}</td></tr>`).join('');
+ S.rooms.forEach((r,i)=>{const run=()=>{const b=roomBlock(true);body+=b.html;grand+=b.total};i===S.cur?run():withRoom(r,run)});
+ $('quote').innerHTML=`<h1>Quote</h1><p>Client: ${esc(S.client)||'-'} &middot; Rep: ${esc(S.rep)||'-'} &middot; ${new Date().toLocaleDateString()}</p>
+  <h3>Room measurements</h3><table><tr><th>Room</th><th>Type</th><th>Size (W x L)</th><th>Door (W x H)</th></tr>${lines}</table>${body}
+  <h2 style="text-align:right">Total: ${grand.toLocaleString()}</h2>
+  <p style="font-size:12px;color:var(--mute)">Indicative only, based on measurements entered on the visit. Verify on site before ordering. ${esc(priceNote())}</p>`}
+function renderRooms(){
+ $('rooms').innerHTML=S.rooms.map((r,i)=>`<button class="chip${i===S.cur?' on':''}" data-r="${i}">${esc(r.name||'Room')}<small>${ROOM_TYPES[r.type]||''} &middot; ${r.closed===false?'measuring...':UU(r.rw,r.rl)}</small></button>`).join('');
+ $('delroom').disabled=S.rooms.length<2;
+ $('roomh').textContent=`Size (${UNITS[S.unit]})`;
+ $('layouth').textContent=S.name||'This room'}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// catalog
+const priceNote=()=>usingSample?SAMPLE_NOTE:'Prices from the imported catalog.';
+function renderCat(){const q=$('catq').value.trim().toLowerCase();
+ $('cathead').textContent=`Catalog (${usingSample?'IKEA UK sample':'imported'}, ${CATALOG.length} items)`;
+ const list=CATALOG.filter(c=>!q||c.n.toLowerCase().includes(q)||String(c.k).toLowerCase().includes(q)).sort((a,b)=>suits(b)-suits(a));
+ $('cat').innerHTML=list.map(c=>`<button data-k="${esc(c.k)}"${suits(c)?'':' style="opacity:.5" title="Usually for other room types"'}>${esc(c.n)}<small>${UUU(c.w,c.d,c.h)}</small></button>`).join('')||'<div class="hint">No match.</div>'}
+$('cat').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+ if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
+ $('tipmsg').textContent='';const c=cat(b.dataset.k),spot=findSpot(c,c.cl)||findSpot(c,0);   // against a wall; centre only if nothing else fits
+ const it={id:S.next++,k:c.k,x:spot?spot.x:S.rw/2,y:spot?spot.y:S.rl/2,rot:spot?spot.rot:0};S.items.push(it);S.sel=it.id;render()};
+$('catq').oninput=renderCat;
+
+// CSV import. Columns: sku,name,width_cm,depth_cm,height_cm (required); front_clearance_cm,price,type,rooms,group,size,finish,model (optional; rooms separated by |).
+// Rows with the same group are the sizes of one product (one row per size, each with its own SKU and price); size names the size, e.g. "Standard Double".
+// finish is free text ("oak", "white", "grey fabric") for the 3D view's colours; model is a link to the product's 3D file (.glb or .gltf).
+function parseCSV(t){const rows=[];let r=[],f='',q=false;t=t.replace(/^﻿/,'');
+ for(let i=0;i<t.length;i++){const c=t[i];
+  if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+  else if(c==='"')q=true;
+  else if(c===','||c===';'){r.push(f);f=''}
+  else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;r.push(f);f='';if(r.some(x=>x.trim()))rows.push(r);r=[]}
+  else f+=c}
+ r.push(f);if(r.some(x=>x.trim()))rows.push(r);return rows}
+function buildCatalog(text){
+ const rows=parseCSV(text),errs=[];
+ if(rows.length<2)return{errs:['The file has no product rows.']};
+ const head=rows[0].map(h=>h.trim().toLowerCase()),col=n=>head.indexOf(n);
+ const need=['sku','name','width_cm','depth_cm','height_cm'].filter(n=>col(n)<0);
+ if(need.length)return{errs:[`Missing column(s): ${need.join(', ')}.`]};
+ const seen=new Set(),out=[];
+ rows.slice(1).forEach((r,i)=>{const n=i+2,g=c=>col(c)<0?'':(r[col(c)]||'').trim();
+  const sku=g('sku'),name=g('name'),num=c=>g(c).replace(',','.')===''?NaN:Number(g(c).replace(',','.'));
+  if(!sku||!name){errs.push(`Row ${n}: sku and name are required.`);return}
+  if(seen.has(sku)){errs.push(`Row ${n}: duplicate sku "${sku}".`);return}
+  seen.add(sku);
+  const w=num('width_cm'),d=num('depth_cm'),h=num('height_cm');
+  for(const [lab,v] of [['width_cm',w],['depth_cm',d],['height_cm',h]])
+   if(!(v>0&&v<=1000))errs.push(`Row ${n} (${sku}): ${lab} must be a number between 0 and 1000 cm.`);
+  let cl=num('front_clearance_cm'),p=num('price');const ty=g('type').toLowerCase();
+  const rm=g('rooms').toLowerCase().split('|').map(x=>x.trim()).filter(Boolean),badr=rm.filter(x=>!ROOMKEYS.includes(x));
+  if(badr.length)errs.push(`Row ${n} (${sku}): rooms must be separated by | and be from ${ROOMKEYS.join(', ')} (got ${badr.join(', ')}).`);
+  if(ty&&!TYPES.includes(ty))errs.push(`Row ${n} (${sku}): type must be one of ${TYPES.join(', ')} (or empty).`);
+  if(isNaN(cl))cl=50;else if(cl<0||cl>300)errs.push(`Row ${n} (${sku}): front_clearance_cm must be 0-300.`);
+  if(isNaN(p))p=0;else if(p<0)errs.push(`Row ${n} (${sku}): price cannot be negative.`);
+  const grp=g('group'),sz=g('size'),fin=g('finish'),mdl=g('model');
+  if(mdl&&!/^\S+\.(glb|gltf)(\?\S*)?$/i.test(mdl))errs.push(`Row ${n} (${sku}): model must be a link to a .glb or .gltf file.`);
+  out.push({k:sku,n:name,w,d,h,cl,p,t:ty||undefined,r:rm.length?rm:undefined,g:grp||undefined,z:sz||undefined,f:fin||undefined,m:mdl||undefined})});
+ return{errs,out}}
+function setCatalog(list,sample){
+ CATALOG=list;usingSample=sample;
+ try{sample?localStorage.removeItem(CK):localStorage.setItem(CK,JSON.stringify(list))}catch(e){}
+ uCache.clear();stash();let gone=0;S.rooms.forEach(r=>{const n=r.items.length;r.items=r.items.filter(i=>cat(i.k));gone+=n-r.items.length});loadRoom(S.cur);
+ renderCat();render();return gone}
+$('imp').onclick=()=>$('impfile').click();
+$('impfile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+ f.text().then(t=>{const {errs,out}=buildCatalog(t),m=$('catmsg');
+  if(errs.length){m.style.color='var(--err)';m.innerHTML=`Import rejected, nothing changed:<br>${errs.slice(0,8).map(esc).join('<br>')}${errs.length>8?`<br>...and ${errs.length-8} more`:''}`;return}
+  const dropped=setCatalog(out,false);m.style.color='var(--ok)';
+  m.textContent=`Imported ${out.length} products.${dropped?` ${dropped} placed item(s) were removed because their SKU is not in the new catalog.`:''}`})};
+$('sample').onclick=()=>{const d=setCatalog(SAMPLE.slice(),true);$('catmsg').style.color='';$('catmsg').textContent=`Sample catalog restored.${d?` ${d} placed item(s) removed.`:''}`};
+$('tpl').onclick=()=>{
+ const csv='sku,name,width_cm,depth_cm,height_cm,front_clearance_cm,price,type,rooms,group,size,finish,model\n'+SAMPLE.map(c=>[c.k,'"'+c.n+'"',c.w,c.d,c.h,c.cl,c.p,typeOf(c),(c.r||[]).join('|'),c.g||'',c.z?'"'+c.z+'"':'',c.f?'"'+c.f+'"':'',c.m||''].join(',')).join('\n')+'\n';
+ copyText(csv,$('catmsg'),'Template (paste it into a spreadsheet, fill it in, save as CSV)')};
+
+// room shape and features editor
+function fillKinds(){$('addkind').innerHTML=(S.mode==='walls'?'':'<option value="cut">Cut-out (L/U/T shape)</option>')+Object.entries(OBS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}
+// Wall choices for windows: numbered walls (wall by wall) or compass sides (quick rectangle).
+const wallRefs=()=>S.mode==='walls'?S.walls.map((w,i)=>[i,'Wall '+(i+1)]):Object.entries(RECTW);
+// Field labels in plain words: position is measured on the plan to the feature's top-left corner.
+const POS=[['x','From left side'],['y','From top side'],['w','Width (across)'],['d','Depth (down)']];
+const FF={cut:POS,hard:[...POS,['h','Height']],low:[...POS,['h','Max height']],window:[['off','From wall corner'],['w','Width'],['sill','Sill height']]};
+function renderFeat(){
+ const inp=(f,l,v)=>`<div><label>${l}</label><input data-f="${f}" ${lenAttrs()} value="${esc(U(v,true))}"></div>`,rows=[];
+ if(S.mode!=='walls')S.cuts.forEach((c,i)=>rows.push(`<div class="frow" data-cut="${i}"><b>Cut-out (not part of the room)</b>${FF.cut.map(([f,l])=>inp(f,l,c[f])).join('')}<button data-del>Remove</button></div>`));
+ S.obs.forEach(o=>{const k=OBS[o.kind];if(!k)return;const set=k.wall?'window':k.hard?'hard':'low';
+  const wall=k.wall?`<div><label>Wall</label><select data-f="wall">${wallRefs().map(([v,t])=>{const cv=S.mode==='walls'&&S.walls[+v]&&S.walls[+v].curve;return `<option value="${v}"${String(o.wall)===String(v)?' selected':''}${cv?' disabled':''}>${t}${cv?' - curved':''}</option>`}).join('')}</select></div>`:'';
+  rows.push(`<div class="frow" data-ob="${o.id}"><b>${k.label}</b>${wall}${FF[set].map(([f,l])=>inp(f,l,o[f])).join('')}<button data-del>Remove</button></div>`)});
+ $('feat').innerHTML=rows.join('')||'<div class="hint" style="margin:0 0 8px">No cut-outs or features. This room is a plain rectangle.</div>'}
+const featTarget=row=>row.dataset.cut!=null?S.cuts[+row.dataset.cut]:S.obs.find(o=>o.id==row.dataset.ob);
+function syncFeat(){document.querySelectorAll('#feat .frow').forEach(row=>{const t=featTarget(row);if(!t)return;
+ row.querySelectorAll('[data-f]').forEach(i=>{const raw=t[i.dataset.f],v=i.dataset.f==='wall'?raw:U(raw,true);if(document.activeElement!==i&&String(i.value)!==String(v))i.value=v})})}
+$('feat').oninput=e=>{const row=e.target.closest('.frow'),f=e.target.dataset.f;if(!row||!f)return;const t=featTarget(row);if(!t)return;
+ if(f==='wall'){t[f]=S.mode==='walls'?+e.target.value:e.target.value;render();return}
+ const v=e.target.value,cm=parseLen(v);e.target.classList.toggle('bad',v.trim()!==''&&!isFinite(cm));if(!isFinite(cm))return;t[f]=cm;render()};
+$('feat').addEventListener('change',e=>{const row=e.target.closest('.frow'),f=e.target.dataset.f;if(!row||!f||f==='wall')return;const t=featTarget(row);if(t){e.target.value=U(t[f],true);e.target.classList.remove('bad')}});
+$('feat').onclick=e=>{if(!e.target.closest('[data-del]'))return;const row=e.target.closest('.frow');
+ if(row.dataset.cut!=null)S.cuts.splice(+row.dataset.cut,1);else S.obs=S.obs.filter(o=>o.id!=row.dataset.ob);renderFeat();render()};
+$('addfeat').onclick=()=>{const k=$('addkind').value;
+ if(k==='cut')S.cuts.push({x:Math.max(0,S.rw-150),y:Math.max(0,S.rl-150),w:150,d:150});
+ else{const d=OBS[k],o={id:S.next++,kind:k};
+  if(d.wall)Object.assign(o,{wall:S.mode==='walls'?Math.max(0,S.walls.findIndex(w=>!w.curve)):'N',off:Math.max(0,Math.round((S.rw-d.w)/2)),w:d.w,sill:d.sill});
+  else Object.assign(o,{w:d.w,d:d.d,h:d.h,x:Math.max(0,Math.round((S.rw-d.w)/2)),y:['radiator','builtin','xdoor'].includes(k)?0:k==='low'?Math.max(0,S.rl-d.d):Math.max(0,Math.round((S.rl-d.d)/2))});
+  S.obs.push(o)}
+ renderFeat();render()};
+
+// In-page confirmation (works where the browser's confirm() popup is blocked).
+function ask(msg,yes){return new Promise(res=>{const d=$('ask');$('askmsg').textContent=msg;$('askyes').textContent=yes||'Continue';d.hidden=false;$('askyes').focus();
+ const done=v=>{d.hidden=true;$('askyes').onclick=$('askno').onclick=null;res(v)};$('askyes').onclick=()=>done(true);$('askno').onclick=()=>done(false)})}
+// wall-by-wall measuring
+function fillDoor(){const sel=$('dwall'),cur=String(S.dwall);
+ const opts=S.mode==='walls'?S.walls.map((w,i)=>[String(i),`Wall ${i+1} (${U(S.wallGeo[i]?S.wallGeo[i].len:+w.len||0)})`]):Object.entries(RECTW);
+ sel.innerHTML=opts.map(([v,t])=>{const cv=S.mode==='walls'&&S.walls[+v]&&S.walls[+v].curve;return `<option value="${v}"${cv?' disabled':''}>${t}${cv?' - curved':''}</option>`}).join('');if(opts.some(o=>o[0]===cur))sel.value=cur;
+ $('doffl').textContent=S.mode==='walls'?"Door offset from the wall's start corner":'Door offset from corner'}
+function renderWallStatus(){const el=$('wallstat'),cb=$('closewall');cb.hidden=true;
+ if(S.mode!=='walls'){el.textContent='';return}
+ if(S.shape==='sketch'&&!S.sketch){el.textContent='Draw the room in the box above.';return}
+ if(S.shape!=='free'){const list=S.shape==='rect'?S.walls.slice(0,2):S.walls,need=list.reduce((a,w)=>a+(w.curve?2:1),0),have=list.reduce((a,w)=>a+(+w.len>0)+(w.curve&&+w.curve.depth>0?1:0),0);
+  if(S.closed){el.innerHTML=`<span style="color:var(--ok)">Room measured:</span> ${UU(S.rw,S.rl)}, floor ${UA(usage().room)}.`+(S.misclose>5?` <span style="color:var(--warn)">The walls were ${U(S.misclose)} off, so re-check them.</span>`:'');return}
+  if(have<need){el.textContent=`Type ${need-have} more measurement${need-have>1?'s':''}.`;return}
+  el.innerHTML=`<span style="color:var(--err)">These measurements don't fit together.</span> ${S.shapeErr?S.shapeErr:shapeDef(S.shape).rule||(S.walls.every(w=>(w.turn==='R'||w.turn==='L')&&!w.curve)?shapeRule(S.walls.map(w=>w.turn)):`They are about ${U(S.mismatch)} apart from closing the room.`)} Measure them again.`;return}
+ if(!S.walls.length){el.textContent='Start at any corner and measure the first wall (it runs left to right on the plan). Then choose which way you turn at the next corner, and keep going all the way round.';return}
+ if(S.closed){el.innerHTML=`<span style="color:var(--ok)">Room closed.</span> Overall ${UU(S.rw,S.rl)}, floor ${UA(usage().room)}. Error at the closing corner: ${U(S.misclose)} (the outline is adjusted by that much).${S.misclose>5?' <span style="color:var(--warn)">That is a lot, so re-check the wall lengths.</span>':''}`;return}
+ let msg=S.shapeErr?`<span style="color:var(--err)">${S.shapeErr}</span> `:'';const gi=S.gapInfo;
+ if(gi){msg+=`Not closed yet: the last corner is ${U(Math.abs(gi.ex))} ${gi.ex>0?'right':'left'} and ${U(Math.abs(gi.ey))} ${gi.ey>0?'below':'above'} the start. Keep adding walls until you are back at the start.`;
+  if(gi.closeLen){cb.hidden=false;cb.textContent=`Add closing wall (${U(gi.closeLen)})`}}
+ el.innerHTML=msg}
+function renderShapes(){const keys=Object.keys(SHAPES).filter(k=>true),showFree=S.more||S.shape==='free',open=showShapes||S.shape!=='rect'||!!S.more;
+ $('shapes').hidden=!open;$('notrect').hidden=open||S.mode!=='walls';
+ $('shapes').innerHTML=`<button class="shape${S.shape==='sketch'?' on':''}" data-shape="sketch" aria-pressed="${S.shape==='sketch'}"><svg viewBox="0 0 56 39" aria-hidden="true"><path d="M5 6c12-3 25-2 44 0M49 6c2 9 1 18 0 28M49 34c-14 1-29 2-44 0M5 34c-1-9-2-18 0-28" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/></svg><span>Draw it</span></button>`+keys.map(k=>`<button class="shape${S.shape===k?' on':''}" data-shape="${k}" aria-pressed="${S.shape===k}" aria-label="${SHAPES[k].name}" title="${SHAPES[k].name}">${shapeSvg(k)}</button>`).join('')+
+  (showFree?`<button class="shape${S.shape==='free'?' on':''}" data-shape="free" aria-pressed="${S.shape==='free'}"><svg viewBox="0 0 56 39" aria-hidden="true"><path d="M3 3h30v12h20v21H20V24H3z" fill="var(--room)" stroke="var(--ink)" stroke-width="2" stroke-dasharray="4 3"/></svg><span>Other shape</span></button>`:'')}
+function renderShapeInputs(){const free=S.shape==='free';$('freebox').hidden=!free;if(free){$('shapebox').innerHTML='';return}
+ if(S.shape==='sketch'&&!S.sketch){padStrokes=[];padPts=null;$('shapebox').innerHTML=`<svg id="pad" class="pad" viewBox="0 0 300 210" aria-label="Drawing area"><defs><pattern id="padgrid" width="15" height="15" patternUnits="userSpaceOnUse"><path d="M15 0H0V15" fill="none" stroke="var(--line)" stroke-width="1"/></pattern></defs><rect width="300" height="210" fill="url(#padgrid)"/><text id="padhint" x="150" y="108" text-anchor="middle" font-size="13" fill="var(--mute)">Draw the room's outline here with your finger</text><polyline id="padline" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points=""/><circle id="padstart" r="7" fill="var(--accent)" stroke="var(--room)" stroke-width="2" style="display:none"/></svg><p id="padmsg" class="hint" style="margin:4px 0 6px">Draw around the room. You can lift your finger and carry on. It finishes when you get back to the green start dot, or tap Done.</p><div class="padtools"><span><button id="padundo" disabled>Undo</button> <button id="padclear" disabled>Clear</button></span><button id="paddone" class="primary" disabled>Done</button></div>`;return}
+ const f=S.shape==='rect'?[[0,'Length'],[1,'Width']]:S.walls.flatMap((w,i)=>w.curve?[[i,`Wall ${i+1}: end to end`],[i+'c',`Wall ${i+1}: curve depth`]]:[[i,'Wall '+(i+1)]]);
+ $('shapebox').innerHTML=`<div class="shapebig">${shapeSvg(S.shape,true)}</div>${S.shape==='sketch'?'<div class="padtools"><span class="hint" style="margin:0">Straightened from your drawing.</span><button id="redraw">Draw again</button></div>':''}<div class="tw">${f.map(([i,l])=>`<div><label for="tw${i}">${l}</label><input id="tw${i}" data-tw="${i}" ${lenAttrs()} placeholder="${esc(unitHint())}" value="${twVal(i)}"></div>`).join('')}</div>`}
+$('shapes').onclick=e=>{const b=e.target.closest('[data-shape]');if(!b)return;const k=b.dataset.shape;if(k===S.shape)return;
+ const old=S.walls.map(w=>+w.len||0),was=S.shape;S.shape=k;S.mode='walls';
+ const def=shapeDef(k);S.walls=k==='free'?S.walls:def?wallsFor(def):[];
+ onShapeChange(true)};
+const twVal=i=>{const w=S.walls[parseInt(i)];if(!w)return '';const v=String(i).endsWith('c')?(w.curve&&w.curve.depth):w.len;return v?esc(U(v,true)):''};
+$('shapebox').oninput=e=>{const i=e.target.dataset.tw;if(i==null)return;const v=e.target.value,cm=parseLen(v),bad=v.trim()!==''&&!isFinite(cm);
+ e.target.classList.toggle('bad',bad);if(bad)return;const len=v.trim()===''?0:cm;
+ if(S.shape==='rect'){S.walls[+i].len=len;S.walls[+i+2].len=len}else if(i.endsWith('c')){const w=S.walls[parseInt(i)];if(w.curve)w.curve.depth=len}else S.walls[+i].len=len;onShapeChange(false)};
+// drawing pad: one stroke, straightened when the finger lifts
+let padPts=null,padStrokes=[];
+const padPt=e=>{const sv=$('pad'),q=sv.createSVGPoint();q.x=e.clientX;q.y=e.clientY;const r=q.matrixTransform(sv.getScreenCTM().inverse());return[r.x,r.y]};
+// The drawing can take several strokes: each new stroke continues the line. It is read when the line gets back to where it
+// started (and has gone round the room), or when Done is tapped.
+const padAll=()=>padStrokes.flat().concat(padPts||[]);
+function padDraw(){const all=padAll();$('padline').setAttribute('points',all.map(q=>q.join(',')).join(' '));
+ const st=$('padstart');st.style.display=all.length?'':'none';if(all.length){st.setAttribute('cx',all[0][0]);st.setAttribute('cy',all[0][1])}
+ $('padhint').style.display=all.length?'none':'';$('padundo').disabled=$('padclear').disabled=!padStrokes.length;$('paddone').disabled=padAll().length<8}
+function padFinish(){const r=sketchToShape(padAll());
+ if(r.err){$('padmsg').style.color='var(--err)';$('padmsg').textContent=r.err.replace(' Draw it again','')+' Undo the last stroke, or Clear to start over.';return}
+ padStrokes=[];S.sketch=r;S.walls=wallsFor(shapeDef('sketch'));onShapeChange(true);const first=$('tw0');if(first)first.focus()}
+// back at the start after going round: finish by itself
+function padClosed(){const all=padAll();if(all.length<20)return false;const X=all.map(p=>p[0]),Y=all.map(p=>p[1]),diag=Math.hypot(Math.max(...X)-Math.min(...X),Math.max(...Y)-Math.min(...Y));
+ let len=0;for(let i=1;i<all.length;i++)len+=Math.hypot(all[i][0]-all[i-1][0],all[i][1]-all[i-1][1]);
+ const e=all[all.length-1];return diag>=60&&len>=2.2*diag&&Math.hypot(e[0]-all[0][0],e[1]-all[0][1])<=Math.max(14,diag*.07)}
+$('shapebox').addEventListener('pointerdown',e=>{if(!e.target.closest('#pad'))return;e.preventDefault();padPts=[padPt(e)];try{$('pad').setPointerCapture(e.pointerId)}catch(_){}
+ $('padmsg').style.color='';padDraw()});
+$('shapebox').addEventListener('pointermove',e=>{if(!padPts)return;const p=padPt(e),l=padPts[padPts.length-1];if(Math.hypot(p[0]-l[0],p[1]-l[1])<2)return;padPts.push(p);padDraw()});
+$('shapebox').addEventListener('pointerup',()=>{if(!padPts)return;if(padPts.length>1)padStrokes.push(padPts);padPts=null;padDraw();if(padClosed())padFinish()});
+$('shapebox').addEventListener('click',e=>{const id=e.target.id;
+ if(id==='redraw'){S.sketch=null;S.walls=[];padStrokes=[];onShapeChange(true)}
+ else if(id==='padundo'){padStrokes.pop();padDraw()}
+ else if(id==='padclear'){padStrokes=[];padDraw()}
+ else if(id==='paddone')padFinish()});
+$('shapebox').addEventListener('change',e=>{const i=e.target.dataset.tw;if(i==null)return;e.target.value=twVal(i).replace(/&quot;/g,'"').replace(/&amp;/g,'&');e.target.classList.remove('bad')});
+function renderWalls(){renderShapes();renderShapeInputs();
+ $('walls').innerHTML=S.walls.map((w,i)=>`<div class="wrow" data-w="${i}"><b>${i+1}</b><input data-wf="len" ${lenAttrs()} placeholder="${esc(unitHint())}" value="${w.len?esc(U(w.len,true)):''}" aria-label="Wall ${i+1} length in cm"><select data-wf="turn" aria-label="Turn after wall ${i+1}"><option value="R"${w.turn!=='L'?' selected':''}>turn right</option><option value="L"${w.turn==='L'?' selected':''}>turn left</option></select><button data-wdel aria-label="Remove wall ${i+1}">&times;</button></div>`).join('');
+ fillDoor();renderWallStatus()}
+function onShapeChange(rebuild){recomputeShape();if(rebuild)renderWalls();else{fillDoor();renderWallStatus()}renderFeat();render()}
+$('walls').oninput=e=>{const row=e.target.closest('.wrow'),f=e.target.dataset.wf;if(!row||!f)return;const w=S.walls[+row.dataset.w];
+ if(f==='len'){const v=e.target.value,cm=parseLen(v);e.target.classList.toggle('bad',v.trim()!==''&&!isFinite(cm));if(v.trim()!==''&&!isFinite(cm))return;w.len=v.trim()===''?0:cm}else w[f]=e.target.value;onShapeChange(false)};
+$('walls').addEventListener('change',e=>{const row=e.target.closest('.wrow');if(row&&e.target.dataset.wf==='len'){const w=S.walls[+row.dataset.w];e.target.value=w.len?U(w.len,true):'';e.target.classList.remove('bad')}});
+$('walls').onclick=e=>{const b=e.target.closest('[data-wdel]');if(!b)return;S.walls.splice(+b.closest('.wrow').dataset.w,1);onShapeChange(true)};
+$('addwall').onclick=()=>{S.walls.push({len:0,turn:'R'});onShapeChange(true);const ins=$('walls').querySelectorAll('input[data-wf=len]');ins[ins.length-1].focus()};
+$('closewall').onclick=()=>{const gi=S.gapInfo;if(gi&&gi.closeLen){S.walls.push({len:gi.closeLen,turn:'R'});onShapeChange(true)}};
+function syncDims(){const wm=S.mode==='walls';$('rwrow').classList.toggle('adv',wm);   // quick rectangle rooms type their size here
+ $('wallsbox').hidden=!wm;$('modewalls').classList.toggle('on',wm);$('moderect').classList.toggle('on',!wm);
+ $('rwl').textContent=wm?'Overall width (from walls)':'Width';$('rll').textContent=wm?'Overall length (from walls)':'Length';
+ [['rw',S.rw],['rl',S.rl]].forEach(([id,v])=>{$(id).disabled=wm;if(wm)$(id).value=S.closed?U(v,true):''})}
+async function toWalls(){ // quick rectangle -> wall by wall
+ if(S.cuts.length&&!await ask('Cut-outs cannot be converted. They will be removed, and you can enter the room wall by wall instead.','Remove cut-outs'))return;
+ const W=+S.rw||0,L=+S.rl||0,map=(ref,off,len)=>({N:[0,off],E:[1,off],S:[2,W-off-len],W:[3,L-off-len]}[ref]||[0,0]);
+ const d=map(S.dwall,S.doff,S.dw);S.dwall=String(d[0]);S.doff=Math.max(0,d[1]);
+ S.obs.forEach(o=>{if(o.kind==='window'){const m=map(o.wall,o.off,o.w);o.wall=m[0];o.off=Math.max(0,m[1])}});
+ S.walls=[{len:W,turn:'R'},{len:L,turn:'R'},{len:W,turn:'R'},{len:L,turn:'R'}];S.shape='rect';S.cuts=[];S.mode='walls';fillKinds();onShapeChange(true)}
+async function toRect(){ // wall by wall -> quick rectangle
+ const rectOk=S.closed&&S.cuts.length===0&&S.walls.length===4&&S.walls.slice(0,3).every(w=>w.turn!=='L');
+ if(!rectOk&&!await ask('Quick rectangle keeps only the overall width and length, so this room becomes a plain rectangle and its door and windows move to the top wall.','Switch to rectangle'))return;
+ const W=S.closed?S.rw:0,L=S.closed?S.rl:0,map=(idx,off,len)=>rectOk?[['N',off],['E',off],['S',W-off-len],['W',L-off-len]][+idx]||['N',0]:['N',0];
+ const d=map(S.dwall,S.doff,S.dw);S.dwall=d[0];S.doff=Math.max(0,d[1]);
+ S.obs.forEach(o=>{if(o.kind==='window'){const m=map(o.wall,o.off,o.w);o.wall=m[0];o.off=Math.max(0,m[1])}});
+ S.rw=W||300;S.rl=L||300;S.cuts=[];S.mode='rect';recomputeShape();load();render()}
+$('modewalls').onclick=()=>{if(S.mode!=='walls')toWalls()};
+$('moderect').onclick=()=>{if(S.mode!=='rect')toRect()};
+
+// ---- Size panel for the selected piece (furniture step) ----
+function renderSizebox(){const it=S.step===2&&sizeOpen&&S.items.find(i=>i.id===S.sel),box=$('sizebox');box.hidden=!it;if(!it)return;
+ const base=cat(it.k),c=spec(it),list=sizesOf(base),many=list.length>1;
+ $('sizettl').textContent=`Size: ${base.n}`;
+ $('sizechips').innerHTML=(many?list.map(x=>`<button class="chip${!it.size&&x.k===it.k?' on':''}" data-sz="k:${esc(x.k)}">${esc(x.z||x.n)}<small>${UU(x.w,x.d)} &middot; ${x.p.toLocaleString()}</small></button>`).join('')
+   :`<button class="chip${!it.size?' on':''}" data-sz="cat">Catalog size<small>${UU(base.w,base.d)}</small></button>`)+
+  `<button class="chip${it.size?' on':''}" data-sz="custom">Custom<small>type below</small></button>`;
+ [['szw',c.w],['szd',c.d],['szh',c.h]].forEach(([id,v])=>{const el=$(id);el.inputMode=imperial()?'text':'decimal';if(document.activeElement!==el){el.value=U(v,true);el.classList.remove('bad')}});
+ const un=UNITS[S.unit];$('szwl').textContent=`Width (${un})`;$('szdl').textContent=`Depth (${un})`;$('szhl').textContent=`Height (${un})`;
+ $('sizehint').className='hint adv';$('sizehint').textContent=(many?`The sizes this product comes in, each with its own catalog price.`:'This product comes in one size in the catalog.')+' A custom size (made to measure) has no catalog price: the quote marks it "price to confirm".'}
+$('sizechips').onclick=e=>{const b=e.target.closest('[data-sz]'),it=b&&S.items.find(i=>i.id===S.sel);if(!it)return;const v=b.dataset.sz;
+ if(v==='cat')delete it.size;
+ else if(v==='custom'){const c=spec(it);it.size={w:c.w,d:c.d,h:c.h,name:'Custom size'};render();$('szw').focus();$('szw').select();return}
+ else if(v.startsWith('k:')&&cat(v.slice(2))){it.k=v.slice(2);delete it.size}
+ render()};
+['szw','szd','szh'].forEach((id,ix)=>{const el=$(id);
+ el.oninput=()=>{const it=S.items.find(i=>i.id===S.sel);if(!it)return;const v=el.value,cm=parseLen(v),bad=v.trim()!==''&&!(cm>=5&&cm<=1000);el.classList.toggle('bad',bad);if(bad||v.trim()==='')return;
+  const c=spec(it);it.size={w:c.w,d:c.d,h:c.h,name:'Custom size'};it.size['wdh'[ix]]=Math.round(cm*10)/10;render()};
+ el.addEventListener('change',()=>{const it=S.items.find(i=>i.id===S.sel);if(it){el.value=U(spec(it)['wdh'[ix]],true);el.classList.remove('bad')}})});
+
+// ---- 3D view (view3d.js, loaded the first time it opens) ----
+// Everything the 3D view needs, in cm and plan coordinates (x right, y down): the outline, doors and windows on its edges,
+// fixed features and the placed pieces. Wall references (wall number, or N/E/S/W) become edge numbers of the outline.
+function roomModel(){
+ const W=+S.rw,L=+S.rl,byWalls=S.mode==='walls',H=+S.rh||260;
+ const loop=byWalls?S.poly.map(p=>({x:p.x,y:p.y})):[{x:0,y:0},{x:W,y:0},{x:W,y:L},{x:0,y:L}];
+ const edgeOf=ref=>{if(!byWalls)return{N:0,E:1,S:2,W:3}[ref]??-1;const g=S.wallGeo[+ref];return g?loop.findIndex(p=>Math.abs(p.x-g.a.x)<.01&&Math.abs(p.y-g.a.y)<.01):-1};
+ const opening=(ref,off,len,y0,y1,kind)=>{const e=edgeOf(ref),sp=wallSpan(ref,off,len,0);if(e<0||!sp)return null;
+  const a=loop[e],b=loop[(e+1)%loop.length],l=Math.hypot(b.x-a.x,b.y-a.y)||1,ux=(b.x-a.x)/l,uy=(b.y-a.y)/l;
+  const t=[[sp.line[0],sp.line[1]],[sp.line[2],sp.line[3]]].map(([x,y])=>(x-a.x)*ux+(y-a.y)*uy).sort((p,q)=>p-q);
+  return{edge:e,t0:Math.max(0,t[0]),t1:Math.min(l,t[1]),y0,y1,kind}};
+ const door=opening(S.dwall,+S.doff,+S.dw,0,Math.min(+S.dh||205,H-5),'door');
+ // A window's height is not measured: it is drawn from the sill to 210 cm (at least 60 cm tall, and 25 cm below the ceiling).
+ const wins=windows().map(o=>opening(o.wall,+o.off,+o.w,+o.sill||0,Math.min(H-25,Math.max((+o.sill||0)+60,210)),'window')).filter(Boolean);
+ return{H,loop,door,openings:[door,...wins].filter(Boolean),cuts:S.cuts.map(c=>({x:c.x,y:c.y,w:c.w,d:c.d})),
+  obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
+  items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:c.m||''}})}}
+// Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
+const V3D='2026-10-23b';
+let view3d=null,v3dTimer=0;
+async function open3d(){
+ if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
+ const wrap=$('v3dwrap'),msg=$('v3dmsg');wrap.hidden=false;$('v3dttl').textContent=`3D: ${S.name||'this room'}`;msg.hidden=false;msg.textContent='Loading the 3D view...';
+ try{const mod=await import('./view3d.js?v='+V3D);if(wrap.hidden)return;view3d=await mod.open($('v3dcanvas'),roomModel());
+  msg.textContent=[...view3d.notes,'Drag to turn, pinch to zoom, two fingers to move. Every piece is drawn at its catalog size; its shape and finish are close to the product, not exact.'].join(' ');
+  clearTimeout(v3dTimer);v3dTimer=setTimeout(()=>{if(view3d&&!view3d.notes.length)msg.hidden=true},7000)}
+ catch(e){msg.textContent=`The 3D view could not start (${e.message}). It needs an internet connection the first time, and a browser that can show 3D (WebGL).`}}
+function close3d(){if(view3d){view3d.close();view3d=null}$('v3dwrap').hidden=true}
+$('v3d').onclick=open3d;$('v3dx').onclick=close3d;
+$('v3dov').onclick=()=>view3d&&view3d.setView('overview');$('v3deye').onclick=()=>view3d&&view3d.setView('eye');
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('v3dwrap').hidden)close3d()});
+
+// ---- Three screens: Measure, Furniture, Quote. The settings icon shows the advanced controls on every screen. ----
+const STEPS=[['Measure','Measure the room'],['Furniture','Add furniture'],['Quote','Quote']];
+let lastSel=null,sizeOpen=false,moveDoor=false,showShapes=false;
+// On the furniture screen a room asks once where its door is ("Move door" asks again).
+const doorAsk=()=>S.step===2&&(moveDoor||!S.doorSet)&&!(S.mode==='walls'&&!S.closed);
+function applyStep(){const st=Math.min(3,Math.max(1,S.step||1));S.step=st;document.body.dataset.step=st;
+ document.querySelectorAll('[data-step]').forEach(el=>{el.hidden=!el.dataset.step.split(' ').includes(String(st))});
+ if(st===1&&S.more&&(S.shape==='free'||S.mode==='rect'))$('layoutcard').hidden=false;   // the plan helps when measuring wall by wall
+ $('stepnav').innerHTML=STEPS.map(([n],i)=>`<button class="stp${i+1===st?' on':''}" data-go="${i+1}"${i+1===st?' aria-current="step"':''}>${i+1}. ${n}</button>`).join('');
+ $('stepttl').textContent=STEPS[st-1][1];
+ $('back').hidden=st===1;const nx=$('next');nx.hidden=st===3;
+ if(st<3)nx.textContent='Next: '+STEPS[st][0];
+ const blocked=st===1&&S.mode==='walls'&&!S.closed;
+ nx.disabled=blocked;$('navmsg').textContent=blocked?'Type the room size first.':'';$('navmsg').hidden=!blocked;
+ $('plantools').hidden=st!==2;
+ document.body.classList.toggle('more',!!S.more);$('gear').setAttribute('aria-pressed',String(!!S.more))}
+function renderTypes(){$('typechips').innerHTML=Object.entries(ROOM_TYPES).map(([k,v])=>`<button class="chip${S.type===k?' on':''}" data-t="${k}">${v}</button>`).join('')}
+// The room type names the room ("Bedroom", "Bedroom 2"), unless someone typed their own name under settings.
+const typeNamed=n=>!n||/^Room( \d+)?$/.test(n)||Object.values(ROOM_TYPES).some(v=>n===v||(n.startsWith(v+' ')&&/^\d+$/.test(n.slice(v.length+1))));
+function roomName(t){const base=t==='other'?'Room':ROOM_TYPES[t],taken=new Set(S.rooms.filter((r,i)=>i!==S.cur).map(r=>r.name));
+ if(!taken.has(base))return base;for(let k=2;;k++)if(!taken.has(`${base} ${k}`))return `${base} ${k}`}
+$('typechips').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;S.type=b.dataset.t;$('rtype').value=S.type;
+ if(typeNamed(S.name)){S.name=roomName(S.type);$('rname').value=S.name}renderCat();render()};
+const goStep=n=>{S.step=n;moveDoor=false;$('tipmsg').textContent='';render();window.scrollTo(0,0)};
+$('stepnav').onclick=e=>{const b=e.target.closest('[data-go]');if(b)goStep(+b.dataset.go)};
+$('back').onclick=()=>goStep((S.step||1)-1);
+$('next').onclick=()=>goStep((S.step||1)+1);
+$('gear').onclick=()=>{S.more=!S.more;renderShapes();render()};
+$('notrect').onclick=()=>{showShapes=true;S.mode='walls';S.shape='sketch';S.sketch=null;S.walls=[];onShapeChange(true)};
+$('sizebtn').onclick=()=>{sizeOpen=!sizeOpen;render()};
+$('movedoor').onclick=()=>{moveDoor=true;render()};
+$('doorskip').onclick=()=>{S.doorSet=true;moveDoor=false;render()};
+$('qrooms').onclick=e=>{const b=e.target.closest('[data-qr]');if(!b)return;stash();loadRoom(+b.dataset.qr);load();renderCat();goStep(S.mode==='walls'&&!S.closed?1:2)};
+$('qaddroom').onclick=()=>{$('addroom').click();goStep(1)};
+
+// inputs
+const bind={client:'client',rep:'rep',name:'rname',type:'rtype',rh:'rh',rw:'rw',rl:'rl',dwall:'dwall',dw:'dw',doff:'doff',dh:'dh'};
+$('rtype').innerHTML=Object.entries(ROOM_TYPES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+const LENKEYS=['rw','rl','dw','doff','dh','rh'];
+function applyUnits(){$('unit').value=S.unit;document.querySelectorAll('input.len').forEach(i=>{i.inputMode=imperial()?'text':'decimal';i.placeholder=unitHint()});
+ $('pxl').textContent=`Gap from left wall (${UNITS[S.unit]})`;$('pyl').textContent=`Gap from top wall (${UNITS[S.unit]})`}
+function load(){applyUnits();fillKinds();fillDoor();for(const k in bind)$(bind[k]).value=LENKEYS.includes(k)?U(S[k],true):S[k];renderWalls();renderFeat()}
+for(const k in bind)$(bind[k]).oninput=e=>{const v=e.target.value;
+ if(LENKEYS.includes(k)){const cm=parseLen(v);e.target.classList.toggle('bad',v.trim()!==''&&!isFinite(cm));if(!isFinite(cm))return;S[k]=cm}
+ else S[k]=['client','rep','dwall','name','type'].includes(k)?v:(+v||0);
+ if(k==='type')renderCat();render()};
+LENKEYS.forEach(k=>$(bind[k]).addEventListener('change',e=>{e.target.value=U(S[k],true);e.target.classList.remove('bad')}));
+$('unit').onchange=e=>{S.unit=e.target.value;load();renderCat();render()};
+$('rot').onclick=()=>{const it=S.items.find(i=>i.id===S.sel);if(it){it.rot=(it.rot+90)%360;render()}};
+$('del').onclick=()=>{S.items=S.items.filter(i=>i.id!==S.sel);S.sel=null;render()};
+$('showq').onclick=()=>{const q=$('quote');if(q.hidden){buildQuote();q.hidden=false;$('showq').textContent='Hide full quote'}else{q.hidden=true;$('showq').textContent='Show full quote'}};
+function quoteText(){stash();const L=[`Quote for ${S.client||'-'} (rep: ${S.rep||'-'}), ${new Date().toLocaleDateString()}`,''];let grand=0;
+ S.rooms.forEach((r,i)=>{const run=()=>{L.push(`${S.name} (${ROOM_TYPES[S.type]}), ${S.closed?UU(S.rw,S.rl):'not measured'}, ceiling ${U(S.rh)}`);
+  let t=0;
+  groupItems().forEach(({c,q})=>{L.push(`  ${q} x ${c.n}${c.sized?` (${c.sized}, ${UUU(c.w,c.d,c.h)}, price to confirm)`:''}: ${(c.p*q).toLocaleString()}`);t+=c.p*q});
+  L.push(`  Room total: ${t.toLocaleString()}`);check().filter(([k])=>k!=='ok').forEach(([k,m])=>L.push('  Note: '+m));L.push('');grand+=t};
+  i===S.cur?run():withRoom(r,run)});
+ L.push(`Total: ${grand.toLocaleString()}`,'Indicative only. Verify on site before ordering. '+priceNote());return L.join('\n')}
+// Copy to the clipboard; if the browser refuses, show the text in a box to select and copy by hand.
+async function copyText(text,msgEl,what){const fb=$('copyfb');
+ try{await navigator.clipboard.writeText(text);fb.hidden=true;msgEl.style.color='var(--ok)';msgEl.textContent=what+' copied.'}
+ catch(e){fb.hidden=false;fb.value=text;fb.focus();fb.select();msgEl.style.color='var(--warn)';msgEl.textContent='Copying was blocked. Select the text in the box and copy it.'}}
+$('copyq').onclick=()=>copyText(quoteText(),$('quotemsg'),'Quote');
+$('rooms').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;stash();loadRoom(+b.dataset.r);load();renderCat();render()};
+$('addroom').onclick=()=>{stash();S.rooms.push({name:`Room ${S.rooms.length+1}`,type:'other',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260});loadRoom(S.rooms.length-1);load();renderCat();render();if(S.more){$('rname').focus();$('rname').select()}};
+$('delroom').onclick=async()=>{if(S.rooms.length<2||!await ask(`Delete "${S.name}" and its layout?`,'Delete room'))return;S.rooms.splice(S.cur,1);loadRoom(Math.min(S.cur,S.rooms.length-1));load();renderCat();render()};
+$('wall').onclick=()=>{const i=S.items.findIndex(x=>x.id===S.sel);if(i<0)return;const it=S.items[i],c=spec(it);
+ S.items.splice(i,1);const spot=findSpot(c,c.cl,[it.rot])||findSpot(c,c.cl);S.items.splice(i,0,it);
+ if(spot){it.x=spot.x;it.y=spot.y;it.rot=spot.rot;$('tipmsg').textContent=''}else $('tipmsg').textContent='No wall position keeps this piece clear of the door and other pieces.';
+ render()};
+$('showcl').onchange=e=>{S.showCl=e.target.checked;render()};
+$('px').oninput=e=>{const it=S.items.find(i=>i.id===S.sel),cm=parseLen(e.target.value);e.target.classList.toggle('bad',e.target.value.trim()!==''&&!isFinite(cm));if(it&&isFinite(cm)){it.x=cm+dims(it).w/2;render()}};
+$('py').oninput=e=>{const it=S.items.find(i=>i.id===S.sel),cm=parseLen(e.target.value);e.target.classList.toggle('bad',e.target.value.trim()!==''&&!isFinite(cm));if(it&&isFinite(cm)){it.y=cm+dims(it).d/2;render()}};
+$('reset').onclick=async()=>{if(await ask('Start a new visit? All rooms and layouts are cleared.','Start new visit')){S.rooms=[];S.cur=0;Object.assign(S,{name:'Living room',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,client:'',rep:'',doorSet:false,step:1});showShapes=false;fixRoom();stash();load();renderCat();render();window.scrollTo(0,0)}};
+
+// drag with wall snapping
+let drag=null;
+function pt(e){const p=$('plan'),q=p.createSVGPoint();q.x=e.clientX;q.y=e.clientY;return q.matrixTransform(p.getScreenCTM().inverse())}
+// Door step: the door goes on the wall nearest to where the plan was tapped, centred on that spot.
+function placeDoorAt(p){
+ if(S.mode==='walls'){if(!S.closed)return;let best=null;
+  S.wallGeo.forEach((g,i)=>{if(g.curve)return;const t=Math.max(0,Math.min(g.len,(p.x-g.a.x)*g.dx+(p.y-g.a.y)*g.dy)),d=Math.hypot(p.x-g.a.x-g.dx*t,p.y-g.a.y-g.dy*t);if(!best||d<best.d)best={i,t,d}});
+  if(!best)return;const g=S.wallGeo[best.i];S.dwall=String(best.i);S.doff=Math.round(Math.max(0,Math.min(g.len-S.dw,best.t-S.dw/2)))}
+ else{const W=+S.rw,L=+S.rl,c=[['N',p.y,p.x,W],['S',L-p.y,p.x,W],['W',p.x,p.y,L],['E',W-p.x,p.y,L]].sort((a,b)=>a[1]-b[1])[0];S.dwall=c[0];S.doff=Math.round(Math.max(0,Math.min(c[3]-S.dw,c[2]-S.dw/2)))}
+ $('dwall').value=S.dwall;$('doff').value=U(S.doff,true);render()}
+$('plan').addEventListener('pointerdown',e=>{if(doorAsk()){S.doorSet=true;moveDoor=false;placeDoorAt(pt(e));return}
+ const g=e.target.closest('[data-id]'),og=!g&&e.target.closest('[data-ob]');
+ if(og){const o=S.obs.find(x=>x.id==og.dataset.ob);if(o){const p=pt(e);drag={ob:o,dx:p.x-o.x,dy:p.y-o.y};S.sel=null;try{$('plan').setPointerCapture(e.pointerId)}catch(_){}render()}return}
+ if(!g){S.sel=null;render();return}
+ const it=S.items.find(i=>i.id==g.dataset.id);S.sel=it.id;const p=pt(e);drag={it,dx:p.x-it.x,dy:p.y-it.y};
+ try{$('plan').setPointerCapture(e.pointerId)}catch(_){}render()});
+$('plan').addEventListener('pointermove',e=>{if(!drag)return;const p=pt(e);
+ if(drag.ob){const o=drag.ob;o.x=Math.round(Math.min(Math.max(0,p.x-drag.dx),Math.max(0,S.rw-o.w)));o.y=Math.round(Math.min(Math.max(0,p.y-drag.dy),Math.max(0,S.rl-o.d)));render();return}
+ const it=drag.it;
+ it.x=p.x-drag.dx;it.y=p.y-drag.dy;
+ const b=body(it),s=8;
+ if(S.poly)S.wallGeo.forEach(g=>{if(g.curve)return;const lo=(p,q)=>Math.min(p,q),hi=(p,q)=>Math.max(p,q),bb=body(it);
+  if(Math.abs(g.dy)<1e-6&&bb.x0<hi(g.a.x,g.b.x)&&bb.x1>lo(g.a.x,g.b.x)){const y=g.a.y;if(g.ny>0&&Math.abs(bb.y0-y)<s)it.y+=y-bb.y0;else if(g.ny<0&&Math.abs(bb.y1-y)<s)it.y-=bb.y1-y}
+  if(Math.abs(g.dx)<1e-6&&bb.y0<hi(g.a.y,g.b.y)&&bb.y1>lo(g.a.y,g.b.y)){const x=g.a.x;if(g.nx>0&&Math.abs(bb.x0-x)<s)it.x+=x-bb.x0;else if(g.nx<0&&Math.abs(bb.x1-x)<s)it.x-=bb.x1-x}});
+ else{if(Math.abs(b.x0)<s)it.x-=b.x0;else if(Math.abs(b.x1-S.rw)<s)it.x-=b.x1-S.rw;
+  if(Math.abs(b.y0)<s)it.y-=b.y0;else if(Math.abs(b.y1-S.rl)<s)it.y-=b.y1-S.rl}
+ {const b2=body(it);hardRects().forEach(r=>{
+  if(b2.y0<r.y1&&b2.y1>r.y0){if(Math.abs(b2.x0-r.x1)<s)it.x+=r.x1-b2.x0;else if(Math.abs(b2.x1-r.x0)<s)it.x-=b2.x1-r.x0}
+  if(b2.x0<r.x1&&b2.x1>r.x0){if(Math.abs(b2.y0-r.y1)<s)it.y+=r.y1-b2.y0;else if(Math.abs(b2.y1-r.y0)<s)it.y-=b2.y1-r.y0}})}
+ it.x=Math.round(it.x);it.y=Math.round(it.y);render()});
+$('plan').addEventListener('pointerup',()=>{drag=null});
+if(!Array.isArray(S.rooms)||!S.rooms.length){S.rooms=[];S.cur=0;stash()}
+S.cur=Math.min(S.cur||0,S.rooms.length-1);oldKeys(S.rooms);S.rooms.forEach(r=>r.items=(r.items||[]).filter(i=>cat(i.k)));loadRoom(S.cur);
+load();renderCat();render();
+</script>
+</body>
+</html>
