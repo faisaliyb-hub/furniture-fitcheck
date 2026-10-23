@@ -15,7 +15,7 @@ connected to IKEA. Each device keeps its own visits in the browser; nothing is s
 - Load real products with **More options → Import CSV** (step 4). The format is in `catalog-template.csv`:
   one row per size, and rows with the same `group` are the sizes of one product.
 - Automated checks: serve the folder (`python3 -m http.server 8766`), open `http://localhost:8766/fitcheck.html`, and run
-  `await (await import('./tests/e2e.js')).run()` in the browser console.
+  `await (await import('./tests/e2e.js')).run()` in the browser console. The 3D checks need an internet connection.
 
 ## Files
 | File | What it is |
@@ -23,6 +23,7 @@ connected to IKEA. Each device keeps its own visits in the browser; nothing is s
 | `fitcheck.html` | The app (HTML, CSS and JavaScript in one file) |
 | `index.html` | Redirects the site's home address to the app |
 | `catalog-template.csv` | Catalog format to send to the furniture house |
+| `view3d.js` | The 3D view, loaded when the 3D view button is pressed (uses three.js from a CDN) |
 | `tests/e2e.js` | End-to-end checks that run inside the page |
 | `tools/make_artifact.py` | Builds the claude.ai preview version into `dist/` |
 | `docs/HANDOFF.md` | Project state, decisions, limits and next steps |

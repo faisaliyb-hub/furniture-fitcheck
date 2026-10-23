@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FitCheck Prototype</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <style>
 :root{--bg:#f6f3ee;--card:#fff;--ink:#1f1d1a;--mute:#7a746a;--line:#e3ded5;--accent:#2f6f5e;--accent-ink:#fff;--warn:#c9821a;--err:#c0392b;--ok:#2f6f5e;--room:#fbfaf7;--info:#3b78b4}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161513;--card:#1f1e1b;--ink:#f0ece4;--mute:#a49d90;--line:#34312c;--accent:#5fb89f;--accent-ink:#10231d;--warn:#e0a040;--err:#e5685a;--ok:#5fb89f;--room:#252420;--info:#79b4e8;color-scheme:dark}}
@@ -61,6 +62,12 @@ body:not(.more) .adv{display:none!important}
 .sg button{white-space:nowrap}
 details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 #quote{margin-top:14px;padding-top:6px;border-top:1px solid var(--line)}
+.v3d{position:fixed;inset:0;z-index:40;background:#e7e9ea;display:flex;flex-direction:column}
+.v3d .v3dbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:calc(8px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));background:var(--card);border-bottom:1px solid var(--line)}
+.v3d .v3dbar{flex-wrap:nowrap}.v3d .v3dbar b{flex:1;min-width:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v3d .v3dbar button{min-height:38px;padding:6px 10px;white-space:nowrap}
+.v3d #v3dcanvas{flex:1;min-height:0;position:relative;touch-action:none}
+.v3d #v3dcanvas canvas{display:block;touch-action:none}
+.v3d .v3dnote{position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));margin:0;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.88);color:#1f1d1a;font-size:13px;pointer-events:none}
 .askov{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.45);z-index:50;padding:16px}
 </style>
 </head>
@@ -115,7 +122,7 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 <div class="col">
  <section class="card" id="layoutcard" data-step="2 3 4"><h2 id="layouth">Layout</h2>
   <svg id="plan" viewBox="0 0 600 500"></svg>
-  <div class="tools" id="plantools"><button id="rot" disabled>Rotate 90&deg;</button><button id="wall" disabled>Move to wall</button><button id="del" disabled>Remove</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
+  <div class="tools" id="plantools"><button id="v3d" class="primary">3D view</button><button id="rot" disabled>Rotate 90&deg;</button><button id="wall" disabled>Move to wall</button><button id="del" disabled>Remove</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
   <div id="sizebox" hidden><div id="sizettl" style="font-weight:600;margin-bottom:6px"></div><div id="sizechips" class="chips" role="group" aria-label="Sizes"></div>
    <div class="row3"><div><label for="szw" id="szwl">Width</label><input id="szw" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szd" id="szdl">Depth</label><input id="szd" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szh" id="szhl">Height</label><input id="szh" type="text" inputmode="decimal" autocomplete="off"></div></div>
    <div id="sizehint" class="hint"></div></div>
@@ -132,38 +139,39 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 <div id="morewrap"><button id="more" class="linkbtn">More options</button></div>
 <div class="navbar"><button id="back">Back</button><button id="next" class="primary">Next</button><p id="navmsg" class="hint"></p></div>
 </main>
+<div id="v3dwrap" class="v3d" hidden role="dialog" aria-modal="true" aria-labelledby="v3dttl"><div class="v3dbar"><b id="v3dttl">3D view</b><button id="v3dov">Overview</button><button id="v3deye">Door view</button><button id="v3dx" class="primary">Close</button></div><div id="v3dcanvas"><p class="v3dnote" id="v3dmsg"></p></div></div>
 <div id="ask" class="askov" hidden role="dialog" aria-modal="true" aria-labelledby="askmsg"><div class="card" style="max-width:380px"><p id="askmsg" style="margin:0 0 12px"></p><div class="tools" style="margin:0"><button id="askyes" class="primary">Continue</button><button id="askno">Cancel</button></div></div></div>
 <script>
 // Sample catalog: 26 real IKEA UK products (sizes and GBP prices as listed on ikea.com/gb on 2026-10-22; sources in docs/SAMPLE_CATALOG.md).
-// Rows that share a group (g) are sizes of one product; z names the size. Front clearances (cl) and room tags (r) are our planning guesses, not IKEA data.
+// Rows that share a group (g) are sizes of one product; z names the size; f is the finish from the IKEA listing (colours the 3D view). Front clearances (cl) and room tags (r) are our planning guesses, not IKEA data.
 // Replace it by importing the furniture house's CSV (see catalog-template.csv).
 const SAMPLE=[
- {k:'694.405.96',n:'KIVIK 3-seat sofa',w:228,d:95,h:83,cl:45,p:449,t:'sofa',r:['living'],g:'kivik',z:'3-seat'},
- {k:'294.405.98',n:'KIVIK 2-seat sofa',w:190,d:95,h:83,cl:45,p:349,t:'sofa',r:['living','office'],g:'kivik',z:'2-seat'},
- {k:'992.407.89',n:'POÄNG armchair',w:68,d:82,h:100,cl:50,p:69,t:'chair',r:['living','bedroom','office']},
- {k:'401.042.94',n:'LACK coffee table 90x55',w:90,d:55,h:45,cl:35,p:19,t:'table',r:['living'],g:'lackcoffee',z:'90x55 cm'},
- {k:'001.042.91',n:'LACK coffee table 118x78',w:118,d:78,h:45,cl:35,p:40,t:'table',r:['living'],g:'lackcoffee',z:'118x78 cm'},
- {k:'304.499.08',n:'LACK side table 55x55',w:55,d:55,h:45,cl:0,p:10,t:'side',r:['living','bedroom'],g:'lackside',z:'55x55 cm'},
- {k:'305.147.91',n:'LACK side table 35x35',w:35,d:35,h:35,cl:0,p:6,t:'side',r:['living','bedroom'],g:'lackside',z:'35x35 cm'},
- {k:'702.943.39',n:'LISABO table 140x78',w:140,d:78,h:74,cl:80,p:129,t:'table',r:['dining'],g:'lisabotable',z:'140x78 cm'},
- {k:'405.637.76',n:'LISABO table 88x78',w:88,d:78,h:74,cl:80,p:69,t:'table',r:['dining'],g:'lisabotable',z:'88x78 cm'},
- {k:'004.572.35',n:'LISABO chair',w:46,d:51,h:80,cl:40,p:50,t:'chair',r:['dining','office','kids']},
- {k:'290.069.78',n:'MALM bed frame, Standard Double',w:150,d:199,h:100,cl:60,p:139,t:'bed',r:['bedroom','kids'],g:'malm',z:'Standard Double (135x190)'},
- {k:'490.099.47',n:'MALM bed frame, Standard Single',w:107,d:199,h:100,cl:60,p:99,t:'bed',r:['bedroom','kids'],g:'malm',z:'Standard Single (90x190)'},
- {k:'690.069.81',n:'MALM bed frame, Standard King',w:166,d:209,h:100,cl:60,p:179,t:'bed',r:['bedroom','kids'],g:'malm',z:'Standard King (150x200)'},
- {k:'790.024.35',n:'MALM bed frame, 180x200',w:196,d:209,h:100,cl:60,p:229,t:'bed',r:['bedroom','kids'],g:'malm',z:'180x200 cm'},
- {k:'506.107.39',n:'HEMNES bedside table',w:46,d:35,h:70,cl:40,p:55,t:'storage',r:['bedroom','kids']},
- {k:'004.417.58',n:'KLEPPSTAD wardrobe, 3 doors',w:117,d:55,h:176,cl:80,p:129,t:'storage',r:['bedroom','kids'],g:'kleppstad',z:'3 doors'},
- {k:'804.372.34',n:'KLEPPSTAD wardrobe, 2 doors',w:79,d:55,h:176,cl:80,p:89,t:'storage',r:['bedroom','kids'],g:'kleppstad',z:'2 doors'},
- {k:'204.989.04',n:'LACK TV bench 160',w:160,d:35,h:36,cl:60,p:50,t:'storage',r:['living','bedroom'],g:'lacktv',z:'160 cm wide'},
- {k:'204.989.37',n:'LACK TV bench 120',w:120,d:35,h:36,cl:60,p:40,t:'storage',r:['living','bedroom'],g:'lacktv',z:'120 cm wide'},
- {k:'004.500.88',n:'LACK TV bench 90',w:90,d:26,h:45,cl:60,p:9,t:'storage',r:['living','bedroom'],g:'lacktv',z:'90 cm wide'},
- {k:'002.638.50',n:'BILLY bookcase 80x202',w:80,d:28,h:202,cl:60,p:55,t:'storage',r:['living','office','bedroom','kids'],g:'billy',z:'80 wide, 202 high'},
- {k:'502.638.38',n:'BILLY bookcase 40x202',w:40,d:28,h:202,cl:60,p:35,t:'storage',r:['living','office','bedroom','kids'],g:'billy',z:'40 wide, 202 high'},
- {k:'302.638.44',n:'BILLY bookcase 80x106',w:80,d:28,h:106,cl:60,p:35,t:'storage',r:['living','office','bedroom','kids'],g:'billy',z:'80 wide, 106 high'},
- {k:'802.130.74',n:'MICKE desk 105x50',w:105,d:50,h:75,cl:80,p:79,t:'table',r:['office','bedroom','kids'],g:'micke',z:'105x50 cm'},
- {k:'302.130.76',n:'MICKE desk 73x50',w:73,d:50,h:75,cl:80,p:49,t:'table',r:['office','bedroom','kids'],g:'micke',z:'73x50 cm'},
- {k:'902.143.08',n:'MICKE desk 142x50',w:142,d:50,h:75,cl:80,p:99,t:'table',r:['office','bedroom','kids'],g:'micke',z:'142x50 cm'}
+ {k:'694.405.96',n:'KIVIK 3-seat sofa',w:228,d:95,h:83,cl:45,p:449,t:'sofa',r:['living'],g:'kivik',z:'3-seat',f:'beige-grey fabric'},
+ {k:'294.405.98',n:'KIVIK 2-seat sofa',w:190,d:95,h:83,cl:45,p:349,t:'sofa',r:['living','office'],g:'kivik',z:'2-seat',f:'beige-grey fabric'},
+ {k:'992.407.89',n:'POÄNG armchair',w:68,d:82,h:100,cl:50,p:69,t:'chair',r:['living','bedroom','office'],f:'birch, light beige fabric'},
+ {k:'401.042.94',n:'LACK coffee table 90x55',w:90,d:55,h:45,cl:35,p:19,t:'table',r:['living'],g:'lackcoffee',z:'90x55 cm',f:'black-brown'},
+ {k:'001.042.91',n:'LACK coffee table 118x78',w:118,d:78,h:45,cl:35,p:40,t:'table',r:['living'],g:'lackcoffee',z:'118x78 cm',f:'black-brown'},
+ {k:'304.499.08',n:'LACK side table 55x55',w:55,d:55,h:45,cl:0,p:10,t:'side',r:['living','bedroom'],g:'lackside',z:'55x55 cm',f:'white'},
+ {k:'305.147.91',n:'LACK side table 35x35',w:35,d:35,h:35,cl:0,p:6,t:'side',r:['living','bedroom'],g:'lackside',z:'35x35 cm',f:'white'},
+ {k:'702.943.39',n:'LISABO table 140x78',w:140,d:78,h:74,cl:80,p:129,t:'table',r:['dining'],g:'lisabotable',z:'140x78 cm',f:'ash'},
+ {k:'405.637.76',n:'LISABO table 88x78',w:88,d:78,h:74,cl:80,p:69,t:'table',r:['dining'],g:'lisabotable',z:'88x78 cm',f:'ash'},
+ {k:'004.572.35',n:'LISABO chair',w:46,d:51,h:80,cl:40,p:50,t:'chair',r:['dining','office','kids'],f:'ash'},
+ {k:'290.069.78',n:'MALM bed frame, Standard Double',w:150,d:199,h:100,cl:60,p:139,t:'bed',r:['bedroom','kids'],g:'malm',z:'Standard Double (135x190)',f:'white'},
+ {k:'490.099.47',n:'MALM bed frame, Standard Single',w:107,d:199,h:100,cl:60,p:99,t:'bed',r:['bedroom','kids'],g:'malm',z:'Standard Single (90x190)',f:'white'},
+ {k:'690.069.81',n:'MALM bed frame, Standard King',w:166,d:209,h:100,cl:60,p:179,t:'bed',r:['bedroom','kids'],g:'malm',z:'Standard King (150x200)',f:'white'},
+ {k:'790.024.35',n:'MALM bed frame, 180x200',w:196,d:209,h:100,cl:60,p:229,t:'bed',r:['bedroom','kids'],g:'malm',z:'180x200 cm',f:'white'},
+ {k:'506.107.39',n:'HEMNES bedside table',w:46,d:35,h:70,cl:40,p:55,t:'storage',r:['bedroom','kids'],f:'grey-green, light brown'},
+ {k:'004.417.58',n:'KLEPPSTAD wardrobe, 3 doors',w:117,d:55,h:176,cl:80,p:129,t:'storage',r:['bedroom','kids'],g:'kleppstad',z:'3 doors',f:'white'},
+ {k:'804.372.34',n:'KLEPPSTAD wardrobe, 2 doors',w:79,d:55,h:176,cl:80,p:89,t:'storage',r:['bedroom','kids'],g:'kleppstad',z:'2 doors',f:'white'},
+ {k:'204.989.04',n:'LACK TV bench 160',w:160,d:35,h:36,cl:60,p:50,t:'storage',r:['living','bedroom'],g:'lacktv',z:'160 cm wide',f:'black-brown'},
+ {k:'204.989.37',n:'LACK TV bench 120',w:120,d:35,h:36,cl:60,p:40,t:'storage',r:['living','bedroom'],g:'lacktv',z:'120 cm wide',f:'black-brown'},
+ {k:'004.500.88',n:'LACK TV bench 90',w:90,d:26,h:45,cl:60,p:9,t:'storage',r:['living','bedroom'],g:'lacktv',z:'90 cm wide',f:'white'},
+ {k:'002.638.50',n:'BILLY bookcase 80x202',w:80,d:28,h:202,cl:60,p:55,t:'storage',r:['living','office','bedroom','kids'],g:'billy',z:'80 wide, 202 high',f:'white'},
+ {k:'502.638.38',n:'BILLY bookcase 40x202',w:40,d:28,h:202,cl:60,p:35,t:'storage',r:['living','office','bedroom','kids'],g:'billy',z:'40 wide, 202 high',f:'white'},
+ {k:'302.638.44',n:'BILLY bookcase 80x106',w:80,d:28,h:106,cl:60,p:35,t:'storage',r:['living','office','bedroom','kids'],g:'billy',z:'80 wide, 106 high',f:'white'},
+ {k:'802.130.74',n:'MICKE desk 105x50',w:105,d:50,h:75,cl:80,p:79,t:'table',r:['office','bedroom','kids'],g:'micke',z:'105x50 cm',f:'white'},
+ {k:'302.130.76',n:'MICKE desk 73x50',w:73,d:50,h:75,cl:80,p:49,t:'table',r:['office','bedroom','kids'],g:'micke',z:'73x50 cm',f:'white'},
+ {k:'902.143.08',n:'MICKE desk 142x50',w:142,d:50,h:75,cl:80,p:99,t:'table',r:['office','bedroom','kids'],g:'micke',z:'142x50 cm',f:'white'}
 ];
 const SAMPLE_NOTE='Sample catalog: IKEA UK products, prices in GBP as listed on ikea.com/gb on 22 Oct 2026. FitCheck is not connected to IKEA.';
 // Visits saved with the first sample catalog used short keys; they map to the closest IKEA sample row.
@@ -703,8 +711,9 @@ $('cat').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  const it={id:S.next++,k:c.k,x:spot?spot.x:S.rw/2,y:spot?spot.y:S.rl/2,rot:spot?spot.rot:0};S.items.push(it);S.sel=it.id;render()};
 $('catq').oninput=renderCat;
 
-// CSV import. Columns: sku,name,width_cm,depth_cm,height_cm (required); front_clearance_cm,price,type,rooms,group,size (optional; rooms separated by |).
+// CSV import. Columns: sku,name,width_cm,depth_cm,height_cm (required); front_clearance_cm,price,type,rooms,group,size,finish,model (optional; rooms separated by |).
 // Rows with the same group are the sizes of one product (one row per size, each with its own SKU and price); size names the size, e.g. "Standard Double".
+// finish is free text ("oak", "white", "grey fabric") for the 3D view's colours; model is a link to the product's 3D file (.glb or .gltf).
 function parseCSV(t){const rows=[];let r=[],f='',q=false;t=t.replace(/^﻿/,'');
  for(let i=0;i<t.length;i++){const c=t[i];
   if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
@@ -734,8 +743,9 @@ function buildCatalog(text){
   if(ty&&!TYPES.includes(ty))errs.push(`Row ${n} (${sku}): type must be one of ${TYPES.join(', ')} (or empty).`);
   if(isNaN(cl))cl=50;else if(cl<0||cl>300)errs.push(`Row ${n} (${sku}): front_clearance_cm must be 0-300.`);
   if(isNaN(p))p=0;else if(p<0)errs.push(`Row ${n} (${sku}): price cannot be negative.`);
-  const grp=g('group'),sz=g('size');
-  out.push({k:sku,n:name,w,d,h,cl,p,t:ty||undefined,r:rm.length?rm:undefined,g:grp||undefined,z:sz||undefined})});
+  const grp=g('group'),sz=g('size'),fin=g('finish'),mdl=g('model');
+  if(mdl&&!/^\S+\.(glb|gltf)(\?\S*)?$/i.test(mdl))errs.push(`Row ${n} (${sku}): model must be a link to a .glb or .gltf file.`);
+  out.push({k:sku,n:name,w,d,h,cl,p,t:ty||undefined,r:rm.length?rm:undefined,g:grp||undefined,z:sz||undefined,f:fin||undefined,m:mdl||undefined})});
  return{errs,out}}
 function setCatalog(list,sample){
  CATALOG=list;usingSample=sample;
@@ -750,7 +760,7 @@ $('impfile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)retu
   m.textContent=`Imported ${out.length} products.${dropped?` ${dropped} placed item(s) were removed because their SKU is not in the new catalog.`:''}`})};
 $('sample').onclick=()=>{const d=setCatalog(SAMPLE.slice(),true);$('catmsg').style.color='';$('catmsg').textContent=`Sample catalog restored.${d?` ${d} placed item(s) removed.`:''}`};
 $('tpl').onclick=()=>{
- const csv='sku,name,width_cm,depth_cm,height_cm,front_clearance_cm,price,type,rooms,group,size\n'+SAMPLE.map(c=>[c.k,'"'+c.n+'"',c.w,c.d,c.h,c.cl,c.p,typeOf(c),(c.r||[]).join('|'),c.g||'',c.z?'"'+c.z+'"':''].join(',')).join('\n')+'\n';
+ const csv='sku,name,width_cm,depth_cm,height_cm,front_clearance_cm,price,type,rooms,group,size,finish,model\n'+SAMPLE.map(c=>[c.k,'"'+c.n+'"',c.w,c.d,c.h,c.cl,c.p,typeOf(c),(c.r||[]).join('|'),c.g||'',c.z?'"'+c.z+'"':'',c.f?'"'+c.f+'"':'',c.m||''].join(',')).join('\n')+'\n';
  copyText(csv,$('catmsg'),'Template (paste it into a spreadsheet, fill it in, save as CSV)')};
 
 // room shape and features editor
@@ -895,6 +905,38 @@ $('sizechips').onclick=e=>{const b=e.target.closest('[data-sz]'),it=b&&S.items.f
  el.oninput=()=>{const it=S.items.find(i=>i.id===S.sel);if(!it)return;const v=el.value,cm=parseLen(v),bad=v.trim()!==''&&!(cm>=5&&cm<=1000);el.classList.toggle('bad',bad);if(bad||v.trim()==='')return;
   const c=spec(it);it.size={w:c.w,d:c.d,h:c.h,name:'Custom size'};it.size['wdh'[ix]]=Math.round(cm*10)/10;render()};
  el.addEventListener('change',()=>{const it=S.items.find(i=>i.id===S.sel);if(it){el.value=U(spec(it)['wdh'[ix]],true);el.classList.remove('bad')}})});
+
+// ---- 3D view (view3d.js, loaded the first time it opens) ----
+// Everything the 3D view needs, in cm and plan coordinates (x right, y down): the outline, doors and windows on its edges,
+// fixed features and the placed pieces. Wall references (wall number, or N/E/S/W) become edge numbers of the outline.
+function roomModel(){
+ const W=+S.rw,L=+S.rl,byWalls=S.mode==='walls',H=+S.rh||260;
+ const loop=byWalls?S.poly.map(p=>({x:p.x,y:p.y})):[{x:0,y:0},{x:W,y:0},{x:W,y:L},{x:0,y:L}];
+ const edgeOf=ref=>{if(!byWalls)return{N:0,E:1,S:2,W:3}[ref]??-1;const g=S.wallGeo[+ref];return g?loop.findIndex(p=>Math.abs(p.x-g.a.x)<.01&&Math.abs(p.y-g.a.y)<.01):-1};
+ const opening=(ref,off,len,y0,y1,kind)=>{const e=edgeOf(ref),sp=wallSpan(ref,off,len,0);if(e<0||!sp)return null;
+  const a=loop[e],b=loop[(e+1)%loop.length],l=Math.hypot(b.x-a.x,b.y-a.y)||1,ux=(b.x-a.x)/l,uy=(b.y-a.y)/l;
+  const t=[[sp.line[0],sp.line[1]],[sp.line[2],sp.line[3]]].map(([x,y])=>(x-a.x)*ux+(y-a.y)*uy).sort((p,q)=>p-q);
+  return{edge:e,t0:Math.max(0,t[0]),t1:Math.min(l,t[1]),y0,y1,kind}};
+ const door=opening(S.dwall,+S.doff,+S.dw,0,Math.min(+S.dh||205,H-5),'door');
+ // A window's height is not measured: it is drawn from the sill to 210 cm (at least 60 cm tall, and 25 cm below the ceiling).
+ const wins=windows().map(o=>opening(o.wall,+o.off,+o.w,+o.sill||0,Math.min(H-25,Math.max((+o.sill||0)+60,210)),'window')).filter(Boolean);
+ return{H,loop,door,openings:[door,...wins].filter(Boolean),cuts:S.cuts.map(c=>({x:c.x,y:c.y,w:c.w,d:c.d})),
+  obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
+  items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:c.m||''}})}}
+// Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
+const V3D='2026-10-23b';
+let view3d=null,v3dTimer=0;
+async function open3d(){
+ if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
+ const wrap=$('v3dwrap'),msg=$('v3dmsg');wrap.hidden=false;$('v3dttl').textContent=`3D: ${S.name||'this room'}`;msg.hidden=false;msg.textContent='Loading the 3D view...';
+ try{const mod=await import('./view3d.js?v='+V3D);if(wrap.hidden)return;view3d=await mod.open($('v3dcanvas'),roomModel());
+  msg.textContent=[...view3d.notes,'Drag to turn, pinch to zoom, two fingers to move. Every piece is drawn at its catalog size; its shape and finish are close to the product, not exact.'].join(' ');
+  clearTimeout(v3dTimer);v3dTimer=setTimeout(()=>{if(view3d&&!view3d.notes.length)msg.hidden=true},7000)}
+ catch(e){msg.textContent=`The 3D view could not start (${e.message}). It needs an internet connection the first time, and a browser that can show 3D (WebGL).`}}
+function close3d(){if(view3d){view3d.close();view3d=null}$('v3dwrap').hidden=true}
+$('v3d').onclick=open3d;$('v3dx').onclick=close3d;
+$('v3dov').onclick=()=>view3d&&view3d.setView('overview');$('v3deye').onclick=()=>view3d&&view3d.setView('eye');
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('v3dwrap').hidden)close3d()});
 
 // ---- Simple step-by-step flow. "More options" shows the advanced controls inside each step. ----
 const STEPS=[['Room','Which room are you measuring?','Tap the room type. The name and client are optional.'],

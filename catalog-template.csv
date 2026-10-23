@@ -1,27 +1,27 @@
-sku,name,width_cm,depth_cm,height_cm,front_clearance_cm,price,type,rooms,group,size
-694.405.96,"KIVIK 3-seat sofa",228,95,83,45,449,sofa,living,kivik,"3-seat"
-294.405.98,"KIVIK 2-seat sofa",190,95,83,45,349,sofa,living|office,kivik,"2-seat"
-992.407.89,"POÄNG armchair",68,82,100,50,69,chair,living|bedroom|office,,
-401.042.94,"LACK coffee table 90x55",90,55,45,35,19,table,living,lackcoffee,"90x55 cm"
-001.042.91,"LACK coffee table 118x78",118,78,45,35,40,table,living,lackcoffee,"118x78 cm"
-304.499.08,"LACK side table 55x55",55,55,45,0,10,side,living|bedroom,lackside,"55x55 cm"
-305.147.91,"LACK side table 35x35",35,35,35,0,6,side,living|bedroom,lackside,"35x35 cm"
-702.943.39,"LISABO table 140x78",140,78,74,80,129,table,dining,lisabotable,"140x78 cm"
-405.637.76,"LISABO table 88x78",88,78,74,80,69,table,dining,lisabotable,"88x78 cm"
-004.572.35,"LISABO chair",46,51,80,40,50,chair,dining|office|kids,,
-290.069.78,"MALM bed frame, Standard Double",150,199,100,60,139,bed,bedroom|kids,malm,"Standard Double (135x190)"
-490.099.47,"MALM bed frame, Standard Single",107,199,100,60,99,bed,bedroom|kids,malm,"Standard Single (90x190)"
-690.069.81,"MALM bed frame, Standard King",166,209,100,60,179,bed,bedroom|kids,malm,"Standard King (150x200)"
-790.024.35,"MALM bed frame, 180x200",196,209,100,60,229,bed,bedroom|kids,malm,"180x200 cm"
-506.107.39,"HEMNES bedside table",46,35,70,40,55,storage,bedroom|kids,,
-004.417.58,"KLEPPSTAD wardrobe, 3 doors",117,55,176,80,129,storage,bedroom|kids,kleppstad,"3 doors"
-804.372.34,"KLEPPSTAD wardrobe, 2 doors",79,55,176,80,89,storage,bedroom|kids,kleppstad,"2 doors"
-204.989.04,"LACK TV bench 160",160,35,36,60,50,storage,living|bedroom,lacktv,"160 cm wide"
-204.989.37,"LACK TV bench 120",120,35,36,60,40,storage,living|bedroom,lacktv,"120 cm wide"
-004.500.88,"LACK TV bench 90",90,26,45,60,9,storage,living|bedroom,lacktv,"90 cm wide"
-002.638.50,"BILLY bookcase 80x202",80,28,202,60,55,storage,living|office|bedroom|kids,billy,"80 wide, 202 high"
-502.638.38,"BILLY bookcase 40x202",40,28,202,60,35,storage,living|office|bedroom|kids,billy,"40 wide, 202 high"
-302.638.44,"BILLY bookcase 80x106",80,28,106,60,35,storage,living|office|bedroom|kids,billy,"80 wide, 106 high"
-802.130.74,"MICKE desk 105x50",105,50,75,80,79,table,office|bedroom|kids,micke,"105x50 cm"
-302.130.76,"MICKE desk 73x50",73,50,75,80,49,table,office|bedroom|kids,micke,"73x50 cm"
-902.143.08,"MICKE desk 142x50",142,50,75,80,99,table,office|bedroom|kids,micke,"142x50 cm"
+sku,name,width_cm,depth_cm,height_cm,front_clearance_cm,price,type,rooms,group,size,finish,model
+694.405.96,"KIVIK 3-seat sofa",228,95,83,45,449,sofa,living,kivik,"3-seat","beige-grey fabric",
+294.405.98,"KIVIK 2-seat sofa",190,95,83,45,349,sofa,living|office,kivik,"2-seat","beige-grey fabric",
+992.407.89,"POÄNG armchair",68,82,100,50,69,chair,living|bedroom|office,,,"birch, light beige fabric",
+401.042.94,"LACK coffee table 90x55",90,55,45,35,19,table,living,lackcoffee,"90x55 cm","black-brown",
+001.042.91,"LACK coffee table 118x78",118,78,45,35,40,table,living,lackcoffee,"118x78 cm","black-brown",
+304.499.08,"LACK side table 55x55",55,55,45,0,10,side,living|bedroom,lackside,"55x55 cm","white",
+305.147.91,"LACK side table 35x35",35,35,35,0,6,side,living|bedroom,lackside,"35x35 cm","white",
+702.943.39,"LISABO table 140x78",140,78,74,80,129,table,dining,lisabotable,"140x78 cm","ash",
+405.637.76,"LISABO table 88x78",88,78,74,80,69,table,dining,lisabotable,"88x78 cm","ash",
+004.572.35,"LISABO chair",46,51,80,40,50,chair,dining|office|kids,,,"ash",
+290.069.78,"MALM bed frame, Standard Double",150,199,100,60,139,bed,bedroom|kids,malm,"Standard Double (135x190)","white",
+490.099.47,"MALM bed frame, Standard Single",107,199,100,60,99,bed,bedroom|kids,malm,"Standard Single (90x190)","white",
+690.069.81,"MALM bed frame, Standard King",166,209,100,60,179,bed,bedroom|kids,malm,"Standard King (150x200)","white",
+790.024.35,"MALM bed frame, 180x200",196,209,100,60,229,bed,bedroom|kids,malm,"180x200 cm","white",
+506.107.39,"HEMNES bedside table",46,35,70,40,55,storage,bedroom|kids,,,"grey-green, light brown",
+004.417.58,"KLEPPSTAD wardrobe, 3 doors",117,55,176,80,129,storage,bedroom|kids,kleppstad,"3 doors","white",
+804.372.34,"KLEPPSTAD wardrobe, 2 doors",79,55,176,80,89,storage,bedroom|kids,kleppstad,"2 doors","white",
+204.989.04,"LACK TV bench 160",160,35,36,60,50,storage,living|bedroom,lacktv,"160 cm wide","black-brown",
+204.989.37,"LACK TV bench 120",120,35,36,60,40,storage,living|bedroom,lacktv,"120 cm wide","black-brown",
+004.500.88,"LACK TV bench 90",90,26,45,60,9,storage,living|bedroom,lacktv,"90 cm wide","white",
+002.638.50,"BILLY bookcase 80x202",80,28,202,60,55,storage,living|office|bedroom|kids,billy,"80 wide, 202 high","white",
+502.638.38,"BILLY bookcase 40x202",40,28,202,60,35,storage,living|office|bedroom|kids,billy,"40 wide, 202 high","white",
+302.638.44,"BILLY bookcase 80x106",80,28,106,60,35,storage,living|office|bedroom|kids,billy,"80 wide, 106 high","white",
+802.130.74,"MICKE desk 105x50",105,50,75,80,79,table,office|bedroom|kids,micke,"105x50 cm","white",
+302.130.76,"MICKE desk 73x50",73,50,75,80,49,table,office|bedroom|kids,micke,"73x50 cm","white",
+902.143.08,"MICKE desk 142x50",142,50,75,80,99,table,office|bedroom|kids,micke,"142x50 cm","white",

@@ -161,6 +161,42 @@ export async function run(){
   ok('sizes: Add places the smaller bed and it really fits',S.items.length===1&&S.items[0].k==='490.099.47'&&!issues().filter(m=>!m.includes('Verify access')).length,issues())}
  S.items=[];S.type='living';goStep(1);
 
+ // ---- 3D view (needs an internet connection: three.js comes from a CDN) ----
+ // room model handed to the 3D view: door and windows land on the right outline edges
+ freshVisit();setTemplate('L-br',[450,230,200,150,250,380]);S.dwall='2';S.doff=50;S.obs=[{id:930,kind:'window',wall:0,off:120,w:160,sill:90}];render();
+ let RM=roomModel();
+ ok('3D model: door on the inner wall of an L',RM.door&&RM.loop[RM.door.edge].x===450&&RM.loop[RM.door.edge].y===230&&RM.door.t0===50&&RM.door.t1===140,RM.door);
+ ok('3D model: window from sill to 210 cm on wall 1',RM.openings.some(o=>o.kind==='window'&&o.edge===0&&o.t0===120&&o.t1===280&&o.y0===90&&o.y1===210));
+ freshVisit({mode:'rect',shape:'rect',rw:420,rl:360,dwall:'S',doff:60});S.walls=[];S.obs=[{id:931,kind:'window',wall:'W',off:100,w:120,sill:90}];render();RM=roomModel();
+ ok('3D model: quick rectangle door on the bottom wall',RM.door&&RM.door.edge===2&&near(RM.door.t0,420-60-90,.01)&&near(RM.door.t1,420-60,.01),RM.door);
+ ok('3D model: quick rectangle window on the left wall',RM.openings.some(o=>o.kind==='window'&&o.edge===3&&near(o.t0,360-100-120,.01)));
+ // every product, plus a turned and a custom-sized piece, measured in the 3D scene
+ freshVisit();setTemplate('rect',[1400,1100]);S.type='other';
+ SAMPLE.forEach(c=>{const sp=findSpot(c,c.cl)||findSpot(c,0);if(sp)S.items.push({id:S.next++,k:c.k,x:sp.x,y:sp.y,rot:sp.rot})});
+ const custom={id:S.next++,k:SAMPLE.find(c=>/Double/.test(c.n)).k,x:700,y:600,rot:90,size:{w:175,d:215,h:110,name:'Custom size'}};S.items.push(custom);render();
+ let opened=false;try{await open3d();for(let i=0;i<40&&!view3d;i++)await wait(100);opened=!!view3d}catch(e){}
+ ok('3D: view opens (needs internet the first time)',opened,$('v3dmsg').textContent);
+ if(opened){
+  ok('3D: one model per placed piece',view3d.pieces.length===S.items.length,[view3d.pieces.length,S.items.length]);
+  const tf=(e,x,y,z)=>[e[0]*x+e[4]*y+e[8]*z+e[12],e[1]*x+e[5]*y+e[9]*z+e[13],e[2]*x+e[6]*y+e[10]*z+e[14]];const off=[];
+  for(const g of view3d.pieces){const pl=S.items.find(i=>i.id===g.userData.item.id),bd=body(pl),c=spec(pl);g.updateMatrixWorld(true);const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
+   g.traverse(o=>{if(!o.isMesh||(o.geometry.type==='PlaneGeometry'&&o.material.transparent))return;o.geometry.computeBoundingBox();const b=o.geometry.boundingBox,e=o.matrixWorld.elements;
+    for(const x of [b.min.x,b.max.x])for(const y of [b.min.y,b.max.y])for(const z of [b.min.z,b.max.z]){const p=tf(e,x,y,z);for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],p[k]);mx[k]=Math.max(mx[k],p[k])}}});
+   const err=Math.max(Math.abs(mn[0]*100-bd.x0),Math.abs(mx[0]*100-bd.x1),Math.abs(mn[2]*100-bd.y0),Math.abs(mx[2]*100-bd.y1),Math.abs(mx[1]*100-c.h),Math.abs(mn[1]*100));
+   if(err>.2)off.push(`${c.n}${pl.size?' (custom)':''}: ${Math.round(err*10)/10} cm`)}
+  ok('3D: every piece matches its plan footprint and catalog height within 2 mm',!off.length,off);
+  const canv=()=>$('v3dcanvas').querySelectorAll('canvas').length;
+  for(let i=0;i<3;i++){close3d();await open3d();for(let j=0;j<40&&!view3d;j++)await wait(100)}
+  ok('3D: reopening leaves a single canvas',canv()===1,canv());
+  close3d();ok('3D: closing removes the canvas and hides the viewer',canv()===0&&$('v3dwrap').hidden);
+  freshVisit();setTemplate('L-br',[450,230,200,150,250,380]);S.dwall='2';S.doff=50;render();await open3d();for(let j=0;j<40&&!view3d;j++)await wait(100);
+  view3d.setView('eye');view3d.render();const cam=view3d.camera.position;
+  ok('3D: "from the door" camera stands inside the room at eye height',insideAt(cam.x*100,cam.z*100)&&near(cam.y,1.6,.01),[cam.x,cam.y,cam.z]);
+  close3d()}
+ S.mode='walls';S.shape='rect';S.sketch=null;S.walls=[];S.closed=false;fixRoom();render();await open3d();
+ ok('3D: refuses a room whose walls are not finished',!view3d&&$('v3dwrap').hidden&&/not closed/.test($('tipmsg').textContent));
+ freshVisit();
+
  // ---- steps and options ----
  freshVisit();goStep(1);ok('steps: step 1 shows only room cards',visible('#typechips')&&!visible('#wallsbox'));
  goStep(2);ok('steps: advanced hidden by default',!visible('#modewalls'));S.more=true;render();ok('steps: More options shows advanced',visible('#modewalls'));S.more=false;render();
