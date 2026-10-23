@@ -191,6 +191,7 @@ export async function run(){
   close3d();ok('3D: closing removes the canvas and hides the viewer',canv()===0&&$('v3dwrap').hidden);
   freshVisit();setTemplate('L-br',[450,230,200,150,250,380]);S.dwall='2';S.doff=50;render();await open3d();for(let j=0;j<40&&!view3d;j++)await wait(100);
   view3d.setView('eye');view3d.render();const cam=view3d.camera.position;
+  ok('3D: zoom goes where you point and can get close',view3d.controls.zoomToCursor&&view3d.controls.minDistance<=.1&&view3d.controls.maxDistance>=8);
   ok('3D: "from the door" camera stands inside the room at eye height',insideAt(cam.x*100,cam.z*100)&&near(cam.y,1.6,.01),[cam.x,cam.y,cam.z]);
   close3d()}
  S.mode='walls';S.shape='rect';S.sketch=null;S.walls=[];S.closed=false;fixRoom();render();await open3d();
@@ -221,6 +222,13 @@ export async function run(){
  const strokeOf=id=>plan.querySelector(`[data-id="${id}"] > rect`).getAttribute('stroke');
  ok('screens: a problem turns the pieces red with one short line',strokeOf(p0.id)==='var(--err)'&&strokeOf(S.items[1].id)==='var(--err)'&&visible('#probline')&&/overlaps/.test($('probline').textContent),$('probline').textContent);
  S.items.pop();render();ok('screens: no problem, no red',strokeOf(p0.id)==='var(--accent)'&&!visible('#probline'));
+ // zoom: pinch with two fingers keeps the spot under the fingers; one finger on empty floor moves; Fit shows the whole room
+ {const r=plan.getBoundingClientRect(),cx=r.left+r.width*.3,cy=r.top+r.height*.6,ev=(ty,id,x,y)=>plan.dispatchEvent(new PointerEvent(ty,{pointerId:id,clientX:x,clientY:y,bubbles:true}));
+  const P0=pt({clientX:cx,clientY:cy});ev('pointerdown',21,cx-30,cy);ev('pointerdown',22,cx+30,cy);ev('pointermove',21,cx-90,cy);ev('pointermove',22,cx+90,cy);const P1=pt({clientX:cx,clientY:cy});ev('pointerup',21,0,0);ev('pointerup',22,0,0);
+  ok('zoom: pinching zooms the plan around the fingers',near(pv.z,3,.01)&&near(P0.x,P1.x,.5)&&near(P0.y,P1.y,.5)&&visible('#fit'),[pv.z,P0,P1]);
+  const vb0=plan.getAttribute('viewBox');ev('pointerdown',23,cx,cy);ev('pointermove',23,cx+40,cy+20);ev('pointerup',23,0,0);
+  ok('zoom: one finger on empty floor moves the zoomed plan',plan.getAttribute('viewBox')!==vb0&&S.items.length===1);
+  $('fit').click();const F=planFull();ok('zoom: Fit shows the whole room again',pv.z===1&&plan.getAttribute('viewBox')===`${F.x} ${F.y} ${F.w} ${F.h}`&&!visible('#fit'))}
  $('next').click();await wait(10);const tot=groupItems().reduce((a,{c,q})=>a+c.p*q,0);
  ok('screens: Quote shows one big total and one line per room',S.step===3&&$('qtotal').textContent===tot.toLocaleString()&&$('qrooms').children.length===1&&!visible('#next')&&visible('#copyq'),[$('qtotal').textContent,tot]);
  $('qaddroom').click();await wait(10);ok('screens: + Room adds a room and opens Measure',S.rooms.length===2&&S.cur===1&&S.step===1);
