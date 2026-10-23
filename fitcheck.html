@@ -39,7 +39,6 @@ input.bad{border-color:var(--err)!important;outline-color:var(--err)}
 body:not(.more) .adv{display:none!important}
 .steps{display:flex;flex-wrap:wrap;gap:5px}.stp{flex:0 0 auto;padding:5px 9px;min-height:32px;font-size:12.5px;border-radius:999px}.stp.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .stepttl{font-size:21px;line-height:1.25;text-transform:none;letter-spacing:0;color:var(--ink);margin:14px 0 2px;text-wrap:balance}
-#stepsub{font-size:14px;margin:0}
 .navbar{position:sticky;bottom:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line)}
 .navbar button{flex:1;min-height:48px;font-size:16px}#navmsg{flex-basis:100%;margin:0;text-align:center}
 .linkbtn{background:none;border:none;color:var(--accent);text-decoration:underline;padding:6px 0;min-height:36px}
@@ -53,13 +52,13 @@ body:not(.more) .adv{display:none!important}
 .pad{width:100%;height:auto;display:block;border:1px dashed var(--line);border-radius:10px;background:var(--room);touch-action:none;cursor:crosshair}
 .padtools{display:flex;gap:8px;justify-content:space-between;align-items:center;margin:4px 0 10px}
 .tw{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:8px}.tw label{font-weight:600;color:var(--ink)}
-.col{display:contents}#plan{touch-action:pan-y}body[data-step="4"] #plan{touch-action:none}#stephead{order:-2}#morewrap{order:9}.navbar{order:10}body[data-step="3"] #layoutcard{order:-1}body[data-step="3"] #plan{cursor:crosshair}
+.col{display:contents}#plan{touch-action:pan-y}body[data-step="2"] #plan{touch-action:none}#stephead{order:-2}#setcard{order:-1}.navbar{order:10}body[data-step="2"] #layoutcard{order:-1}body.doormode #plan{cursor:crosshair}
 .row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 #sizebox{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}#sizebox .chips{margin-bottom:8px}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.chip{text-align:left;line-height:1.25;padding:7px 11px}.chip small{display:block;opacity:.75;font-size:11px}.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .sg{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sg small{display:block;color:var(--mute)}.sg .tag{color:var(--warn)}
-.sg button{white-space:nowrap}
+.sg button{white-space:nowrap}.sg .addbtn{min-width:44px;min-height:44px;font-size:22px;line-height:1;padding:0}
 details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 #quote{margin-top:14px;padding-top:6px;border-top:1px solid var(--line)}
 .v3d{position:fixed;inset:0;z-index:40;background:#e7e9ea;display:flex;flex-direction:column}
@@ -68,50 +67,56 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 .v3d #v3dcanvas{flex:1;min-height:0;position:relative;touch-action:none}
 .v3d #v3dcanvas canvas{display:block;touch-action:none}
 .v3d .v3dnote{position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));margin:0;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.88);color:#1f1d1a;font-size:13px;pointer-events:none}
+.iconbtn{width:44px;padding:0;display:grid;place-items:center}.iconbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+#layoutcard{position:relative}#layouth{padding-right:120px}.corner{position:absolute;top:8px;right:8px;min-height:36px;padding:4px 12px;font-weight:600}.corner2{right:64px}
+.doorbar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:600}.doorbar button{min-height:34px;padding:4px 12px}
+.probline{margin:8px 0 0;color:var(--err);font-size:14px}
+.qbig{text-align:center;margin:4px 0 14px}.qbig small{display:block;color:var(--mute);font-size:13px}.qbig b{display:block;font-size:40px;line-height:1.15}
+.qroom{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;margin-bottom:6px}.qroom small{display:block;color:var(--mute);font-size:12px}
+.steps .stp{flex:1}
 .askov{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.45);z-index:50;padding:16px}
 </style>
 </head>
 <body>
-<header><h1>FitCheck</h1><div class="unitsel"><label for="unit">Units</label><select id="unit"><option value="cm">cm</option><option value="m">m</option><option value="mm">mm</option><option value="ftin">ft + in</option><option value="in">inches</option></select><button id="reset">New visit</button></div></header>
+<header><h1>FitCheck</h1><button id="gear" class="iconbtn" aria-label="Settings and advanced controls" aria-pressed="false" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M10.3 3h3.4l.5 2.4 1.6.9 2.3-.8 1.7 2.9-1.8 1.6v1.9l1.8 1.6-1.7 2.9-2.3-.8-1.6.9-.5 2.4h-3.4l-.5-2.4-1.6-.9-2.3.8-1.7-2.9 1.8-1.6v-1.9L4.1 8.4l1.7-2.9 2.3.8 1.6-.9z"/></svg></button></header>
 <main>
-<div id="stephead"><nav id="stepnav" class="steps" aria-label="Steps"></nav><h2 id="stepttl" class="stepttl"></h2><p id="stepsub" class="hint"></p></div>
+<div id="stephead"><nav id="stepnav" class="steps" aria-label="Screens"></nav><h2 id="stepttl" class="stepttl"></h2></div>
 <div class="col">
- <section class="card" data-step="1"><h2>Visit</h2>
-  <div class="row"><div><label>Client (optional)</label><input id="client" placeholder="Client name"></div><div><label>Rep (optional)</label><input id="rep" placeholder="Your name"></div></div>
- </section>
- <section class="card" data-step="1"><h2>Room type</h2>
-  <div id="typechips" class="chips typechips"></div>
-  <div class="row"><div><label>Room name (optional)</label><input id="rname" placeholder="e.g. Master bedroom"></div><div class="adv"><label>Room type</label><select id="rtype"></select></div></div>
-  <h2 style="margin-top:14px">Rooms in this visit</h2>
-  <div id="rooms" class="chips"></div>
+ <section class="card adv" id="setcard" data-step="1 2 3"><h2>Settings</h2>
+  <div class="row"><div><label for="unit">Units</label><select id="unit"><option value="cm">cm</option><option value="m">m</option><option value="mm">mm</option><option value="ftin">ft + in</option><option value="in">inches</option></select></div><div><label for="rep">Rep</label><input id="rep" placeholder="Your name"></div></div>
+  <div class="row"><div><label for="rname">Room name</label><input id="rname" placeholder="e.g. Master bedroom"></div><div><label for="rtype">Room type</label><select id="rtype"></select></div></div>
+  <label>Rooms in this visit</label><div id="rooms" class="chips"></div>
   <div class="tools" style="margin-top:0"><button id="addroom">+ Add room</button><button id="delroom">Delete room</button></div>
+  <div class="hint">Settings are on, so the advanced controls show on every screen. Tap the settings icon again to hide them.</div>
  </section>
- <section class="card" data-step="2"><h2 id="roomh">Room measurements (cm)</h2>
+ <section class="card" data-step="1"><h2>Room</h2><div id="typechips" class="chips typechips"></div></section>
+ <section class="card" data-step="1"><h2 id="roomh">Size</h2>
   <div class="tools adv" style="margin:0 0 10px"><button id="modewalls" class="chip">Wall by wall</button><button id="moderect" class="chip">Quick rectangle</button></div>
   <div id="wallsbox">
    <div id="shapes" class="shapes" role="group" aria-label="Room shape"></div>
    <div id="shapebox"></div>
+   <button id="notrect" class="linkbtn">Not a rectangle? Draw it</button>
    <div id="freebox">
    <div id="walls"></div>
    <div class="tools" style="margin-top:6px"><button id="addwall">+ Next wall</button><button id="closewall" class="primary" hidden></button></div>
    </div>
    <div id="wallstat" class="hint" style="margin-bottom:10px"></div>
   </div>
-  <div class="row adv"><div><label id="rwl">Width</label><input id="rw" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label id="rll">Length</label><input id="rl" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
+  <div class="row adv" id="rwrow"><div><label id="rwl">Width</label><input id="rw" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label id="rll">Length</label><input id="rl" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
   <div class="row adv"><div><label>Ceiling height</label><input id="rh" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div></div></div>
   <div class="hint adv">Width and length are the overall size of the room (worked out from the walls, or typed in quick rectangle mode).</div>
  </section>
- <section class="card" data-step="3"><h2>Door</h2>
-  <div class="row"><div class="adv"><label>Wall with the door</label><select id="dwall"></select></div><div><label>Door width</label><input id="dw" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
-  <div class="row"><div class="adv"><label id="doffl">Door offset from corner</label><input id="doff" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div class="adv"><label>Door height</label><input id="dh" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
+ <section class="card adv" data-step="2"><h2>Door</h2>
+  <div class="row"><div><label>Wall with the door</label><select id="dwall"></select></div><div><label>Door width</label><input id="dw" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
+  <div class="row"><div><label id="doffl">Door offset from corner</label><input id="doff" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label>Door height</label><input id="dh" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
  </section>
- <section class="card adv" data-step="3"><h2>Windows, pillars and other features</h2>
+ <section class="card adv" data-step="2"><h2>Windows, pillars and other features</h2>
   <div id="feat"></div>
   <div class="row" style="margin-top:6px"><div><select id="addkind"></select></div><div><button id="addfeat" style="width:100%">+ Add</button></div></div>
   <div class="hint">Position is measured on the plan: <b>From left side</b> and <b>From top side</b> go to the feature's top-left corner. Or drag the feature on the plan and the numbers fill in. Width runs left to right on the plan, depth top to bottom. For a window, <b>From wall corner</b> is measured from the corner where that wall starts.</div>
   <div class="hint">Columns, radiators, built-ins, stairs and other doors block the floor. Low ceiling zones limit how tall a piece can be. Windows flag tall pieces in front of them. Cut-outs (quick rectangle mode only) make L, U or T shaped rooms.</div>
  </section>
- <section class="card adv" data-step="4"><h2 id="cathead">Catalog</h2>
+ <section class="card adv" data-step="2"><h2 id="cathead">Catalog</h2>
   <input id="catq" placeholder="Search name or SKU" style="margin-bottom:8px">
   <div class="cat" id="cat" style="max-height:320px;overflow:auto"></div>
   <div class="tools"><button id="imp">Import CSV</button><button id="tpl">Copy template</button><button id="sample">Use sample</button></div>
@@ -120,23 +125,33 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
  </section>
 </div>
 <div class="col">
- <section class="card" id="layoutcard" data-step="2 3 4"><h2 id="layouth">Layout</h2>
+ <section class="card" id="layoutcard" data-step="2"><h2 id="layouth">Layout</h2><button id="v3d" class="corner" aria-label="3D view">3D</button><button id="fit" class="corner corner2" hidden>Fit</button>
+  <div id="doorbar" class="doorbar" hidden><span>Tap the wall where the door is</span><button id="doorskip">Skip</button></div>
   <svg id="plan" viewBox="0 0 600 500"></svg>
-  <div class="tools" id="plantools"><button id="v3d" class="primary">3D view</button><button id="rot" disabled>Rotate 90&deg;</button><button id="wall" disabled>Move to wall</button><button id="del" disabled>Remove</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
+  <p id="probline" class="probline" hidden></p>
+  <div class="tools" id="plantools"><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
   <div id="sizebox" hidden><div id="sizettl" style="font-weight:600;margin-bottom:6px"></div><div id="sizechips" class="chips" role="group" aria-label="Sizes"></div>
    <div class="row3"><div><label for="szw" id="szwl">Width</label><input id="szw" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szd" id="szdl">Depth</label><input id="szd" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szh" id="szhl">Height</label><input id="szh" type="text" inputmode="decimal" autocomplete="off"></div></div>
    <div id="sizehint" class="hint"></div></div>
   <div class="hint adv">Drawn to scale: each piece covers only its own footprint. Tap a piece to see the free space around it. Orange zone = clearance needed in front.</div><div id="tipmsg" class="hint" style="color:var(--warn)"></div>
  </section>
- <section class="card adv" data-step="4"><h2>Space</h2><div id="space"></div>
+ <section class="card adv" data-step="2"><h2>Space</h2><div id="space"></div>
   <div id="selbox" hidden style="margin-top:10px"><div id="selinfo" class="hint" style="font-size:14px;color:var(--ink);margin:0 0 8px"></div>
    <div class="row"><div><label id="pxl">Gap from left wall</label><input id="px" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label id="pyl">Gap from top wall</label><input id="py" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div></div>
  </section>
- <section class="card" data-step="4"><h2 id="sgh">What fits</h2><div id="sugg" class="hint">Calculating...</div></section>
- <section class="card" data-step="4"><h2>Fit check</h2><div id="issues"></div></section>
- <section class="card" data-step="5"><h2>Quote</h2><div id="qtable"></div><div class="tools"><button class="primary" id="showq">Show full quote</button><button id="copyq">Copy quote text</button></div><div class="hint" id="quotemsg">The full quote lists every room with its plan. Copy it as text to paste into an email or chat.</div><textarea id="copyfb" readonly rows="8" hidden style="margin-top:8px"></textarea><div id="quote" hidden></div></section>
+ <section class="card" data-step="2"><h2 id="sgh">Fits here</h2><div id="sugg" class="hint">Calculating...</div></section>
+ <section class="card adv" data-step="2"><h2>Fit check</h2><div id="issues"></div></section>
+ <section class="card" data-step="3">
+  <div class="qbig"><small>Total</small><b id="qtotal">0</b><small id="qnote"></small></div>
+  <div id="qrooms"></div>
+  <label for="client" style="margin-top:12px">Client (optional)</label><input id="client" placeholder="Client name">
+  <div class="tools"><button class="primary" id="copyq">Copy quote</button><button id="qaddroom">+ Room</button></div>
+  <div class="hint" id="quotemsg"></div><textarea id="copyfb" readonly rows="8" hidden style="margin-top:8px"></textarea>
+  <div class="adv"><div id="qtable"></div><div class="tools"><button id="showq">Show full quote</button></div></div>
+  <div id="quote" hidden></div>
+  <button id="reset" class="linkbtn">New visit</button>
+ </section>
 </div>
-<div id="morewrap"><button id="more" class="linkbtn">More options</button></div>
 <div class="navbar"><button id="back">Back</button><button id="next" class="primary">Next</button><p id="navmsg" class="hint"></p></div>
 </main>
 <div id="v3dwrap" class="v3d" hidden role="dialog" aria-modal="true" aria-labelledby="v3dttl"><div class="v3dbar"><b id="v3dttl">3D view</b><button id="v3dov">Overview</button><button id="v3deye">Door view</button><button id="v3dx" class="primary">Close</button></div><div id="v3dcanvas"><p class="v3dnote" id="v3dmsg"></p></div></div>
@@ -185,7 +200,7 @@ const $=id=>document.getElementById(id);
 const LS='fitcheck-v1',CK='fitcheck-catalog';
 let CATALOG=SAMPLE.slice(),usingSample=true;
 try{const c=JSON.parse(localStorage.getItem(CK));if(Array.isArray(c)&&c.length){CATALOG=c;usingSample=false}}catch(e){}
-let S={client:'',rep:'',name:'Room 1',type:'living',rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],sel:null,next:1,rooms:[],cur:0,cuts:[],obs:[],rh:260,mode:'walls',walls:[],shape:'rect',unit:'cm',step:1,more:false};
+let S={client:'',rep:'',name:'Living room',type:'living',rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],sel:null,next:1,rooms:[],cur:0,cuts:[],obs:[],rh:260,mode:'walls',walls:[],shape:'rect',unit:'cm',step:1,more:false};
 try{const s=JSON.parse(localStorage.getItem(LS));if(s){S=Object.assign(S,s);if(!s.rooms&&!s.mode)S.mode='rect'}}catch(e){}
 const save=()=>{stash();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}};
 const cat=k=>CATALOG.find(c=>c.k===k);
@@ -203,8 +218,8 @@ const sizeKey=it=>it.size?`${it.size.w}x${it.size.d}x${it.size.h||''}`:'';
 
 // A visit has several rooms. The active room's fields live on S; the others are stored in S.rooms.
 const ROOM_TYPES={living:'Living room',bedroom:'Bedroom',dining:'Dining room',office:'Home office',kids:"Kids' room",other:'Other'};
-const RF=['name','type','rw','rl','dwall','dw','doff','dh','items','cuts','obs','rh','mode','walls','shape','sketch'];
-const normRoom=r=>{r.mode=r.mode||'rect';r.walls=r.walls||[];r.shape=r.shape||(r.mode==='walls'&&r.walls.length?'free':'rect');r.sketch=r.sketch||null;r.cuts=r.cuts||[];r.obs=r.obs||[];r.rh=r.rh||260;return r};
+const RF=['name','type','rw','rl','dwall','dw','doff','dh','items','cuts','obs','rh','mode','walls','shape','sketch','doorSet'];
+const normRoom=r=>{r.doorSet=!!r.doorSet;r.mode=r.mode||'rect';r.walls=r.walls||[];r.shape=r.shape||(r.mode==='walls'&&r.walls.length?'free':'rect');r.sketch=r.sketch||null;r.cuts=r.cuts||[];r.obs=r.obs||[];r.rh=r.rh||260;return r};
 function fixRoom(){S.cuts=S.cuts||[];S.obs=S.obs||[];S.rh=S.rh||260;S.mode=S.mode||'rect';S.walls=S.walls||[];S.shape=S.shape||'rect';
  const def=shapeDef(S.shape);if(S.mode==='walls'&&def&&S.walls.length!==def.turns.length)S.walls=wallsFor(def);
  recomputeShape()}
@@ -245,7 +260,7 @@ function shapeSvg(key,big){const pts=shapeDef(key).pts,sc=big?2.2:.5,pad=big?26:
  if(big&&!lab)P.forEach((a,i)=>{const b=P[(i+1)%n],len=Math.hypot(b[0]-a[0],b[1]-a[1]),dx=(b[0]-a[0])/len,dy=(b[1]-a[1])/len,mx=(a[0]+b[0])/2+dy*15,my=(a[1]+b[1])/2-dx*15;
   if(key==='rect'&&i>1)return;const t=key==='rect'?(i===0?'Length':'Width'):String(i+1),r=key==='rect'?0:10;
   h+=r?`<circle cx="${mx}" cy="${my}" r="${r}" fill="var(--accent)"/><text x="${mx}" y="${my+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent-ink)">${t}</text>`
-   :`<text x="${mx}" y="${my+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent)">${t}</text>`});
+   :`<text x="${mx}" y="${my+4.5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent)"${i===1?` transform="rotate(90 ${mx} ${my})"`:''}>${t}</text>`});   // Width runs down the right wall
  return h+'</svg>'}
 
 // ---- Room outlines with straight, angled and curved walls ----
@@ -425,22 +440,24 @@ const windows=()=>S.obs.filter(o=>o.kind==='window');
 // Strip a window occupies in front of its wall (20 cm deep) for "is a piece standing in front of it".
 const winRect=o=>(wallSpan(o.wall,o.off,o.w,20)||{rect:EMPTY}).rect
 
+// Problems shown on the simple screens: errors, and a piece in the door swing. Each is [type, message, piece ids].
+const problems=()=>check().filter(p=>p[2]&&(p[0]==='err'||p[3]));
 function check(){
  if(S.mode==='walls'&&!S.closed)return [['warn','The room outline is not closed yet. Finish measuring the walls to check fit.']];
  const out=[],W=S.rw,L=S.rl,dz=doorRect();
  S.items.forEach(it=>{const c=spec(it),b=body(it),f=front(it);
-  if(!rectInRoom(b))out.push(['err',`${c.n} sticks out of the room.`]);
-  if(hit(b,dz))out.push(['warn',`${c.n} blocks the door swing area.`]);
+  if(!rectInRoom(b))out.push(['err',`${c.n} sticks out of the room.`,[it.id]]);
+  if(hit(b,dz))out.push(['warn',`${c.n} blocks the door swing area.`,[it.id],1]);
   if(!rectInRoom(f))out.push(['warn',`${c.n}: front clearance (${U(c.cl)}) runs into a wall.`]);
   S.items.forEach(o=>{if(o.id===it.id)return;
-   if(o.id>it.id&&hit(b,body(o)))out.push(['err',`${c.n} overlaps ${spec(o).n}.`]);
+   if(o.id>it.id&&hit(b,body(o)))out.push(['err',`${c.n} overlaps ${spec(o).n}.`,[it.id,o.id]]);
    if(hit(f,body(o)))out.push(['warn',`${spec(o).n} is inside the clearance zone of ${c.n}.`]);});
   hardList().forEach(({r,label})=>{
-   if(hit(b,r))out.push(['err',`${c.n} overlaps ${label}.`]);
+   if(hit(b,r))out.push(['err',`${c.n} overlaps ${label}.`,[it.id]]);
    else if(hit(f,r))out.push(['warn',`${label[0].toUpperCase()+label.slice(1)} is inside the clearance zone of ${c.n}.`])});
-  lowZones().forEach(o=>{if(c.h>o.h&&hit(b,rectOf(o)))out.push(['err',`${c.n} (${U(c.h)} high) is under a low ceiling area that allows ${U(o.h)}.`])});
+  lowZones().forEach(o=>{if(c.h>o.h&&hit(b,rectOf(o)))out.push(['err',`${c.n} (${U(c.h)} high) is under a low ceiling area that allows ${U(o.h)}.`,[it.id]])});
   windows().forEach(o=>{if(c.h>o.sill&&hit(b,winRect(o)))out.push(['warn',`${c.n} (${U(c.h)} high) stands in front of a window with a ${U(o.sill)} sill and will block it.`])});
-  if(c.h>S.rh)out.push(['err',`${c.n} (${U(c.h)}) is taller than the ${U(S.rh)} ceiling.`]);
+  if(c.h>S.rh)out.push(['err',`${c.n} (${U(c.h)}) is taller than the ${U(S.rh)} ceiling.`,[it.id]]);
   const s=[c.w,c.d,c.h].sort((a,b)=>a-b);
   if(s[0]>S.dw-5||s[1]>S.dh-5)out.push(['warn',`${c.n} (${UUU(c.w,c.d,c.h)}) may not get through the ${UU(S.dw,S.dh)} door. Verify access.`]);
  });
@@ -546,9 +563,10 @@ function drawPlan(sel,print){
  const sb=imperial()?91.44:100,sbl=imperial()?'3 ft':{m:'1 m',mm:'1000 mm',cm:'100 cm'}[S.unit];
  h+=`<g stroke="var(--mute)" stroke-width="${sw}"><line x1="0" y1="${L+24}" x2="${sb}" y2="${L+24}"/><line x1="0" y1="${L+20}" x2="0" y2="${L+28}"/><line x1="${sb}" y1="${L+20}" x2="${sb}" y2="${L+28}"/></g><text x="${sb+8}" y="${L+24+fs*.35}" font-size="${fs}" fill="var(--mute)">${sbl} scale</text>`;
  const halo=`paint-order="stroke" stroke="var(--room)" stroke-width="${u*3}" stroke-linejoin="round"`;
- S.items.forEach(it=>{const c=spec(it),b=body(it),f=front(it),bw=b.x1-b.x0,bh=b.y1-b.y0,on=it.id===sel,s2=on?sw*1.6:sw;
+ const bad=new Set(problems().flatMap(p=>p[2]));
+ S.items.forEach(it=>{const c=spec(it),b=body(it),f=front(it),bw=b.x1-b.x0,bh=b.y1-b.y0,on=it.id===sel,s2=on?sw*1.6:sw,col=bad.has(it.id)?'var(--err)':'var(--accent)';
   if(S.showCl||on)h+=`<rect x="${f.x0}" y="${f.y0}" width="${f.x1-f.x0}" height="${f.y1-f.y0}" fill="var(--warn)" fill-opacity=".08" stroke="var(--warn)" stroke-dasharray="${u*5} ${u*4}" stroke-width="${sw*.7}"/>`;
-  h+=`<g data-id="${it.id}" style="cursor:grab"><rect x="${b.x0+s2/2}" y="${b.y0+s2/2}" width="${bw-s2}" height="${bh-s2}" fill="var(--accent)" fill-opacity="${on?.5:.28}" stroke="var(--accent)" stroke-width="${s2}"/>`;
+  h+=`<g data-id="${it.id}" style="cursor:grab"><rect x="${b.x0+s2/2}" y="${b.y0+s2/2}" width="${bw-s2}" height="${bh-s2}" fill="${col}" fill-opacity="${on?.5:.28}" stroke="${col}" stroke-width="${s2}"/>`;
   h+=`<g transform="translate(${it.x} ${it.y}) rotate(${it.rot})" fill="none" stroke="var(--ink)" stroke-opacity=".4" stroke-width="${u*1.1}" pointer-events="none">${detail(c,u)}</g>`;
   const e=sw*2.2,fx={0:[b.x0+e,b.y1-e,b.x1-e,b.y1-e],90:[b.x0+e,b.y0+e,b.x0+e,b.y1-e],180:[b.x0+e,b.y0+e,b.x1-e,b.y0+e],270:[b.x1-e,b.y0+e,b.x1-e,b.y1-e]}[it.rot];
   h+=`<line x1="${fx[0]}" y1="${fx[1]}" x2="${fx[2]}" y2="${fx[3]}" stroke="var(--ink)" stroke-opacity=".55" stroke-width="${u*2.5}"/>`;
@@ -620,8 +638,7 @@ function doorOk(c){const s=[c.w,c.d,c.h].sort((a,b)=>a-b);return s[0]<=S.dw-5&&s
 function scheduleSugg(){clearTimeout(suggTimer);suggTimer=setTimeout(renderSugg,120)}
 function renderSugg(){
  const W=+S.rw,L=+S.rl,box=$('sugg');
- $('sgh').textContent=`${S.name||'This room'} (${ROOM_TYPES[S.type]}): what fits`;
- if(S.mode==='walls'&&!S.closed){suggList=[];box.className='hint';box.textContent='Finish measuring the walls so the outline closes, then suggestions appear here.';return}
+ if(S.mode==='walls'&&!S.closed){suggList=[];box.className='hint';box.textContent='Measure the room first.';return}
  if(W<1||L<1){box.textContent='Enter the room size to see suggestions.';return}
  const fr=freeRect(),free=usage().free;suggList=[];const no=[];
  products().forEach(c=>{
@@ -634,14 +651,17 @@ function renderSugg(){
  suggList.forEach(x=>x.suit=suits(x.c));
  suggList.sort((a,b)=>(b.suit-a.suit)||(b.door-a.door)||(b.c.w*b.c.d-a.c.w*a.c.d));
  let h=`<div class="hint adv" style="margin:0 0 6px">Largest free area: <b>${UU(fr.w,fr.d)}</b> (clearances not included). Suggestions respect clearances, the door swing and other pieces, and show pieces suited to this room type first.</div>`;
- const row=(x,i)=>`<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b>${x.from?`<small style="color:var(--accent)">Fits as ${esc(x.c.z||x.c.n)}; ${esc(x.from.z||x.from.n)} does not</small>`:''}<small>${UUU(x.c.w,x.c.d,x.c.h)} &middot; ${x.c.p.toLocaleString()}${x.door?'':' <span class="tag">&middot; check door access</span>'}</small></div><button data-add="${i}">Add</button></div>`;
+ // One short row per product: name, size and price, and a + button. The details stay behind the settings icon.
+ const row=(x,i)=>`<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b>${x.from?`<small style="color:var(--accent)">Smaller size: ${esc(x.c.z||x.c.n)}</small>`:''}<small>${UU(x.c.w,x.c.d)} &middot; ${x.c.p.toLocaleString()}${x.door?'':' <span class="tag adv">&middot; check door access</span>'}</small></div><button data-add="${i}" class="addbtn" aria-label="Add ${esc(x.c.n)}">+</button></div>`;
  const mine=suggList.map((x,i)=>x.suit?row(x,i):'').join(''),other=suggList.map((x,i)=>x.suit?'':row(x,i)).join(''),nOther=suggList.filter(x=>!x.suit).length;
- h+=mine||`<div class="issue warn">Nothing suited to a ${ROOM_TYPES[S.type].toLowerCase()} fits the space that is left.</div>`;
- if(nOther)h+=`<details><summary>Also fits, but usually for other rooms (${nOther})</summary>${other}</details>`;
- if(no.length)h+=`<details><summary>Does not fit (${no.length})</summary>${no.map(([c,r])=>`<div class="sg"><div><b>${esc(c.n)}</b><small>${UU(c.w,c.d)}. ${r}</small></div></div>`).join('')}</details>`;
+ h+=mine||`<div class="hint">Nothing for a ${ROOM_TYPES[S.type].toLowerCase()} fits the space that is left.</div>`;
+ if(nOther)h+=`<details><summary>Also fits, usually for other rooms (${nOther})</summary>${other}</details>`;
+ if(no.length)h+=`<details class="adv"><summary>Does not fit (${no.length})</summary>${no.map(([c,r])=>`<div class="sg"><div><b>${esc(c.n)}</b><small>${UU(c.w,c.d)}. ${r}</small></div></div>`).join('')}</details>`;
  box.className='';box.innerHTML=h}
+// The list refreshes 120 ms after a change, so the spot is worked out again on the tap (the room may have just changed).
 $('sugg').onclick=e=>{const b=e.target.closest('[data-add]');if(!b)return;const x=suggList[+b.dataset.add];if(!x)return;
- ghost=null;const it={id:S.next++,k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot};S.items.push(it);S.sel=it.id;render()};
+ if(S.mode==='walls'&&!S.closed)return;const c=x.c,sp=findSpot(c,c.cl)||findSpot(c,0);
+ ghost=null;const it={id:S.next++,k:c.k,x:sp?sp.x:S.rw/2,y:sp?sp.y:S.rl/2,rot:sp?sp.rot:0};S.items.push(it);S.sel=it.id;render()};
 $('sugg').onmouseover=e=>{const r=e.target.closest('.sg[data-i]');const x=r&&suggList[+r.dataset.i];
  const g=x?{k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot}:null;
  if(JSON.stringify(g)!==JSON.stringify(ghost)){ghost=g;$('plan').innerHTML=drawPlan(S.sel)}};
@@ -649,10 +669,15 @@ $('sugg').onmouseleave=()=>{if(ghost){ghost=null;$('plan').innerHTML=drawPlan(S.
 
 function render(){
  const W=+S.rw||1,L=+S.rl||1,m=40,plan=$('plan');
- plan.setAttribute('viewBox',`${-m} ${-m} ${W+2*m} ${L+2*m}`);
+ setPlanBox();
  plan.innerHTML=drawPlan(S.sel);
  $('issues').innerHTML=check().map(([t,m])=>`<div class="issue ${t}">${m}</div>`).join('');
- $('rot').disabled=$('del').disabled=$('wall').disabled=S.sel==null;
+ // piece tools show when a piece is selected; otherwise only "Move door"
+ if(S.sel!==lastSel){sizeOpen=false;lastSel=S.sel}
+ const has=S.items.some(i=>i.id===S.sel);['rot','sizebtn','del','wall'].forEach(id=>$(id).hidden=!has);$('movedoor').hidden=has||doorAsk();
+ $('sizebtn').setAttribute('aria-expanded',String(has&&sizeOpen));$('sizebtn').classList.toggle('on',has&&sizeOpen);
+ const pr=problems();$('probline').hidden=!pr.length;$('probline').textContent=pr.length?pr[0][1]+(pr.length>1?` (+${pr.length-1} more)`:''):'';
+ const asking=doorAsk();document.body.classList.toggle('doormode',asking);$('doorbar').hidden=!asking;$('doorskip').textContent=S.doorSet?'Cancel':'Skip';
  $('showcl').checked=!!S.showCl;
  const us=usage(),free=us.free;
  $('space').innerHTML=`<table><tr><td>Room floor${S.cuts.length?' (without cut-outs)':''}</td><td class="n">${UA(us.room)}</td></tr>${us.fixed?`<tr><td>Fixed features (columns, radiators...)</td><td class="n">${UA(us.fixed)}</td></tr>`:''}<tr><td>Furniture footprint</td><td class="n">${UA(us.used)} (${us.room?Math.round(us.used/us.room*100):0}%)</td></tr><tr><th>Free floor space</th><th class="n">${UA(free)}</th></tr></table>${us.overlap?'<div class="hint">Some pieces overlap each other or a fixed feature, so these figures are approximate.</div>':''}`;
@@ -662,7 +687,11 @@ function render(){
   $('selinfo').innerHTML=`<b>${esc(c.n)}</b>: ${UUU(c.w,c.d,c.h)} (W x D x H). Floor footprint on the plan: ${UU(b.x1-b.x0,b.y1-b.y0)}.<br>Free space around it: left <b>${U(g.gl)}</b>, right <b>${U(g.gr)}</b>, top <b>${U(g.gu)}</b>, bottom <b>${U(g.gd)}</b>.`+(Math.min(g.gl,g.gr,g.gu,g.gd)>40?'<br><span style="color:var(--warn)">This piece is away from the walls and splits the floor. Use Move to wall to keep the space free.</span>':'');
   if(document.activeElement!==$('px'))$('px').value=U(b.x0,true);
   if(document.activeElement!==$('py'))$('py').value=U(b.y0,true)}
- const grand={t:0,n:0},parts=S.rooms.map((r,i)=>{const run=()=>{const b=roomBlock(false);grand.t+=b.total;grand.n+=b.count;return b.html};return i===S.cur?run():withRoom(r,run)}).join('');
+ const grand={t:0,n:0},lines=[],parts=S.rooms.map((r,i)=>{const run=()=>{const b=roomBlock(false);grand.t+=b.total;grand.n+=b.count;
+   lines.push({i,name:S.name,n:b.count,t:b.total,open:S.mode==='walls'&&!S.closed});return b.html};return i===S.cur?run():withRoom(r,run)}).join('');
+ // quote screen: one big total and one line per room (tap a line to open that room)
+ $('qtotal').textContent=grand.t.toLocaleString();$('qnote').textContent=usingSample?'Sample prices: IKEA UK, in £':'';
+ $('qrooms').innerHTML=lines.map(x=>`<button class="qroom" data-qr="${x.i}"><span>${esc(x.name||'Room')}<small>${x.open?'not measured yet':`${x.n} piece${x.n===1?'':'s'}`}</small></span><b>${x.t.toLocaleString()}</b></button>`).join('');
  $('qtable').innerHTML=parts+`<table style="margin-top:8px"><tr><th>Visit total (${S.rooms.length} room${S.rooms.length>1?'s':''})</th><th class="n">${grand.t.toLocaleString()}</th></tr></table>`;
  $('showq').disabled=$('copyq').disabled=!grand.n;if(!$('quote').hidden){$('quote').hidden=true;$('showq').textContent='Show full quote'}
  renderRooms();renderTypes();applyStep();renderSizebox();
@@ -695,8 +724,8 @@ function buildQuote(){stash();let body='',grand=0;
 function renderRooms(){
  $('rooms').innerHTML=S.rooms.map((r,i)=>`<button class="chip${i===S.cur?' on':''}" data-r="${i}">${esc(r.name||'Room')}<small>${ROOM_TYPES[r.type]||''} &middot; ${r.closed===false?'measuring...':UU(r.rw,r.rl)}</small></button>`).join('');
  $('delroom').disabled=S.rooms.length<2;
- $('roomh').textContent=`Measurements for: ${S.name||'this room'} (${UNITS[S.unit]})`;
- $('layouth').textContent=`Layout: ${S.name||'this room'} (${ROOM_TYPES[S.type]})`}
+ $('roomh').textContent=`Size (${UNITS[S.unit]})`;
+ $('layouth').textContent=S.name||'This room'}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // catalog
@@ -815,7 +844,8 @@ function renderWallStatus(){const el=$('wallstat'),cb=$('closewall');cb.hidden=t
  if(gi){msg+=`Not closed yet: the last corner is ${U(Math.abs(gi.ex))} ${gi.ex>0?'right':'left'} and ${U(Math.abs(gi.ey))} ${gi.ey>0?'below':'above'} the start. Keep adding walls until you are back at the start.`;
   if(gi.closeLen){cb.hidden=false;cb.textContent=`Add closing wall (${U(gi.closeLen)})`}}
  el.innerHTML=msg}
-function renderShapes(){const keys=Object.keys(SHAPES).filter(k=>true),showFree=S.more||S.shape==='free';
+function renderShapes(){const keys=Object.keys(SHAPES).filter(k=>true),showFree=S.more||S.shape==='free',open=showShapes||S.shape!=='rect'||!!S.more;
+ $('shapes').hidden=!open;$('notrect').hidden=open||S.mode!=='walls';
  $('shapes').innerHTML=`<button class="shape${S.shape==='sketch'?' on':''}" data-shape="sketch" aria-pressed="${S.shape==='sketch'}"><svg viewBox="0 0 56 39" aria-hidden="true"><path d="M5 6c12-3 25-2 44 0M49 6c2 9 1 18 0 28M49 34c-14 1-29 2-44 0M5 34c-1-9-2-18 0-28" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/></svg><span>Draw it</span></button>`+keys.map(k=>`<button class="shape${S.shape===k?' on':''}" data-shape="${k}" aria-pressed="${S.shape===k}" aria-label="${SHAPES[k].name}" title="${SHAPES[k].name}">${shapeSvg(k)}</button>`).join('')+
   (showFree?`<button class="shape${S.shape==='free'?' on':''}" data-shape="free" aria-pressed="${S.shape==='free'}"><svg viewBox="0 0 56 39" aria-hidden="true"><path d="M3 3h30v12h20v21H20V24H3z" fill="var(--room)" stroke="var(--ink)" stroke-width="2" stroke-dasharray="4 3"/></svg><span>Other shape</span></button>`:'')}
 function renderShapeInputs(){const free=S.shape==='free';$('freebox').hidden=!free;if(free){$('shapebox').innerHTML='';return}
@@ -866,7 +896,7 @@ $('walls').addEventListener('change',e=>{const row=e.target.closest('.wrow');if(
 $('walls').onclick=e=>{const b=e.target.closest('[data-wdel]');if(!b)return;S.walls.splice(+b.closest('.wrow').dataset.w,1);onShapeChange(true)};
 $('addwall').onclick=()=>{S.walls.push({len:0,turn:'R'});onShapeChange(true);const ins=$('walls').querySelectorAll('input[data-wf=len]');ins[ins.length-1].focus()};
 $('closewall').onclick=()=>{const gi=S.gapInfo;if(gi&&gi.closeLen){S.walls.push({len:gi.closeLen,turn:'R'});onShapeChange(true)}};
-function syncDims(){const wm=S.mode==='walls';
+function syncDims(){const wm=S.mode==='walls';$('rwrow').classList.toggle('adv',wm);   // quick rectangle rooms type their size here
  $('wallsbox').hidden=!wm;$('modewalls').classList.toggle('on',wm);$('moderect').classList.toggle('on',!wm);
  $('rwl').textContent=wm?'Overall width (from walls)':'Width';$('rll').textContent=wm?'Overall length (from walls)':'Length';
  [['rw',S.rw],['rl',S.rl]].forEach(([id,v])=>{$(id).disabled=wm;if(wm)$(id).value=S.closed?U(v,true):''})}
@@ -887,7 +917,7 @@ $('modewalls').onclick=()=>{if(S.mode!=='walls')toWalls()};
 $('moderect').onclick=()=>{if(S.mode!=='rect')toRect()};
 
 // ---- Size panel for the selected piece (furniture step) ----
-function renderSizebox(){const it=S.step===4&&S.items.find(i=>i.id===S.sel),box=$('sizebox');box.hidden=!it;if(!it)return;
+function renderSizebox(){const it=S.step===2&&sizeOpen&&S.items.find(i=>i.id===S.sel),box=$('sizebox');box.hidden=!it;if(!it)return;
  const base=cat(it.k),c=spec(it),list=sizesOf(base),many=list.length>1;
  $('sizettl').textContent=`Size: ${base.n}`;
  $('sizechips').innerHTML=(many?list.map(x=>`<button class="chip${!it.size&&x.k===it.k?' on':''}" data-sz="k:${esc(x.k)}">${esc(x.z||x.n)}<small>${UU(x.w,x.d)} &middot; ${x.p.toLocaleString()}</small></button>`).join('')
@@ -895,7 +925,7 @@ function renderSizebox(){const it=S.step===4&&S.items.find(i=>i.id===S.sel),box=
   `<button class="chip${it.size?' on':''}" data-sz="custom">Custom<small>type below</small></button>`;
  [['szw',c.w],['szd',c.d],['szh',c.h]].forEach(([id,v])=>{const el=$(id);el.inputMode=imperial()?'text':'decimal';if(document.activeElement!==el){el.value=U(v,true);el.classList.remove('bad')}});
  const un=UNITS[S.unit];$('szwl').textContent=`Width (${un})`;$('szdl').textContent=`Depth (${un})`;$('szhl').textContent=`Height (${un})`;
- $('sizehint').textContent=(many?`The sizes this product comes in, each with its own catalog price.`:'This product comes in one size in the catalog.')+' A custom size (made to measure) has no catalog price: the quote marks it "price to confirm".'}
+ $('sizehint').className='hint adv';$('sizehint').textContent=(many?`The sizes this product comes in, each with its own catalog price.`:'This product comes in one size in the catalog.')+' A custom size (made to measure) has no catalog price: the quote marks it "price to confirm".'}
 $('sizechips').onclick=e=>{const b=e.target.closest('[data-sz]'),it=b&&S.items.find(i=>i.id===S.sel);if(!it)return;const v=b.dataset.sz;
  if(v==='cat')delete it.size;
  else if(v==='custom'){const c=spec(it);it.size={w:c.w,d:c.d,h:c.h,name:'Custom size'};render();$('szw').focus();$('szw').select();return}
@@ -924,7 +954,7 @@ function roomModel(){
   obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
   items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:c.m||''}})}}
 // Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
-const V3D='2026-10-23b';
+const V3D='2026-10-23c';
 let view3d=null,v3dTimer=0;
 async function open3d(){
  if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
@@ -938,29 +968,40 @@ $('v3d').onclick=open3d;$('v3dx').onclick=close3d;
 $('v3dov').onclick=()=>view3d&&view3d.setView('overview');$('v3deye').onclick=()=>view3d&&view3d.setView('eye');
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('v3dwrap').hidden)close3d()});
 
-// ---- Simple step-by-step flow. "More options" shows the advanced controls inside each step. ----
-const STEPS=[['Room','Which room are you measuring?','Tap the room type. The name and client are optional.'],
- ['Walls','What shape is the room?','Draw it roughly with your finger, or tap the picture that looks like it. Then measure each numbered wall.'],
- ['Door','Where is the door?','Tap the plan where the door is.'],
- ['Furniture','What fits','Tap Add on anything that fits. Tap a piece on the plan to change its size, turn, move or remove it.'],
- ['Quote','Quote','Check the total, then copy the quote to send it.']];
-function applyStep(){const st=Math.min(5,Math.max(1,S.step||1));S.step=st;document.body.dataset.step=st;
+// ---- Three screens: Measure, Furniture, Quote. The settings icon shows the advanced controls on every screen. ----
+const STEPS=[['Measure','Measure the room'],['Furniture','Add furniture'],['Quote','Quote']];
+let lastSel=null,sizeOpen=false,moveDoor=false,showShapes=false;
+// On the furniture screen a room asks once where its door is ("Move door" asks again).
+const doorAsk=()=>S.step===2&&(moveDoor||!S.doorSet)&&!(S.mode==='walls'&&!S.closed);
+function applyStep(){const st=Math.min(3,Math.max(1,S.step||1));S.step=st;document.body.dataset.step=st;
  document.querySelectorAll('[data-step]').forEach(el=>{el.hidden=!el.dataset.step.split(' ').includes(String(st))});
+ if(st===1&&S.more&&(S.shape==='free'||S.mode==='rect'))$('layoutcard').hidden=false;   // the plan helps when measuring wall by wall
  $('stepnav').innerHTML=STEPS.map(([n],i)=>`<button class="stp${i+1===st?' on':''}" data-go="${i+1}"${i+1===st?' aria-current="step"':''}>${i+1}. ${n}</button>`).join('');
- $('stepttl').textContent=STEPS[st-1][1];$('stepsub').textContent=STEPS[st-1][2];
- $('back').hidden=st===1;const nx=$('next');
- if(st<5){nx.textContent='Next: '+STEPS[st][0];nx.dataset.act='next'}else{nx.textContent='+ Measure another room';nx.dataset.act='room'}
- const open=S.mode==='walls'&&!S.closed,blocked=open&&(st===2||st===3);
- nx.disabled=blocked;$('navmsg').textContent=blocked?'Finish the walls first: the room is not closed yet.':'';$('navmsg').hidden=!blocked;
- $('plantools').hidden=st!==4;
- document.body.classList.toggle('more',!!S.more);$('more').textContent=S.more?'Fewer options':'More options'}
+ $('stepttl').textContent=STEPS[st-1][1];
+ $('back').hidden=st===1;const nx=$('next');nx.hidden=st===3;
+ if(st<3)nx.textContent='Next: '+STEPS[st][0];
+ const blocked=st===1&&S.mode==='walls'&&!S.closed;
+ nx.disabled=blocked;$('navmsg').textContent=blocked?'Type the room size first.':'';$('navmsg').hidden=!blocked;
+ $('plantools').hidden=st!==2;
+ document.body.classList.toggle('more',!!S.more);$('gear').setAttribute('aria-pressed',String(!!S.more))}
 function renderTypes(){$('typechips').innerHTML=Object.entries(ROOM_TYPES).map(([k,v])=>`<button class="chip${S.type===k?' on':''}" data-t="${k}">${v}</button>`).join('')}
-$('typechips').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;S.type=b.dataset.t;$('rtype').value=S.type;renderCat();render()};
-const goStep=n=>{S.step=n;render();window.scrollTo(0,0)};
+// The room type names the room ("Bedroom", "Bedroom 2"), unless someone typed their own name under settings.
+const typeNamed=n=>!n||/^Room( \d+)?$/.test(n)||Object.values(ROOM_TYPES).some(v=>n===v||(n.startsWith(v+' ')&&/^\d+$/.test(n.slice(v.length+1))));
+function roomName(t){const base=t==='other'?'Room':ROOM_TYPES[t],taken=new Set(S.rooms.filter((r,i)=>i!==S.cur).map(r=>r.name));
+ if(!taken.has(base))return base;for(let k=2;;k++)if(!taken.has(`${base} ${k}`))return `${base} ${k}`}
+$('typechips').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;S.type=b.dataset.t;$('rtype').value=S.type;
+ if(typeNamed(S.name)){S.name=roomName(S.type);$('rname').value=S.name}renderCat();render()};
+const goStep=n=>{S.step=n;moveDoor=false;$('tipmsg').textContent='';render();window.scrollTo(0,0)};
 $('stepnav').onclick=e=>{const b=e.target.closest('[data-go]');if(b)goStep(+b.dataset.go)};
 $('back').onclick=()=>goStep((S.step||1)-1);
-$('next').onclick=()=>{if($('next').dataset.act==='room'){$('addroom').click();goStep(1)}else goStep((S.step||1)+1)};
-$('more').onclick=()=>{S.more=!S.more;renderShapes();render()};
+$('next').onclick=()=>goStep((S.step||1)+1);
+$('gear').onclick=()=>{S.more=!S.more;renderShapes();render()};
+$('notrect').onclick=()=>{showShapes=true;S.mode='walls';S.shape='sketch';S.sketch=null;S.walls=[];onShapeChange(true)};
+$('sizebtn').onclick=()=>{sizeOpen=!sizeOpen;render()};
+$('movedoor').onclick=()=>{moveDoor=true;render()};
+$('doorskip').onclick=()=>{S.doorSet=true;moveDoor=false;render()};
+$('qrooms').onclick=e=>{const b=e.target.closest('[data-qr]');if(!b)return;stash();loadRoom(+b.dataset.qr);load();renderCat();goStep(S.mode==='walls'&&!S.closed?1:2)};
+$('qaddroom').onclick=()=>{$('addroom').click();goStep(1)};
 
 // inputs
 const bind={client:'client',rep:'rep',name:'rname',type:'rtype',rh:'rh',rw:'rw',rl:'rl',dwall:'dwall',dw:'dw',doff:'doff',dh:'dh'};
@@ -991,7 +1032,7 @@ async function copyText(text,msgEl,what){const fb=$('copyfb');
  catch(e){fb.hidden=false;fb.value=text;fb.focus();fb.select();msgEl.style.color='var(--warn)';msgEl.textContent='Copying was blocked. Select the text in the box and copy it.'}}
 $('copyq').onclick=()=>copyText(quoteText(),$('quotemsg'),'Quote');
 $('rooms').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;stash();loadRoom(+b.dataset.r);load();renderCat();render()};
-$('addroom').onclick=()=>{stash();S.rooms.push({name:`Room ${S.rooms.length+1}`,type:'other',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260});loadRoom(S.rooms.length-1);load();renderCat();render();$('rname').focus();$('rname').select()};
+$('addroom').onclick=()=>{stash();S.rooms.push({name:`Room ${S.rooms.length+1}`,type:'other',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260});loadRoom(S.rooms.length-1);load();renderCat();render();if(S.more){$('rname').focus();$('rname').select()}};
 $('delroom').onclick=async()=>{if(S.rooms.length<2||!await ask(`Delete "${S.name}" and its layout?`,'Delete room'))return;S.rooms.splice(S.cur,1);loadRoom(Math.min(S.cur,S.rooms.length-1));load();renderCat();render()};
 $('wall').onclick=()=>{const i=S.items.findIndex(x=>x.id===S.sel);if(i<0)return;const it=S.items[i],c=spec(it);
  S.items.splice(i,1);const spot=findSpot(c,c.cl,[it.rot])||findSpot(c,c.cl);S.items.splice(i,0,it);
@@ -1000,7 +1041,7 @@ $('wall').onclick=()=>{const i=S.items.findIndex(x=>x.id===S.sel);if(i<0)return;
 $('showcl').onchange=e=>{S.showCl=e.target.checked;render()};
 $('px').oninput=e=>{const it=S.items.find(i=>i.id===S.sel),cm=parseLen(e.target.value);e.target.classList.toggle('bad',e.target.value.trim()!==''&&!isFinite(cm));if(it&&isFinite(cm)){it.x=cm+dims(it).w/2;render()}};
 $('py').oninput=e=>{const it=S.items.find(i=>i.id===S.sel),cm=parseLen(e.target.value);e.target.classList.toggle('bad',e.target.value.trim()!==''&&!isFinite(cm));if(it&&isFinite(cm)){it.y=cm+dims(it).d/2;render()}};
-$('reset').onclick=async()=>{if(await ask('Start a new visit? All rooms and layouts are cleared.','Start new visit')){S.rooms=[];S.cur=0;Object.assign(S,{name:'Room 1',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,client:'',rep:''});fixRoom();stash();load();renderCat();render()}};
+$('reset').onclick=async()=>{if(await ask('Start a new visit? All rooms and layouts are cleared.','Start new visit')){S.rooms=[];S.cur=0;Object.assign(S,{name:'Living room',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,client:'',rep:'',doorSet:false,step:1});showShapes=false;fixRoom();stash();load();renderCat();render();window.scrollTo(0,0)}};
 
 // drag with wall snapping
 let drag=null;
@@ -1012,13 +1053,34 @@ function placeDoorAt(p){
   if(!best)return;const g=S.wallGeo[best.i];S.dwall=String(best.i);S.doff=Math.round(Math.max(0,Math.min(g.len-S.dw,best.t-S.dw/2)))}
  else{const W=+S.rw,L=+S.rl,c=[['N',p.y,p.x,W],['S',L-p.y,p.x,W],['W',p.x,p.y,L],['E',W-p.x,p.y,L]].sort((a,b)=>a[1]-b[1])[0];S.dwall=c[0];S.doff=Math.round(Math.max(0,Math.min(c[3]-S.dw,c[2]-S.dw/2)))}
  $('dwall').value=S.dwall;$('doff').value=U(S.doff,true);render()}
-$('plan').addEventListener('pointerdown',e=>{if(S.step===3){placeDoorAt(pt(e));return}
+// ---- Zooming the plan: pinch (two fingers) or the mouse wheel; one finger on empty floor moves a zoomed plan; Fit shows it all. ----
+// pv is the visible part of the plan in cm (z = zoom, 1 = whole room). It resets when the room or its size changes.
+let pv={z:1,x:0,y:0,key:''},pinch=null,pan=null;const ptrs=new Map();
+function planFull(){const W=+S.rw||1,L=+S.rl||1,m=40;return{x:-m,y:-m,w:W+2*m,h:L+2*m}}
+function setPlanBox(){const F=planFull(),key=`${S.cur}|${F.w}x${F.h}`;if(pv.key!==key)pv={z:1,x:F.x,y:F.y,key};
+ const w=F.w/pv.z,h=F.h/pv.z;pv.x=Math.min(Math.max(pv.x,F.x),F.x+F.w-w);pv.y=Math.min(Math.max(pv.y,F.y),F.y+F.h-h);
+ $('plan').setAttribute('viewBox',`${pv.x} ${pv.y} ${w} ${h}`);$('fit').hidden=pv.z<=1.01||S.step!==2}
+// zoom to z, keeping plan point P under the screen point (cx, cy)
+function zoomAt(z,P,cx,cy){const F=planFull(),r=$('plan').getBoundingClientRect();pv.z=Math.min(8,Math.max(1,z));
+ const w=F.w/pv.z,h=F.h/pv.z;pv.x=P.x-(cx-r.left)/r.width*w;pv.y=P.y-(cy-r.top)/r.height*h;setPlanBox()}
+$('fit').onclick=()=>{pv.z=1;setPlanBox()};
+$('plan').addEventListener('wheel',e=>{if(S.step!==2)return;e.preventDefault();zoomAt(pv.z*Math.exp(-e.deltaY*.0015),pt(e),e.clientX,e.clientY)},{passive:false});
+const endPtr=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size)pan=null};
+$('plan').addEventListener('pointerup',endPtr);$('plan').addEventListener('pointercancel',endPtr);
+$('plan').addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(ptrs.size===2&&S.step===2){const [a,b]=[...ptrs.values()],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;drag=null;pan=null;   // a second finger: pinch instead of drag
+  pinch={d0:Math.hypot(a.x-b.x,a.y-b.y)||1,z0:pv.z,P:pt({clientX:mx,clientY:my})};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}return}
+ if(ptrs.size>2||pinch)return;
+ if(doorAsk()){S.doorSet=true;moveDoor=false;placeDoorAt(pt(e));return}
  const g=e.target.closest('[data-id]'),og=!g&&e.target.closest('[data-ob]');
  if(og){const o=S.obs.find(x=>x.id==og.dataset.ob);if(o){const p=pt(e);drag={ob:o,dx:p.x-o.x,dy:p.y-o.y};S.sel=null;try{$('plan').setPointerCapture(e.pointerId)}catch(_){}render()}return}
- if(!g){S.sel=null;render();return}
+ if(!g){if(pv.z>1.01&&S.step===2){pan={sx:e.clientX,sy:e.clientY,x0:pv.x,y0:pv.y};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}}S.sel=null;render();return}
  const it=S.items.find(i=>i.id==g.dataset.id);S.sel=it.id;const p=pt(e);drag={it,dx:p.x-it.x,dy:p.y-it.y};
  try{$('plan').setPointerCapture(e.pointerId)}catch(_){}render()});
-$('plan').addEventListener('pointermove',e=>{if(!drag)return;const p=pt(e);
+$('plan').addEventListener('pointermove',e=>{if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(pinch&&ptrs.size>=2){const [a,b]=[...ptrs.values()];zoomAt(pinch.z0*Math.hypot(a.x-b.x,a.y-b.y)/pinch.d0,pinch.P,(a.x+b.x)/2,(a.y+b.y)/2);return}
+ if(pan){const r=$('plan').getBoundingClientRect(),F=planFull();pv.x=pan.x0-(e.clientX-pan.sx)*F.w/pv.z/r.width;pv.y=pan.y0-(e.clientY-pan.sy)*F.h/pv.z/r.height;setPlanBox();return}
+ if(!drag)return;const p=pt(e);
  if(drag.ob){const o=drag.ob;o.x=Math.round(Math.min(Math.max(0,p.x-drag.dx),Math.max(0,S.rw-o.w)));o.y=Math.round(Math.min(Math.max(0,p.y-drag.dy),Math.max(0,S.rl-o.d)));render();return}
  const it=drag.it;
  it.x=p.x-drag.dx;it.y=p.y-drag.dy;

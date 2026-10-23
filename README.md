@@ -12,7 +12,9 @@ connected to IKEA. Each device keeps its own visits in the browser; nothing is s
 ## Use it
 - Open `fitcheck.html` (or the hosted link) in a browser. On a phone, use the browser's
   "Add to Home Screen" to keep it like an app.
-- Load real products with **More options → Import CSV** (step 4). The format is in `catalog-template.csv`:
+- Three screens: **Measure** (room type and size), **Furniture** (plan, what fits, 3D) and **Quote**. The settings icon
+  (top right) shows the advanced controls.
+- Load real products with **settings icon → Import CSV** (Furniture screen). The format is in `catalog-template.csv`:
   one row per size, and rows with the same `group` are the sizes of one product.
 - Automated checks: serve the folder (`python3 -m http.server 8766`), open `http://localhost:8766/fitcheck.html`, and run
   `await (await import('./tests/e2e.js')).run()` in the browser console. The 3D checks need an internet connection.
