@@ -67,6 +67,7 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 .v3d #v3dcanvas{flex:1;min-height:0;position:relative;touch-action:none}
 .v3d #v3dcanvas canvas{display:block;touch-action:none}
 .v3d .v3dnote{position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));margin:0;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.88);color:#1f1d1a;font-size:13px;pointer-events:none}
+.sizehead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.sizehead h2{margin:0}.unitmini{display:flex;align-items:center;gap:6px;margin:0;font-size:13px}.unitmini select{width:auto;min-height:36px;padding:4px 8px}
 .iconbtn{width:44px;padding:0;display:grid;place-items:center}.iconbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 #layoutcard{position:relative}#layouth{padding-right:120px}.corner{position:absolute;top:8px;right:8px;min-height:36px;padding:4px 12px;font-weight:600}.corner2{right:64px}
 .doorbar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:600}.doorbar button{min-height:34px;padding:4px 12px}
@@ -90,7 +91,7 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
   <div class="hint">Settings are on, so the advanced controls show on every screen. Tap the settings icon again to hide them.</div>
  </section>
  <section class="card" data-step="1"><h2>Room</h2><div id="typechips" class="chips typechips"></div></section>
- <section class="card" data-step="1"><h2 id="roomh">Size</h2>
+ <section class="card" data-step="1"><div class="sizehead"><h2 id="roomh">Size</h2><label class="unitmini">in <select id="unit2" aria-label="Unit"><option value="cm">cm</option><option value="m">m</option><option value="mm">mm</option><option value="ftin">ft + in</option><option value="in">inches</option></select></label></div>
   <div class="tools adv" style="margin:0 0 10px"><button id="modewalls" class="chip">Wall by wall</button><button id="moderect" class="chip">Quick rectangle</button></div>
   <div id="wallsbox">
    <div id="shapes" class="shapes" role="group" aria-label="Room shape"></div>
@@ -640,6 +641,7 @@ function renderSugg(){
  const W=+S.rw,L=+S.rl,box=$('sugg');
  if(S.mode==='walls'&&!S.closed){suggList=[];box.className='hint';box.textContent='Measure the room first.';return}
  if(W<1||L<1){box.textContent='Enter the room size to see suggestions.';return}
+ if(W>3000||L>3000){suggList=[];box.className='hint';box.textContent='This room is over 30 m long. Check the size and its unit.';return}
  const fr=freeRect(),free=usage().free;suggList=[];const no=[];
  products().forEach(c=>{
   const spot=c.w*c.d<=free&&findSpot(c,c.cl);
@@ -724,7 +726,7 @@ function buildQuote(){stash();let body='',grand=0;
 function renderRooms(){
  $('rooms').innerHTML=S.rooms.map((r,i)=>`<button class="chip${i===S.cur?' on':''}" data-r="${i}">${esc(r.name||'Room')}<small>${ROOM_TYPES[r.type]||''} &middot; ${r.closed===false?'measuring...':UU(r.rw,r.rl)}</small></button>`).join('');
  $('delroom').disabled=S.rooms.length<2;
- $('roomh').textContent=`Size (${UNITS[S.unit]})`;
+ $('roomh').textContent='Size';
  $('layouth').textContent=S.name||'This room'}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -832,6 +834,7 @@ function fillDoor(){const sel=$('dwall'),cur=String(S.dwall);
  sel.innerHTML=opts.map(([v,t])=>{const cv=S.mode==='walls'&&S.walls[+v]&&S.walls[+v].curve;return `<option value="${v}"${cv?' disabled':''}>${t}${cv?' - curved':''}</option>`}).join('');if(opts.some(o=>o[0]===cur))sel.value=cur;
  $('doffl').textContent=S.mode==='walls'?"Door offset from the wall's start corner":'Door offset from corner'}
 function renderWallStatus(){const el=$('wallstat'),cb=$('closewall');cb.hidden=true;
+ const sw=Object.values(sizeWarn)[0];if(sw&&S.mode==='walls'){el.innerHTML=`<span style="color:var(--err)">${esc(sw)}</span>`;return}
  if(S.mode!=='walls'){el.textContent='';return}
  if(S.shape==='sketch'&&!S.sketch){el.textContent='Draw the room in the box above.';return}
  if(S.shape!=='free'){const list=S.shape==='rect'?S.walls.slice(0,2):S.walls,need=list.reduce((a,w)=>a+(w.curve?2:1),0),have=list.reduce((a,w)=>a+(+w.len>0)+(w.curve&&+w.curve.depth>0?1:0),0);
@@ -857,8 +860,15 @@ $('shapes').onclick=e=>{const b=e.target.closest('[data-shape]');if(!b)return;co
  const def=shapeDef(k);S.walls=k==='free'?S.walls:def?wallsFor(def):[];
  onShapeChange(true)};
 const twVal=i=>{const w=S.walls[parseInt(i)];if(!w)return '';const v=String(i).endsWith('c')?(w.curve&&w.curve.depth):w.len;return v?esc(U(v,true)):''};
+// A wall over 20 m, or a rectangle side under 50 cm, is almost always a unit slip (400 typed in metres, 4 typed in cm).
+// Such a box turns red with a hint and the room is not accepted; a huge room would also make a phone freeze.
+const sizeWarn={};const MAXWALL=2000;
+function sizeProblem(v,cm,rect,curve){if(curve)return cm>1000?`${U(cm)} is too deep for a curved wall.`:'';
+ if(cm>MAXWALL)return `${U(cm)} is too long for a room wall.${S.unit!=='cm'&&!/[a-z'"]/i.test(v)?` Did you mean ${v.trim()} cm?`:''} Check the unit next to Size.`;
+ if(rect&&cm<50)return `${U(cm)} is too short for a room.${S.unit==='cm'&&!/[a-z'"]/i.test(v)?` Did you mean ${v.trim()} m?`:''} Check the unit next to Size.`;return ''}
 $('shapebox').oninput=e=>{const i=e.target.dataset.tw;if(i==null)return;const v=e.target.value,cm=parseLen(v),bad=v.trim()!==''&&!isFinite(cm);
- e.target.classList.toggle('bad',bad);if(bad)return;const len=v.trim()===''?0:cm;
+ e.target.classList.toggle('bad',bad);if(bad)return;let len=v.trim()===''?0:cm;
+ const prob=len?sizeProblem(v,len,S.shape==='rect',String(i).endsWith('c')):'';if(prob){sizeWarn[i]=prob;len=0}else delete sizeWarn[i];e.target.classList.toggle('bad',!!prob);
  if(S.shape==='rect'){S.walls[+i].len=len;S.walls[+i+2].len=len}else if(i.endsWith('c')){const w=S.walls[parseInt(i)];if(w.curve)w.curve.depth=len}else S.walls[+i].len=len;onShapeChange(false)};
 // drawing pad: one stroke, straightened when the finger lifts
 let padPts=null,padStrokes=[];
@@ -885,11 +895,11 @@ $('shapebox').addEventListener('click',e=>{const id=e.target.id;
  else if(id==='padundo'){padStrokes.pop();padDraw()}
  else if(id==='padclear'){padStrokes=[];padDraw()}
  else if(id==='paddone')padFinish()});
-$('shapebox').addEventListener('change',e=>{const i=e.target.dataset.tw;if(i==null)return;e.target.value=twVal(i).replace(/&quot;/g,'"').replace(/&amp;/g,'&');e.target.classList.remove('bad')});
+$('shapebox').addEventListener('change',e=>{const i=e.target.dataset.tw;if(i==null||sizeWarn[i])return;e.target.value=twVal(i).replace(/&quot;/g,'"').replace(/&amp;/g,'&');e.target.classList.remove('bad')});
 function renderWalls(){renderShapes();renderShapeInputs();
  $('walls').innerHTML=S.walls.map((w,i)=>`<div class="wrow" data-w="${i}"><b>${i+1}</b><input data-wf="len" ${lenAttrs()} placeholder="${esc(unitHint())}" value="${w.len?esc(U(w.len,true)):''}" aria-label="Wall ${i+1} length in cm"><select data-wf="turn" aria-label="Turn after wall ${i+1}"><option value="R"${w.turn!=='L'?' selected':''}>turn right</option><option value="L"${w.turn==='L'?' selected':''}>turn left</option></select><button data-wdel aria-label="Remove wall ${i+1}">&times;</button></div>`).join('');
  fillDoor();renderWallStatus()}
-function onShapeChange(rebuild){if(rebuild)S.doorSet=false;   // a new shape has new walls: ask for the door again
+function onShapeChange(rebuild){if(rebuild){S.doorSet=false;for(const k in sizeWarn)delete sizeWarn[k]}   // a new shape has new walls: ask for the door again
  recomputeShape();if(rebuild)renderWalls();else{fillDoor();renderWallStatus()}renderFeat();render()}
 $('walls').oninput=e=>{const row=e.target.closest('.wrow'),f=e.target.dataset.wf;if(!row||!f)return;const w=S.walls[+row.dataset.w];
  if(f==='len'){const v=e.target.value,cm=parseLen(v);e.target.classList.toggle('bad',v.trim()!==''&&!isFinite(cm));if(v.trim()!==''&&!isFinite(cm))return;w.len=v.trim()===''?0:cm}else w[f]=e.target.value;onShapeChange(false)};
@@ -1009,7 +1019,7 @@ $('qaddroom').onclick=()=>{$('addroom').click();goStep(1)};
 const bind={client:'client',rep:'rep',name:'rname',type:'rtype',rh:'rh',rw:'rw',rl:'rl',dwall:'dwall',dw:'dw',doff:'doff',dh:'dh'};
 $('rtype').innerHTML=Object.entries(ROOM_TYPES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
 const LENKEYS=['rw','rl','dw','doff','dh','rh'];
-function applyUnits(){$('unit').value=S.unit;document.querySelectorAll('input.len').forEach(i=>{i.inputMode=imperial()?'text':'decimal';i.placeholder=unitHint()});
+function applyUnits(){$('unit').value=$('unit2').value=S.unit;document.querySelectorAll('input.len').forEach(i=>{i.inputMode=imperial()?'text':'decimal';i.placeholder=unitHint()});
  $('pxl').textContent=`Gap from left wall (${UNITS[S.unit]})`;$('pyl').textContent=`Gap from top wall (${UNITS[S.unit]})`}
 function load(){applyUnits();fillKinds();fillDoor();for(const k in bind)$(bind[k]).value=LENKEYS.includes(k)?U(S[k],true):S[k];renderWalls();renderFeat()}
 for(const k in bind)$(bind[k]).oninput=e=>{const v=e.target.value;
@@ -1017,6 +1027,7 @@ for(const k in bind)$(bind[k]).oninput=e=>{const v=e.target.value;
  else S[k]=['client','rep','dwall','name','type'].includes(k)?v:(+v||0);
  if(k==='type')renderCat();render()};
 LENKEYS.forEach(k=>$(bind[k]).addEventListener('change',e=>{e.target.value=U(S[k],true);e.target.classList.remove('bad')}));
+$('unit2').onchange=e=>$('unit').onchange(e);
 $('unit').onchange=e=>{S.unit=e.target.value;load();renderCat();render()};
 $('rot').onclick=()=>{const it=S.items.find(i=>i.id===S.sel);if(it){it.rot=(it.rot+90)%360;render()}};
 $('del').onclick=()=>{S.items=S.items.filter(i=>i.id!==S.sel);S.sel=null;render()};

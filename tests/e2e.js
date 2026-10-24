@@ -209,6 +209,14 @@ export async function run(){
  typeIn($('tw0'),'');typeIn($('tw1'),'');window.scrollTo(0,99999);const y0=$('tw0').getBoundingClientRect().top;
  typeIn($('tw0'),'450');typeIn($('tw1'),'380');ok('screens: Next unlocks once the size is typed',S.closed&&!$('next').disabled);
  ok('screens: the size boxes do not jump when the room becomes measured',Math.abs($('tw0').getBoundingClientRect().top-y0)<1,[y0,$('tw0').getBoundingClientRect().top]);window.scrollTo(0,0);
+ // unit slips: 400 typed in metres, 4 typed in cm. The box turns red with a hint, the room is not accepted, nothing freezes.
+ ok('size: the unit shows next to Size',visible('#unit2')&&$('unit2').value===S.unit);
+ S.unit='m';load();render();typeIn($('tw0'),'400');typeIn($('tw1'),'3.8');
+ ok('size: 400 in metres is refused with a hint',!S.closed&&$('tw0').classList.contains('bad')&&/Did you mean 400 cm/.test($('wallstat').textContent)&&$('next').disabled,$('wallstat').textContent);
+ S.unit='cm';load();render();typeIn($('tw0'),'400');typeIn($('tw1'),'4');
+ ok('size: 4 cm for a room side is refused with a hint',!S.closed&&$('tw1').classList.contains('bad')&&/Did you mean 4 m/.test($('wallstat').textContent));
+ typeIn($('tw1'),'380');ok('size: correcting the number accepts the room',S.closed&&!$('tw1').classList.contains('bad')&&!$('next').disabled);
+ typeIn($('tw0'),'450');
  $('typechips').querySelector('[data-t=bedroom]').click();ok('screens: the room type names the room',S.name==='Bedroom',S.name);
  $('notrect').click();ok('screens: "Not a rectangle? Draw it" opens the drawing pad and the shape pictures',S.shape==='sketch'&&!!$('pad')&&visible('#shapes'));
  $('shapes').querySelector('[data-shape=rect]').click();typeIn($('tw0'),'450');typeIn($('tw1'),'380');
