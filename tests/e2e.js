@@ -206,7 +206,9 @@ export async function run(){
  ok('screens: advanced controls hidden by default',!visible('#modewalls')&&!visible('#setcard')&&!visible('#unit'));
  $('gear').click();ok('screens: the settings icon shows the advanced controls',S.more&&visible('#modewalls')&&visible('#setcard')&&visible('#unit'));$('gear').click();
  const typeIn=(el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}))};
+ typeIn($('tw0'),'');typeIn($('tw1'),'');window.scrollTo(0,99999);const y0=$('tw0').getBoundingClientRect().top;
  typeIn($('tw0'),'450');typeIn($('tw1'),'380');ok('screens: Next unlocks once the size is typed',S.closed&&!$('next').disabled);
+ ok('screens: the size boxes do not jump when the room becomes measured',Math.abs($('tw0').getBoundingClientRect().top-y0)<1,[y0,$('tw0').getBoundingClientRect().top]);window.scrollTo(0,0);
  $('typechips').querySelector('[data-t=bedroom]').click();ok('screens: the room type names the room',S.name==='Bedroom',S.name);
  $('notrect').click();ok('screens: "Not a rectangle? Draw it" opens the drawing pad and the shape pictures',S.shape==='sketch'&&!!$('pad')&&visible('#shapes'));
  $('shapes').querySelector('[data-shape=rect]').click();typeIn($('tw0'),'450');typeIn($('tw1'),'380');

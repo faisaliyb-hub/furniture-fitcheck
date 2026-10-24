@@ -226,6 +226,7 @@ User feedback after trying the live app with the 3D view: the 3D view is smooth,
   - With the door prompt showing, tapping a piece moved the door to that spot instead of selecting the piece. Now only a tap on empty floor places the door.
   - Changing the room's shape kept the old door position. Now it asks for the door again.
   - The copied quote started "Quote for - (rep: -)" and repeated the room name ("Living room (Living room)").
+- Length/Width boxes "don't click again" (user report 2026-10-24): when both numbers were in, the "Type the room size first." line under Next disappeared and the page got shorter, so the page jumped about 25 px and a tap aimed at the box landed on its label. Clearing a number to edit it made the page jump back. Fixed: on Measure that line keeps its space, and the status line has a fixed minimum height. 128 checks pass.
   - Not changed: the copied quote still lists internal notes such as "may not get through the door"; the 3D overview leaves wide margins on a tall phone screen.
 - Zoom (user feedback 2026-10-23, "I can't zoom in and out freely", in both views): the flat plan now zooms with a two-finger pinch (up to 8x, around the fingers) or the mouse wheel; one finger on empty floor moves a zoomed plan; a **Fit** button beside 3D shows the whole room. In 3D, zoom goes towards where you pinch or point, gets as close as 10 cm and as far as 8 times the room size, and is a bit faster.
 - Not tested yet: a real phone (the user's next step), and Safari on iPhone.

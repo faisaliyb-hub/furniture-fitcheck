@@ -100,7 +100,7 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
    <div id="walls"></div>
    <div class="tools" style="margin-top:6px"><button id="addwall">+ Next wall</button><button id="closewall" class="primary" hidden></button></div>
    </div>
-   <div id="wallstat" class="hint" style="margin-bottom:10px"></div>
+   <div id="wallstat" class="hint" style="margin-bottom:10px;min-height:3em"></div>
   </div>
   <div class="row adv" id="rwrow"><div><label id="rwl">Width</label><input id="rw" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label id="rll">Length</label><input id="rl" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
   <div class="row adv"><div><label>Ceiling height</label><input id="rh" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div></div></div>
@@ -982,7 +982,8 @@ function applyStep(){const st=Math.min(3,Math.max(1,S.step||1));S.step=st;docume
  $('back').hidden=st===1;const nx=$('next');nx.hidden=st===3;
  if(st<3)nx.textContent='Next: '+STEPS[st][0];
  const blocked=st===1&&S.mode==='walls'&&!S.closed;
- nx.disabled=blocked;$('navmsg').textContent=blocked?'Type the room size first.':'';$('navmsg').hidden=!blocked;
+ // On Measure the hint line keeps its space even when empty, so the page does not jump under the finger while typing the size.
+ nx.disabled=blocked;$('navmsg').textContent=blocked?'Type the room size first.':'\u00a0';$('navmsg').hidden=st!==1;$('navmsg').style.visibility=blocked?'visible':'hidden';
  $('plantools').hidden=st!==2;
  document.body.classList.toggle('more',!!S.more);$('gear').setAttribute('aria-pressed',String(!!S.more))}
 function renderTypes(){$('typechips').innerHTML=Object.entries(ROOM_TYPES).map(([k,v])=>`<button class="chip${S.type===k?' on':''}" data-t="${k}">${v}</button>`).join('')}
