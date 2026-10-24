@@ -34,6 +34,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 4px;b
 .hint{color:var(--mute);font-size:12px;margin-top:6px}
 .frow{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px;align-items:end;margin-bottom:10px;padding:8px;border:1px solid var(--line);border-radius:8px}.frow>b{grid-column:1/-1;font-size:13px}.frow label{margin:0}.frow input,.frow select{min-height:34px;padding:6px 8px}.frow button{min-height:34px;padding:4px 8px}
 .wrow{display:grid;grid-template-columns:28px 1fr 1.5fr 40px;gap:6px;align-items:center;margin-bottom:6px}.wrow>b{text-align:center;color:var(--mute)}.wrow input,.wrow select,.wrow button{min-height:38px}
+/* iPhone Safari zooms the whole page into any text box written smaller than 16 px; keep every box at 16 px so it never does */
+input,select,textarea{font-size:16px}
 input.bad{border-color:var(--err)!important;outline-color:var(--err)}
 .unitsel{display:flex;gap:8px;align-items:center}.unitsel button{white-space:nowrap}.unitsel label{margin:0}.unitsel select{width:auto;min-height:38px;padding:6px 8px}
 body:not(.more) .adv{display:none!important}
