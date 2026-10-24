@@ -631,11 +631,12 @@ function backGapRects(b,ri,hr,W,L){const ys=q=>q.y0<b.y1-.5&&q.y1>b.y0+.5,xs=q=>
  return b.x0-Math.max(0,...hr.filter(q=>ys(q)&&q.x1<=b.x0+.5).map(q=>q.x1))}
 // Best valid spot for catalog piece c (back to a wall when possible), or null. Same rules as check().
 // near: optional target points; the spot closest to one of them wins (used to pair pieces).
-function findSpot(c,cl,rots=[0,90,180,270],near){const W=+S.rw,L=+S.rl,ob=S.items.map(body),of=S.items.map(front),dz=doorRect(),hr=hardRects(),lows=lowZones(),wins=windows(),step=CATALOG.length>40?10:5;let best=null;
+function findSpot(c,cl,rots=[0,90,180,270],near){const W=+S.rw,L=+S.rl,ob=S.items.map(body),of=S.items.map(front),dz=doorRect(),hr=hardRects(),lows=lowZones(),wins=windows(),step=10;let best=null;
  if(c.h>S.rh)return null;const isBed=['bed','sofa'].includes(typeOf(c));
  for(const rot of rots){const w=rot%180?c.d:c.w,d=rot%180?c.w:c.d;if(w>W||d>L)continue;
   const xs=new Set([W-w]),ys=new Set([L-d]);
   for(let x=0;x<=W-w;x+=step)xs.add(x);for(let y=0;y<=L-d;y+=step)ys.add(y);
+  if(isBed){xs.add(W/2-w/2);ys.add(L/2-d/2)}if(near)near.forEach(p=>{xs.add(p.x-w/2);ys.add(p.y-d/2)});   // exact centre and pairing spots, off the 10 cm grid
   [...ob,...hr].forEach(b=>{xs.add(b.x1);xs.add(b.x0-w);ys.add(b.y1);ys.add(b.y0-d)});
   S.wallGeo.forEach(g=>{xs.add(g.a.x);xs.add(g.a.x-w);ys.add(g.a.y);ys.add(g.a.y-d)});
   for(const x of xs){if(x<-.01||x>W-w+.01)continue;
@@ -662,7 +663,11 @@ function pairSpot(c){const n=c.n.toLowerCase(),side=/bedside|night/.test(n),coff
  const sp=findSpot(c,c.cl,[it.rot],near)||findSpot(c,0,[it.rot],near);
  return sp&&Math.min(...near.map(q=>Math.hypot(sp.x-q.x,sp.y-q.y)))<=40?sp:null}
 function doorOk(c){const s=[c.w,c.d,c.h].sort((a,b)=>a-b);return s[0]<=S.dw-5&&s[1]<=S.dh-5}
-function scheduleSugg(){clearTimeout(suggTimer);suggTimer=setTimeout(renderSugg,120)}
+// "Fits here" is the slowest thing in the app (a search per product), so it runs only on the Furniture screen and only
+// when something that changes what fits has changed: not on selecting a piece, opening Size or switching screens.
+let suggKey='';
+const fitKey=()=>JSON.stringify([S.cur,S.rw,S.rl,S.closed,S.poly&&S.poly.length,S.walls,S.items.map(i=>[i.k,i.x,i.y,i.rot,i.size]),S.obs,S.cuts,S.dwall,S.doff,S.dw,S.dh,S.rh,S.type,S.unit,CATALOG.length,usingSample]);
+function scheduleSugg(){clearTimeout(suggTimer);if(S.step!==2)return;suggTimer=setTimeout(()=>{const k=fitKey();if(k===suggKey&&$('sugg').childElementCount)return;suggKey=k;renderSugg()},150)}
 // Name for a product that comes in several sizes: the words all its sizes share ("KIVIK 3-seat sofa" + "KIVIK 2-seat sofa" -> "KIVIK sofa").
 function groupTitle(list){const ws=list.map(c=>c.n.split(',')[0].trim().split(/\s+/)),a=ws[0];let p=0,q=0;
  while(p<a.length&&ws.every(w=>w[p]===a[p]))p++;while(q<a.length-p&&ws.every(w=>w[w.length-1-q]===a[a.length-1-q]))q++;
@@ -690,7 +695,7 @@ function renderSugg(){
  // One row per product. A product with several sizes gets one button per size, so the rep picks the size and can add
  // as many as they like. Sizes that do not fit well are still offered (dimmed): adding one shows it red on the plan.
  const fits=new Map();suggList.forEach(x=>fits.set(x.c.k,true));
- const fitsK=c=>{if(!fits.has(c.k))fits.set(c.k,c.w*c.d<=free&&!!findSpot(c,c.cl));return fits.get(c.k)};
+ const fitsK=c=>{if(!fits.has(c.k))fits.set(c.k,c.h<=S.rh&&c.w*c.d<=free&&((c.w<=fr.w&&c.d<=fr.d)||(c.d<=fr.w&&c.w<=fr.d)));return fits.get(c.k)};   // quick: fits the largest free area
  const sizeBtn=(s,i)=>{const ok=s.k===(suggList[i]||{}).c?.k||fitsK(s);return `<button class="szb${ok?'':' off'}" ${s.k===(suggList[i]||{}).c?.k?`data-add="${i}"`:`data-addk="${esc(s.k)}"`} aria-label="Add ${esc(s.n)}"><b>+ ${esc(s.z||s.n)}</b><small>${UU(s.w,s.d)} &middot; ${s.p.toLocaleString()}${ok?'':' &middot; tight'}</small></button>`};
  const row=(x,i)=>{const list=sizesOf(x.from||x.c);
   if(list.length>1)return `<div class="sg sgm" data-i="${i}"><b>${esc(groupTitle(list))}</b><div class="szs">${list.map(s=>sizeBtn(s,i)).join('')}</div></div>`;
