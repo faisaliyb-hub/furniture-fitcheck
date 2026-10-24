@@ -255,7 +255,6 @@ export async function run(){
  ok('review: in a bedroom the bed comes first',typeOf(suggList[0].c)==='bed',suggList.slice(0,3).map(x=>x.c.n));
  const addK=k=>{renderSugg();const i=suggList.findIndex(x=>x.c.k===k||x.c.g===k);$('sugg').querySelector(`[data-add="${i}"]`).click()};
  addK('malm');const bed0=S.items[0];ok('review: the bed is centred on its wall',near(bed0.x,210,1)&&near(body(bed0).y0,0,.5),[bed0.x,bed0.y]);
- renderSugg();ok('review: with a bed in the room, the bed no longer leads the list',typeOf(suggList[0].c)!=='bed',suggList[0].c.n);
  addK('506.107.39');addK('506.107.39');const [l1,l2]=S.items.slice(1).map(body),bb=body(bed0);
  ok('review: bedside tables go either side of the bed head',[l1,l2].every(b=>near(b.y0,0,.5))&&[l1,l2].some(b=>near(b.x1,bb.x0,5))&&[l1,l2].some(b=>near(b.x0,bb.x1,5)),[l1,l2,bb]);
  S.sel=null;render();ok('review: plan labels use short names',/>MALM bed frame</.test($('plan').innerHTML)&&!/Standard Double</.test($('plan').innerHTML));
@@ -264,6 +263,18 @@ export async function run(){
  ok('review: in a living room the sofa comes first',typeOf(suggList[0].c)==='sofa',suggList[0].c.n);
  addK('kivik');addK('lackcoffee');addK('lacktv');{const [so,ct,tv]=S.items,bs=body(so),bc=body(ct),bt=body(tv);
   ok('review: coffee table in front of the sofa, TV on the wall the sofa faces',near(bc.y0-bs.y1,45,3)&&near(bt.y1,400,.5)&&tv.rot===(so.rot+180)%360&&near(so.x,240,1),[bs,bc,bt,so.rot,tv.rot])}
+ // more than one of a product, in the size the rep chooses
+ freshVisit({type:'living',name:'Living room',dwall:'2',doff:50});setTemplate('rect',[600,450]);goStep(2);renderSugg();
+ const sofaRow=()=>[...$('sugg').querySelectorAll('.sgm')].find(r=>/KIVIK sofa/.test(r.textContent));
+ ok('choice: a product with sizes shows one button per size',!!sofaRow()&&sofaRow().querySelectorAll('.szb').length===2,sofaRow()&&sofaRow().textContent);
+ const tap=lbl=>{renderSugg();[...sofaRow().querySelectorAll('.szb')].find(b=>b.textContent.includes(lbl)).click()};
+ tap('3-seat');tap('3-seat');tap('2-seat');
+ ok('choice: two 3-seat sofas and a 2-seat can be added',S.items.filter(i=>i.k==='694.405.96').length===2&&S.items.filter(i=>i.k==='294.405.98').length===1,S.items.map(i=>i.k));
+ renderSugg();ok('choice: the sofa row stays in place after adding',!!sofaRow());
+ freshVisit({type:'living',name:'Living room'});setTemplate('rect',[250,250]);goStep(2);renderSugg();
+ const tight=[...$('sugg').querySelectorAll('details')].find(d=>/Tight fit/.test(d.textContent));
+ ok('choice: pieces that do not fit well are listed with an add button',!!tight&&!!tight.querySelector('[data-addk]'));
+ if(tight){const n=S.items.length;tight.querySelector('[data-addk]').click();ok('choice: adding a tight piece places it and the plan shows the problem',S.items.length===n+1&&(problems().length>0||check().some(([t])=>t!=='ok')))}
  goStep(1);
  {const qt=quoteText();ok('quote text: no empty client/rep and no repeated room name',/^Quote, /.test(qt)&&!/\(rep: -\)/.test(qt)&&!/Living room \(Living room\)/.test(qt),qt.split('\n').slice(0,3))}
  S.doorSet=true;goStep(1);$('notrect').click();$('shapes').querySelector('[data-shape=rect]').click();ok('door prompt: a new room shape asks for the door again',S.doorSet===false);

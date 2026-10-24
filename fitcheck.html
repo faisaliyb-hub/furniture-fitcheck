@@ -59,7 +59,7 @@ body.typing .navbar{visibility:hidden}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.chip{text-align:left;line-height:1.25;padding:7px 11px}.chip small{display:block;opacity:.75;font-size:11px}.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .sg{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sg small{display:block;color:var(--mute)}.sg .tag{color:var(--warn)}
-.sg button{white-space:nowrap}.sg .addbtn{min-width:44px;min-height:44px;font-size:22px;line-height:1;padding:0}
+.sg button{white-space:nowrap}.sgm{display:block}.szs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.szb{text-align:left;line-height:1.2;padding:6px 10px;min-height:44px}.szb small{display:block;color:var(--mute);font-size:11px}.szb.off{opacity:.6;border-style:dashed}.sg .addbtn{min-width:44px;min-height:44px;font-size:22px;line-height:1;padding:0}
 details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 #quote{margin-top:14px;padding-top:6px;border-top:1px solid var(--line)}
 .v3d{position:fixed;inset:0;z-index:40;background:#e7e9ea;display:flex;flex-direction:column}
@@ -661,6 +661,10 @@ function pairSpot(c){const n=c.n.toLowerCase(),side=/bedside|night/.test(n),coff
  return sp&&Math.min(...near.map(q=>Math.hypot(sp.x-q.x,sp.y-q.y)))<=40?sp:null}
 function doorOk(c){const s=[c.w,c.d,c.h].sort((a,b)=>a-b);return s[0]<=S.dw-5&&s[1]<=S.dh-5}
 function scheduleSugg(){clearTimeout(suggTimer);suggTimer=setTimeout(renderSugg,120)}
+// Name for a product that comes in several sizes: the words all its sizes share ("KIVIK 3-seat sofa" + "KIVIK 2-seat sofa" -> "KIVIK sofa").
+function groupTitle(list){const ws=list.map(c=>c.n.split(',')[0].trim().split(/\s+/)),a=ws[0];let p=0,q=0;
+ while(p<a.length&&ws.every(w=>w[p]===a[p]))p++;while(q<a.length-p&&ws.every(w=>w[w.length-1-q]===a[a.length-1-q]))q++;
+ return [...a.slice(0,p),...a.slice(a.length-q)].join(' ')||shortName(list[0].n)}
 // The piece a room is built around comes first in "Fits here".
 // (only until the room has one).
 function mainPiece(c){const is=c=>{const t=typeOf(c),n=c.n.toLowerCase();return !!{bedroom:t==='bed',kids:t==='bed',living:t==='sofa',dining:t==='table'&&c.h>=65&&!/desk/.test(n),office:/desk/.test(n)}[S.type]};
@@ -678,22 +682,25 @@ function renderSugg(){
   const alt=sizesOf(c).filter(x=>x!==c&&x.w*x.d<=free).reverse().map(x=>{const sp=findSpot(x,x.cl);return sp&&{c:x,spot:sp,door:doorOk(x),from:c}}).find(Boolean);
   if(alt){suggList.push(alt);return}
   no.push([c,c.w*c.d>free?'Too big for the free floor space.':findSpot(c,0)?`Fits the floor, but not with its ${U(c.cl)} front clearance.`:'Too big for the space that is left.'])});
- suggList.forEach(x=>x.suit=suits(x.c));
- // products already in the room go further down, so the list leads with what is still missing
- const placed=new Set(S.items.map(it=>{const c=cat(it.k);return c&&(c.g||c.k)}));
- suggList.forEach(x=>{x.key=mainPiece(x.c);x.dup=placed.has(x.c.g||x.c.k)?1:0});
- suggList.sort((a,b)=>(b.suit-a.suit)||(b.key-a.key)||(a.dup-b.dup)||(b.c.w*b.c.d-a.c.w*a.c.d));
+ suggList.forEach(x=>{x.suit=suits(x.c);x.key=mainPiece(x.c)});
+ suggList.sort((a,b)=>(b.suit-a.suit)||(b.key-a.key)||(b.c.w*b.c.d-a.c.w*a.c.d));   // a steady order: an added piece stays where it was
  let h=`<div class="hint adv" style="margin:0 0 6px">Largest free area: <b>${UU(fr.w,fr.d)}</b> (clearances not included). Suggestions respect clearances, the door swing and other pieces, and show pieces suited to this room type first.</div>`;
- // One short row per product: name, size and price, and a + button. The details stay behind the settings icon.
- const row=(x,i)=>`<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b>${x.from?`<small style="color:var(--accent)">Smaller size: ${esc(x.c.z||x.c.n)}</small>`:''}<small>${UU(x.c.w,x.c.d)} &middot; ${x.c.p.toLocaleString()}${x.door?'':' <span class="tag adv">&middot; check door access</span>'}</small></div><button data-add="${i}" class="addbtn" aria-label="Add ${esc(x.c.n)}">+</button></div>`;
+ // One row per product. A product with several sizes gets one button per size, so the rep picks the size and can add
+ // as many as they like. Sizes that do not fit well are still offered (dimmed): adding one shows it red on the plan.
+ const fits=new Map();suggList.forEach(x=>fits.set(x.c.k,true));
+ const fitsK=c=>{if(!fits.has(c.k))fits.set(c.k,c.w*c.d<=free&&!!findSpot(c,c.cl));return fits.get(c.k)};
+ const sizeBtn=(s,i)=>{const ok=s.k===(suggList[i]||{}).c?.k||fitsK(s);return `<button class="szb${ok?'':' off'}" ${s.k===(suggList[i]||{}).c?.k?`data-add="${i}"`:`data-addk="${esc(s.k)}"`} aria-label="Add ${esc(s.n)}"><b>+ ${esc(s.z||s.n)}</b><small>${UU(s.w,s.d)} &middot; ${s.p.toLocaleString()}${ok?'':' &middot; tight'}</small></button>`};
+ const row=(x,i)=>{const list=sizesOf(x.from||x.c);
+  if(list.length>1)return `<div class="sg sgm" data-i="${i}"><b>${esc(groupTitle(list))}</b><div class="szs">${list.map(s=>sizeBtn(s,i)).join('')}</div></div>`;
+  return `<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b><small>${UU(x.c.w,x.c.d)} &middot; ${x.c.p.toLocaleString()}${x.door?'':' <span class="tag adv">&middot; check door access</span>'}</small></div><button data-add="${i}" class="addbtn" aria-label="Add ${esc(x.c.n)}">+</button></div>`};
  const mine=suggList.map((x,i)=>x.suit?row(x,i):'').join(''),other=suggList.map((x,i)=>x.suit?'':row(x,i)).join(''),nOther=suggList.filter(x=>!x.suit).length;
  h+=mine||`<div class="hint">Nothing for a ${ROOM_TYPES[S.type].toLowerCase()} fits the space that is left.</div>`;
  if(nOther)h+=`<details><summary>Also fits, usually for other rooms (${nOther})</summary>${other}</details>`;
- if(no.length)h+=`<details class="adv"><summary>Does not fit (${no.length})</summary>${no.map(([c,r])=>`<div class="sg"><div><b>${esc(c.n)}</b><small>${UU(c.w,c.d)}. ${r}</small></div></div>`).join('')}</details>`;
+ if(no.length)h+=`<details><summary>Tight fit: needs more space (${no.length})</summary>${no.map(([c,r])=>{const list=sizesOf(c);return `<div class="sg${list.length>1?' sgm':''}"><div><b>${esc(list.length>1?groupTitle(list):c.n)}</b><small>${r}</small></div>${list.length>1?`<div class="szs">${list.map(s=>sizeBtn(s,-1)).join('')}</div>`:`<button data-addk="${esc(c.k)}" class="addbtn" aria-label="Add ${esc(c.n)}">+</button>`}</div>`}).join('')}</details>`;
  box.className='';box.innerHTML=h}
 // The list refreshes 120 ms after a change, so the spot is worked out again on the tap (the room may have just changed).
-$('sugg').onclick=e=>{const b=e.target.closest('[data-add]');if(!b)return;const x=suggList[+b.dataset.add];if(!x)return;
- if(S.mode==='walls'&&!S.closed)return;const c=x.c,sp=pairSpot(c)||findSpot(c,c.cl)||findSpot(c,0);
+$('sugg').onclick=e=>{const b=e.target.closest('[data-add],[data-addk]');if(!b)return;const x=b.dataset.addk?{c:cat(b.dataset.addk)}:suggList[+b.dataset.add];if(!x||!x.c)return;
+ if(S.mode==='walls'&&!S.closed)return;const c=x.c,sp=pairSpot(c)||findSpot(c,c.cl)||findSpot(c,0);   // no spot: the middle of the room, shown red
  ghost=null;const it={id:S.next++,k:c.k,x:sp?sp.x:S.rw/2,y:sp?sp.y:S.rl/2,rot:sp?sp.rot:0};S.items.push(it);S.sel=it.id;render()};
 $('sugg').onmouseover=e=>{const r=e.target.closest('.sg[data-i]');const x=r&&suggList[+r.dataset.i];
  const g=x?{k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot}:null;
