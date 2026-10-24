@@ -5,7 +5,7 @@ Checked 2026-10-23.
 - **Folder:** `furniture-fitcheck` in the user's Project folder. Work continues on branch **`feat/three-screens`**: `main`, plus the 3-screen version, plus the latest version of this file. Check with `git status` before starting.
 - **Live site:** https://faisaliyb-hub.github.io/furniture-fitcheck/ serves `main` at commit `e1c9867`. That version has the IKEA sample catalog, product sizes and the 3D view. GitHub has only `main`; every other branch exists only on this computer.
 - **Checks:** all 124 in `tests/e2e.js` pass on `feat/three-screens` (run 2026-10-23; how to run them is under Current state). `main` has the earlier 104.
-- **Latest work (2026-10-23): the simpler 3-screen version is built** on branch **`feat/three-screens`** (from `docs/simplify-plan`). It is not live. All 120 checks pass. **Next step:** publish it at a preview address (`/preview/`) so the user can try it on a phone. That needs a push to `main`, so ask first; the main link stays unchanged until the user approves the new version.
+- **Latest work (2026-10-23):** the simpler 3-screen version (with free zoom on the plan and in 3D) **is now the main app**: the user approved it and ran the merge of `feat/three-screens` into `main` themself (commit `46b1760`, live, checked). `preview/` still holds the same version and can be removed. **Next:** the user tries it with a real room, then show it to the furniture house; after that, the shared backend with rep logins (waiting for the user's OK).
 - **Rules:**
   - Ask before pushing to `main`, because it changes the live site.
   - The repo is public, so never commit client data or secrets.
