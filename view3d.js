@@ -231,7 +231,7 @@ export async function open(container,R){
  const de=R.door?room.out[R.door.edge]:{x:0,y:-1,dx:1,dy:0};
  function setView(v){if(v==='eye'&&R.door){const a=room.loop[R.door.edge],t=(R.door.t0+R.door.t1)/2*M+(R.door.t1-R.door.t0)*M*.35,inn=(R.door.t1-R.door.t0)*M+.35;
    camera.position.set(a.x+de.dx*t-de.x*inn,1.6,a.y+de.dy*t-de.y*inn);controls.target.set(cx,.9,cz)}
-  else{const f=Math.max(1,1.15/camera.aspect);   // tall phone screens: step back so the whole room fits across
+  else{const f=Math.max(1,.95/camera.aspect);   // tall phone screens: step back just enough for the room to fill the width
    camera.position.set(cx+(-de.x*size*1.05+de.dx*size*.5)*f,room.H+size*.95*f,cz+(-de.y*size*1.05+de.dy*size*.5)*f);controls.target.set(cx,.3,cz)}
   controls.update();dirty=true}
  // walls between the camera and the room are cut down low, like a doll's house

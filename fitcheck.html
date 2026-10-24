@@ -40,6 +40,7 @@ body:not(.more) .adv{display:none!important}
 .steps{display:flex;flex-wrap:wrap;gap:5px}.stp{flex:0 0 auto;padding:5px 9px;min-height:32px;font-size:12.5px;border-radius:999px}.stp.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .stepttl{font-size:21px;line-height:1.25;text-transform:none;letter-spacing:0;color:var(--ink);margin:14px 0 2px;text-wrap:balance}
 .navbar{position:sticky;bottom:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line)}
+body.typing .navbar{visibility:hidden}
 .navbar button{flex:1;min-height:48px;font-size:16px}#navmsg{flex-basis:100%;margin:0;text-align:center}
 .linkbtn{background:none;border:none;color:var(--accent);text-decoration:underline;padding:6px 0;min-height:36px}
 .typechips .chip{min-height:44px;font-size:15px}
@@ -146,7 +147,7 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
   <div class="qbig"><small>Total</small><b id="qtotal">0</b><small id="qnote"></small></div>
   <div id="qrooms"></div>
   <label for="client" style="margin-top:12px">Client (optional)</label><input id="client" placeholder="Client name">
-  <div class="tools"><button class="primary" id="copyq">Copy quote</button><button id="qaddroom">+ Room</button></div>
+  <div class="tools"><button class="primary" id="shareq" hidden>Share quote</button><button id="copyq">Copy quote</button><button id="qaddroom">+ Room</button></div>
   <div class="hint" id="quotemsg"></div><textarea id="copyfb" readonly rows="8" hidden style="margin-top:8px"></textarea>
   <div class="adv"><div id="qtable"></div><div class="tools"><button id="showq">Show full quote</button></div></div>
   <div id="quote" hidden></div>
@@ -571,9 +572,11 @@ function drawPlan(sel,print){
   h+=`<g transform="translate(${it.x} ${it.y}) rotate(${it.rot})" fill="none" stroke="var(--ink)" stroke-opacity=".4" stroke-width="${u*1.1}" pointer-events="none">${detail(c,u)}</g>`;
   const e=sw*2.2,fx={0:[b.x0+e,b.y1-e,b.x1-e,b.y1-e],90:[b.x0+e,b.y0+e,b.x0+e,b.y1-e],180:[b.x0+e,b.y0+e,b.x1-e,b.y0+e],270:[b.x1-e,b.y0+e,b.x1-e,b.y1-e]}[it.rot];
   h+=`<line x1="${fx[0]}" y1="${fx[1]}" x2="${fx[2]}" y2="${fx[3]}" stroke="var(--ink)" stroke-opacity=".55" stroke-width="${u*2.5}"/>`;
-  const f1=Math.max(u*6,Math.min(fs,bw*.9/Math.max(c.n.length*.68,1)));
-  h+=`<text x="${it.x}" y="${it.y-f1*.15}" text-anchor="middle" font-size="${f1}" font-weight="600" fill="var(--ink)" pointer-events="none">${esc(c.n)}</text>`;
-  h+=`<text x="${it.x}" y="${it.y+f1*1.05}" text-anchor="middle" font-size="${f1*.85}" fill="var(--ink)" pointer-events="none">${UU(bw,bh)}</text></g>`;
+  const nm=shortName(c.n),f1=Math.min(fs*1.1,Math.max(u*10,bw*.92/Math.max(nm.length*.6,1))),wd=nm.split(' '),k=Math.ceil(wd.length/2);
+  const lines=nm.length*f1*.6<=bw*.95||wd.length<2?[nm]:[wd.slice(0,k).join(' '),wd.slice(k).join(' ')];
+  h+=`<text x="${it.x}" y="${it.y-(lines.length-1)*f1*.55+f1*.3}" text-anchor="middle" font-size="${f1}" font-weight="600" fill="var(--ink)" ${halo} pointer-events="none">${lines.map((l,i)=>`<tspan x="${it.x}" dy="${i?f1*1.1:0}">${esc(l)}</tspan>`).join('')}</text>`;
+  if(on)h+=`<text x="${it.x}" y="${it.y+lines.length*f1*.55+f1*.55}" text-anchor="middle" font-size="${f1*.8}" fill="var(--ink)" ${halo} pointer-events="none">${UU(bw,bh)}</text>`;
+  h+='</g>';
   if(on){const g=gaps(it),dim=(x1,y1,x2,y2,v)=>{if(v<.5)return '';const tx=(x1+x2)/2,ty=(y1+y2)/2,hz=y1===y2;
     return `<g stroke="var(--ink)" stroke-width="${sw*.7}"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`+
      (hz?`<line x1="${x1}" y1="${y1-u*4}" x2="${x1}" y2="${y1+u*4}"/><line x1="${x2}" y1="${y2-u*4}" x2="${x2}" y2="${y2+u*4}"/>`:`<line x1="${x1-u*4}" y1="${y1}" x2="${x1+u*4}" y2="${y1}"/><line x1="${x2-u*4}" y1="${y2}" x2="${x2+u*4}" y2="${y2}"/>`)+
@@ -617,8 +620,9 @@ function backGapRects(b,ri,hr,W,L){const ys=q=>q.y0<b.y1-.5&&q.y1>b.y0+.5,xs=q=>
  if(ri===2)return Math.min(L,...hr.filter(q=>xs(q)&&q.y0>=b.y1-.5).map(q=>q.y0))-b.y1;
  return b.x0-Math.max(0,...hr.filter(q=>ys(q)&&q.x1<=b.x0+.5).map(q=>q.x1))}
 // Best valid spot for catalog piece c (back to a wall when possible), or null. Same rules as check().
-function findSpot(c,cl,rots=[0,90,180,270]){const W=+S.rw,L=+S.rl,ob=S.items.map(body),of=S.items.map(front),dz=doorRect(),hr=hardRects(),lows=lowZones(),wins=windows(),step=CATALOG.length>40?10:5;let best=null;
- if(c.h>S.rh)return null;
+// near: optional target points; the spot closest to one of them wins (used to pair pieces).
+function findSpot(c,cl,rots=[0,90,180,270],near){const W=+S.rw,L=+S.rl,ob=S.items.map(body),of=S.items.map(front),dz=doorRect(),hr=hardRects(),lows=lowZones(),wins=windows(),step=CATALOG.length>40?10:5;let best=null;
+ if(c.h>S.rh)return null;const isBed=['bed','sofa'].includes(typeOf(c));
  for(const rot of rots){const w=rot%180?c.d:c.w,d=rot%180?c.w:c.d;if(w>W||d>L)continue;
   const xs=new Set([W-w]),ys=new Set([L-d]);
   for(let x=0;x<=W-w;x+=step)xs.add(x);for(let y=0;y<=L-d;y+=step)ys.add(y);
@@ -632,11 +636,27 @@ function findSpot(c,cl,rots=[0,90,180,270]){const W=+S.rw,L=+S.rl,ob=S.items.map
     const f=[{x0:b.x0,y0:b.y1,x1:b.x1,y1:b.y1+cl},{x0:b.x0-cl,y0:b.y0,x1:b.x0,y1:b.y1},{x0:b.x0,y0:b.y0-cl,x1:b.x1,y1:b.y0},{x0:b.x1,y0:b.y0,x1:b.x1+cl,y1:b.y1}][rot/90];
     if(!rectInRoom(f))continue;
     if(ob.some(o=>hit(f,o))||hr.some(o=>hit(f,o))||of.some(o=>hit(b,o)))continue;
-    const back=backGap(b,rot/90,hr,W,L),score=back*3+Math.min(b.x0,W-b.x1)+Math.min(b.y0,L-b.y1);
+    // a bed or sofa goes centred on its wall (room for a bedside table each side); everything else tucks into a corner
+    const back=backGap(b,rot/90,hr,W,L),spread=isBed?(rot%180?Math.abs(y+d/2-L/2):Math.abs(x+w/2-W/2)):Math.min(b.x0,W-b.x1)+Math.min(b.y0,L-b.y1);
+    const score=near?Math.min(...near.map(p=>Math.hypot(x+w/2-p.x,y+d/2-p.y)))*4+back:back*3+spread;
     if(!best||score<best.score)best={x:x+w/2,y:y+d/2,rot,score}}}}
  return best}
+// Pieces that belong together: a bedside table goes beside the head of a bed, a coffee table in front of a sofa,
+// a TV unit against the wall the sofa faces (turned towards it).
+// Local offsets (u across the partner, v towards its front) are turned with the partner's rotation.
+function pairSpot(c){const n=c.n.toLowerCase(),side=/bedside|night/.test(n),coffee=/coffee/.test(n),tv=/\btv\b|media/.test(n);if(!side&&!coffee&&!tv)return null;
+ const p=S.items.map(it=>({it,s:spec(it)})).find(({s})=>side?typeOf(s)==='bed':typeOf(s)==='sofa');if(!p)return null;
+ const {it,s}=p,t=it.rot*Math.PI/180,at=(u,v)=>({x:it.x+u*Math.cos(t)-v*Math.sin(t),y:it.y+u*Math.sin(t)+v*Math.cos(t)});
+ if(tv)return findSpot(c,c.cl,[(it.rot+180)%360],[at(0,5000)]);   // as far along the sofa's view as the room allows
+ const near=side?[-1,1].map(k=>at(k*(s.w/2+c.w/2+2),-s.d/2+c.d/2)):[at(0,s.d/2+s.cl+c.d/2+2)];
+ const sp=findSpot(c,c.cl,[it.rot],near)||findSpot(c,0,[it.rot],near);
+ return sp&&Math.min(...near.map(q=>Math.hypot(sp.x-q.x,sp.y-q.y)))<=40?sp:null}
 function doorOk(c){const s=[c.w,c.d,c.h].sort((a,b)=>a-b);return s[0]<=S.dw-5&&s[1]<=S.dh-5}
 function scheduleSugg(){clearTimeout(suggTimer);suggTimer=setTimeout(renderSugg,120)}
+// The piece a room is built around comes first in "Fits here".
+// (only until the room has one).
+function mainPiece(c){const is=c=>{const t=typeOf(c),n=c.n.toLowerCase();return !!{bedroom:t==='bed',kids:t==='bed',living:t==='sofa',dining:t==='table'&&c.h>=65&&!/desk/.test(n),office:/desk/.test(n)}[S.type]};
+ return is(c)&&!S.items.some(it=>is(spec(it)))?1:0}
 function renderSugg(){
  const W=+S.rw,L=+S.rl,box=$('sugg');
  if(S.mode==='walls'&&!S.closed){suggList=[];box.className='hint';box.textContent='Measure the room first.';return}
@@ -651,7 +671,10 @@ function renderSugg(){
   if(alt){suggList.push(alt);return}
   no.push([c,c.w*c.d>free?'Too big for the free floor space.':findSpot(c,0)?`Fits the floor, but not with its ${U(c.cl)} front clearance.`:'Too big for the space that is left.'])});
  suggList.forEach(x=>x.suit=suits(x.c));
- suggList.sort((a,b)=>(b.suit-a.suit)||(b.door-a.door)||(b.c.w*b.c.d-a.c.w*a.c.d));
+ // products already in the room go further down, so the list leads with what is still missing
+ const placed=new Set(S.items.map(it=>{const c=cat(it.k);return c&&(c.g||c.k)}));
+ suggList.forEach(x=>{x.key=mainPiece(x.c);x.dup=placed.has(x.c.g||x.c.k)?1:0});
+ suggList.sort((a,b)=>(b.suit-a.suit)||(b.key-a.key)||(a.dup-b.dup)||(b.c.w*b.c.d-a.c.w*a.c.d));
  let h=`<div class="hint adv" style="margin:0 0 6px">Largest free area: <b>${UU(fr.w,fr.d)}</b> (clearances not included). Suggestions respect clearances, the door swing and other pieces, and show pieces suited to this room type first.</div>`;
  // One short row per product: name, size and price, and a + button. The details stay behind the settings icon.
  const row=(x,i)=>`<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b>${x.from?`<small style="color:var(--accent)">Smaller size: ${esc(x.c.z||x.c.n)}</small>`:''}<small>${UU(x.c.w,x.c.d)} &middot; ${x.c.p.toLocaleString()}${x.door?'':' <span class="tag adv">&middot; check door access</span>'}</small></div><button data-add="${i}" class="addbtn" aria-label="Add ${esc(x.c.n)}">+</button></div>`;
@@ -662,7 +685,7 @@ function renderSugg(){
  box.className='';box.innerHTML=h}
 // The list refreshes 120 ms after a change, so the spot is worked out again on the tap (the room may have just changed).
 $('sugg').onclick=e=>{const b=e.target.closest('[data-add]');if(!b)return;const x=suggList[+b.dataset.add];if(!x)return;
- if(S.mode==='walls'&&!S.closed)return;const c=x.c,sp=findSpot(c,c.cl)||findSpot(c,0);
+ if(S.mode==='walls'&&!S.closed)return;const c=x.c,sp=pairSpot(c)||findSpot(c,c.cl)||findSpot(c,0);
  ghost=null;const it={id:S.next++,k:c.k,x:sp?sp.x:S.rw/2,y:sp?sp.y:S.rl/2,rot:sp?sp.rot:0};S.items.push(it);S.sel=it.id;render()};
 $('sugg').onmouseover=e=>{const r=e.target.closest('.sg[data-i]');const x=r&&suggList[+r.dataset.i];
  const g=x?{k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot}:null;
@@ -728,6 +751,8 @@ function renderRooms(){
  $('delroom').disabled=S.rooms.length<2;
  $('roomh').textContent='Size';
  $('layouth').textContent=S.name||'This room'}
+// Short product name for the plan: no size codes or trailing numbers ("LACK TV bench 160" -> "LACK TV bench").
+const shortName=n=>n.split(',')[0].replace(/\s+\d+(x\d+)?(\s*cm)?$/i,'').trim();
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // catalog
@@ -738,7 +763,7 @@ function renderCat(){const q=$('catq').value.trim().toLowerCase();
  $('cat').innerHTML=list.map(c=>`<button data-k="${esc(c.k)}"${suits(c)?'':' style="opacity:.5" title="Usually for other room types"'}>${esc(c.n)}<small>${UUU(c.w,c.d,c.h)}</small></button>`).join('')||'<div class="hint">No match.</div>'}
 $('cat').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
- $('tipmsg').textContent='';const c=cat(b.dataset.k),spot=findSpot(c,c.cl)||findSpot(c,0);   // against a wall; centre only if nothing else fits
+ $('tipmsg').textContent='';const c=cat(b.dataset.k),spot=pairSpot(c)||findSpot(c,c.cl)||findSpot(c,0);   // against a wall; centre only if nothing else fits
  const it={id:S.next++,k:c.k,x:spot?spot.x:S.rw/2,y:spot?spot.y:S.rl/2,rot:spot?spot.rot:0};S.items.push(it);S.sel=it.id;render()};
 $('catq').oninput=renderCat;
 
@@ -836,7 +861,7 @@ function fillDoor(){const sel=$('dwall'),cur=String(S.dwall);
 function renderWallStatus(){const el=$('wallstat'),cb=$('closewall');cb.hidden=true;
  const sw=Object.values(sizeWarn)[0];if(sw&&S.mode==='walls'){el.innerHTML=`<span style="color:var(--err)">${esc(sw)}</span>`;return}
  if(S.mode!=='walls'){el.textContent='';return}
- if(S.shape==='sketch'&&!S.sketch){el.textContent='Draw the room in the box above.';return}
+ if(S.shape==='sketch'&&!S.sketch){el.textContent='';return}
  if(S.shape!=='free'){const list=S.shape==='rect'?S.walls.slice(0,2):S.walls,need=list.reduce((a,w)=>a+(w.curve?2:1),0),have=list.reduce((a,w)=>a+(+w.len>0)+(w.curve&&+w.curve.depth>0?1:0),0);
   if(S.closed){el.innerHTML=`<span style="color:var(--ok)">Room measured:</span> ${UU(S.rw,S.rl)}, floor ${UA(usage().room)}.`+(S.misclose>5?` <span style="color:var(--warn)">The walls were ${U(S.misclose)} off, so re-check them.</span>`:'');return}
   if(have<need){el.textContent=`Type ${need-have} more measurement${need-have>1?'s':''}.`;return}
@@ -965,7 +990,7 @@ function roomModel(){
   obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
   items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:c.m||''}})}}
 // Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
-const V3D='2026-10-23c';
+const V3D='2026-10-24a';
 let view3d=null,v3dTimer=0;
 async function open3d(){
  if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
@@ -1037,7 +1062,7 @@ function quoteText(){stash();const who=[S.client&&`for ${S.client}`,S.rep&&`by $
  S.rooms.forEach((r,i)=>{const run=()=>{const tl=ROOM_TYPES[S.type];L.push(`${S.name}${S.name===tl||S.type==='other'?'':` (${tl})`}, ${S.closed?UU(S.rw,S.rl):'not measured'}, ceiling ${U(S.rh)}`);
   let t=0;
   groupItems().forEach(({c,q})=>{L.push(`  ${q} x ${c.n}${c.sized?` (${c.sized}, ${UUU(c.w,c.d,c.h)}, price to confirm)`:''}: ${(c.p*q).toLocaleString()}`);t+=c.p*q});
-  L.push(`  Room total: ${t.toLocaleString()}`);check().filter(([k])=>k!=='ok').forEach(([k,m])=>L.push('  Note: '+m));L.push('');grand+=t};
+  L.push(`  Room total: ${t.toLocaleString()}`,'');grand+=t};
   i===S.cur?run():withRoom(r,run)});
  L.push(`Total: ${grand.toLocaleString()}`,'Indicative only. Verify on site before ordering. '+priceNote());return L.join('\n')}
 // Copy to the clipboard; if the browser refuses, show the text in a box to select and copy by hand.
@@ -1045,6 +1070,12 @@ async function copyText(text,msgEl,what){const fb=$('copyfb');
  try{await navigator.clipboard.writeText(text);fb.hidden=true;msgEl.style.color='var(--ok)';msgEl.textContent=what+' copied.'}
  catch(e){fb.hidden=false;fb.value=text;fb.focus();fb.select();msgEl.style.color='var(--warn)';msgEl.textContent='Copying was blocked. Select the text in the box and copy it.'}}
 $('copyq').onclick=()=>copyText(quoteText(),$('quotemsg'),'Quote');
+// Share sheet where the phone has one (WhatsApp, email, messages); Copy stays for everything else.
+if(navigator.share){$('shareq').hidden=false;$('copyq').classList.remove('primary')}
+$('shareq').onclick=async()=>{try{await navigator.share({title:'Quote',text:quoteText()})}catch(e){if(e&&e.name!=='AbortError')copyText(quoteText(),$('quotemsg'),'Quote')}};
+// While typing on a phone the bottom bar steps aside (it would sit on top of the keyboard and the boxes).
+if(matchMedia('(pointer:coarse)').matches){document.addEventListener('focusin',e=>{if(e.target.matches('input:not([type=checkbox]),textarea'))document.body.classList.add('typing')});
+ document.addEventListener('focusout',()=>document.body.classList.remove('typing'))}
 $('rooms').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;stash();loadRoom(+b.dataset.r);load();renderCat();render()};
 $('addroom').onclick=()=>{stash();S.rooms.push({name:`Room ${S.rooms.length+1}`,type:'other',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260});loadRoom(S.rooms.length-1);load();renderCat();render();if(S.more){$('rname').focus();$('rname').select()}};
 $('delroom').onclick=async()=>{if(S.rooms.length<2||!await ask(`Delete "${S.name}" and its layout?`,'Delete room'))return;S.rooms.splice(S.cur,1);loadRoom(Math.min(S.cur,S.rooms.length-1));load();renderCat();render()};
