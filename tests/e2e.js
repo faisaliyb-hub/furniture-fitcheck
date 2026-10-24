@@ -250,6 +250,21 @@ export async function run(){
  $('typechips').querySelector('[data-t=bedroom]').click();ok('screens: a second bedroom is named Bedroom 2',S.name==='Bedroom 2',S.name);
  goStep(3);$('qrooms').querySelector('[data-qr="0"]').click();await wait(10);ok('screens: tapping a room line opens that room',S.cur===0&&S.step===2&&S.items.length===1);
  S.step=5;render();ok('screens: an old saved step number lands on a real screen',S.step===3);goStep(1);
+ // review 2026-10-24: main piece first, beds centred, bedside tables beside the bed, readable labels, client-ready quote text
+ freshVisit({type:'bedroom',name:'Bedroom',dwall:'2',doff:300});setTemplate('rect',[420,380]);goStep(2);renderSugg();
+ ok('review: in a bedroom the bed comes first',typeOf(suggList[0].c)==='bed',suggList.slice(0,3).map(x=>x.c.n));
+ const addK=k=>{renderSugg();const i=suggList.findIndex(x=>x.c.k===k||x.c.g===k);$('sugg').querySelector(`[data-add="${i}"]`).click()};
+ addK('malm');const bed0=S.items[0];ok('review: the bed is centred on its wall',near(bed0.x,210,1)&&near(body(bed0).y0,0,.5),[bed0.x,bed0.y]);
+ renderSugg();ok('review: with a bed in the room, the bed no longer leads the list',typeOf(suggList[0].c)!=='bed',suggList[0].c.n);
+ addK('506.107.39');addK('506.107.39');const [l1,l2]=S.items.slice(1).map(body),bb=body(bed0);
+ ok('review: bedside tables go either side of the bed head',[l1,l2].every(b=>near(b.y0,0,.5))&&[l1,l2].some(b=>near(b.x1,bb.x0,5))&&[l1,l2].some(b=>near(b.x0,bb.x1,5)),[l1,l2,bb]);
+ S.sel=null;render();ok('review: plan labels use short names',/>MALM bed frame</.test($('plan').innerHTML)&&!/Standard Double</.test($('plan').innerHTML));
+ ok('review: the copied quote has no internal notes',!/Note:/.test(quoteText()),quoteText());
+ freshVisit({type:'living',name:'Living room',dwall:'2',doff:50});setTemplate('rect',[480,400]);goStep(2);renderSugg();
+ ok('review: in a living room the sofa comes first',typeOf(suggList[0].c)==='sofa',suggList[0].c.n);
+ addK('kivik');addK('lackcoffee');addK('lacktv');{const [so,ct,tv]=S.items,bs=body(so),bc=body(ct),bt=body(tv);
+  ok('review: coffee table in front of the sofa, TV on the wall the sofa faces',near(bc.y0-bs.y1,45,3)&&near(bt.y1,400,.5)&&tv.rot===(so.rot+180)%360&&near(so.x,240,1),[bs,bc,bt,so.rot,tv.rot])}
+ goStep(1);
  {const qt=quoteText();ok('quote text: no empty client/rep and no repeated room name',/^Quote, /.test(qt)&&!/\(rep: -\)/.test(qt)&&!/Living room \(Living room\)/.test(qt),qt.split('\n').slice(0,3))}
  S.doorSet=true;goStep(1);$('notrect').click();$('shapes').querySelector('[data-shape=rect]').click();ok('door prompt: a new room shape asks for the door again',S.doorSet===false);
 

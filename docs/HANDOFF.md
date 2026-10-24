@@ -228,7 +228,18 @@ User feedback after trying the live app with the 3D view: the 3D view is smooth,
   - The copied quote started "Quote for - (rep: -)" and repeated the room name ("Living room (Living room)").
 - Length/Width boxes "don't click again" (user report 2026-10-24): when both numbers were in, the "Type the room size first." line under Next disappeared and the page got shorter, so the page jumped about 25 px and a tap aimed at the box landed on its label. Clearing a number to edit it made the page jump back. Fixed: on Measure that line keeps its space, and the status line has a fixed minimum height. 128 checks pass.
 - "A lot is not clickable" after typing 400 and 4 (user report 2026-10-24, iPhone Safari): the unit setting on that phone was metres (hidden behind the settings icon), so 400 became a 400 m room. The fit search for a room that size froze the page, and a frozen page ignores taps. Fixed: the unit now shows beside "Size" on Measure; a wall over 20 m, or a rectangle side under 50 cm, turns red with a hint ("400 m is too long for a room wall. Did you mean 400 cm?") and the room is not accepted; suggestions are skipped for any room over 30 m. 132 checks pass.
-  - Not changed: the copied quote still lists internal notes such as "may not get through the door"; the 3D overview leaves wide margins on a tall phone screen.
+- Full hands-on review (2026-10-24, user: "check everything it's supposed to do"), with real taps and drags at phone size. Fixed (140 checks pass):
+  - The room's main piece leads "Fits here" (bed in a bedroom or kids' room, sofa in a living room, dining table, desk) until the room has one, and products already in the room move down. Before, the bed came 8th in a bedroom because pieces wider than the door were pushed down.
+  - Beds and sofas are placed centred on their wall. A bedside table goes beside the head of the bed, a coffee table 45 cm in front of the sofa, and a TV unit on the wall the sofa faces, turned towards it.
+  - Plan labels use short names ("MALM bed frame") at a readable size, on one or two lines; the size shows on the selected piece.
+  - On phones the bottom bar hides while a box is being typed in.
+  - One instruction under the drawing pad (it showed twice).
+  - The 3D overview starts closer on tall screens.
+  - The copied quote has items and totals only; internal fit notes stay in the app.
+  - "Share quote" (the phone's share sheet: WhatsApp, email) where available; Copy stays.
+  - Seen but not changed: one drag of a piece did nothing and could not be repeated (re-check on the iPhone simulator); switching to "Draw it" clears a typed rectangle; gap labels crowd small pieces.
+- The copied quote previously listed internal notes (fixed above).
+  - Not changed (earlier note, now fixed): the copied quote listed internal notes such as "may not get through the door"; the 3D overview leaves wide margins on a tall phone screen.
 - Zoom (user feedback 2026-10-23, "I can't zoom in and out freely", in both views): the flat plan now zooms with a two-finger pinch (up to 8x, around the fingers) or the mouse wheel; one finger on empty floor moves a zoomed plan; a **Fit** button beside 3D shows the whole room. In 3D, zoom goes towards where you pinch or point, gets as close as 10 cm and as far as 8 times the room size, and is a bit faster.
 - Not tested yet: a real phone (the user's next step), and Safari on iPhone.
 
