@@ -889,7 +889,8 @@ $('shapebox').addEventListener('change',e=>{const i=e.target.dataset.tw;if(i==nu
 function renderWalls(){renderShapes();renderShapeInputs();
  $('walls').innerHTML=S.walls.map((w,i)=>`<div class="wrow" data-w="${i}"><b>${i+1}</b><input data-wf="len" ${lenAttrs()} placeholder="${esc(unitHint())}" value="${w.len?esc(U(w.len,true)):''}" aria-label="Wall ${i+1} length in cm"><select data-wf="turn" aria-label="Turn after wall ${i+1}"><option value="R"${w.turn!=='L'?' selected':''}>turn right</option><option value="L"${w.turn==='L'?' selected':''}>turn left</option></select><button data-wdel aria-label="Remove wall ${i+1}">&times;</button></div>`).join('');
  fillDoor();renderWallStatus()}
-function onShapeChange(rebuild){recomputeShape();if(rebuild)renderWalls();else{fillDoor();renderWallStatus()}renderFeat();render()}
+function onShapeChange(rebuild){if(rebuild)S.doorSet=false;   // a new shape has new walls: ask for the door again
+ recomputeShape();if(rebuild)renderWalls();else{fillDoor();renderWallStatus()}renderFeat();render()}
 $('walls').oninput=e=>{const row=e.target.closest('.wrow'),f=e.target.dataset.wf;if(!row||!f)return;const w=S.walls[+row.dataset.w];
  if(f==='len'){const v=e.target.value,cm=parseLen(v);e.target.classList.toggle('bad',v.trim()!==''&&!isFinite(cm));if(v.trim()!==''&&!isFinite(cm))return;w.len=v.trim()===''?0:cm}else w[f]=e.target.value;onShapeChange(false)};
 $('walls').addEventListener('change',e=>{const row=e.target.closest('.wrow');if(row&&e.target.dataset.wf==='len'){const w=S.walls[+row.dataset.w];e.target.value=w.len?U(w.len,true):'';e.target.classList.remove('bad')}});
@@ -1019,8 +1020,9 @@ $('unit').onchange=e=>{S.unit=e.target.value;load();renderCat();render()};
 $('rot').onclick=()=>{const it=S.items.find(i=>i.id===S.sel);if(it){it.rot=(it.rot+90)%360;render()}};
 $('del').onclick=()=>{S.items=S.items.filter(i=>i.id!==S.sel);S.sel=null;render()};
 $('showq').onclick=()=>{const q=$('quote');if(q.hidden){buildQuote();q.hidden=false;$('showq').textContent='Hide full quote'}else{q.hidden=true;$('showq').textContent='Show full quote'}};
-function quoteText(){stash();const L=[`Quote for ${S.client||'-'} (rep: ${S.rep||'-'}), ${new Date().toLocaleDateString()}`,''];let grand=0;
- S.rooms.forEach((r,i)=>{const run=()=>{L.push(`${S.name} (${ROOM_TYPES[S.type]}), ${S.closed?UU(S.rw,S.rl):'not measured'}, ceiling ${U(S.rh)}`);
+function quoteText(){stash();const who=[S.client&&`for ${S.client}`,S.rep&&`by ${S.rep}`].filter(Boolean).join(' ');
+ const L=[`Quote${who?' '+who:''}, ${new Date().toLocaleDateString()}`,''];let grand=0;
+ S.rooms.forEach((r,i)=>{const run=()=>{const tl=ROOM_TYPES[S.type];L.push(`${S.name}${S.name===tl||S.type==='other'?'':` (${tl})`}, ${S.closed?UU(S.rw,S.rl):'not measured'}, ceiling ${U(S.rh)}`);
   let t=0;
   groupItems().forEach(({c,q})=>{L.push(`  ${q} x ${c.n}${c.sized?` (${c.sized}, ${UUU(c.w,c.d,c.h)}, price to confirm)`:''}: ${(c.p*q).toLocaleString()}`);t+=c.p*q});
   L.push(`  Room total: ${t.toLocaleString()}`);check().filter(([k])=>k!=='ok').forEach(([k,m])=>L.push('  Note: '+m));L.push('');grand+=t};
@@ -1071,8 +1073,8 @@ $('plan').addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,{x:e.clientX,y
  if(ptrs.size===2&&S.step===2){const [a,b]=[...ptrs.values()],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;drag=null;pan=null;   // a second finger: pinch instead of drag
   pinch={d0:Math.hypot(a.x-b.x,a.y-b.y)||1,z0:pv.z,P:pt({clientX:mx,clientY:my})};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}return}
  if(ptrs.size>2||pinch)return;
- if(doorAsk()){S.doorSet=true;moveDoor=false;placeDoorAt(pt(e));return}
  const g=e.target.closest('[data-id]'),og=!g&&e.target.closest('[data-ob]');
+ if(doorAsk()&&!g&&!og){S.doorSet=true;moveDoor=false;placeDoorAt(pt(e));return}   // a tap on a piece still selects it
  if(og){const o=S.obs.find(x=>x.id==og.dataset.ob);if(o){const p=pt(e);drag={ob:o,dx:p.x-o.x,dy:p.y-o.y};S.sel=null;try{$('plan').setPointerCapture(e.pointerId)}catch(_){}render()}return}
  if(!g){if(pv.z>1.01&&S.step===2){pan={sx:e.clientX,sy:e.clientY,x0:pv.x,y0:pv.y};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}}S.sel=null;render();return}
  const it=S.items.find(i=>i.id==g.dataset.id);S.sel=it.id;const p=pt(e);drag={it,dx:p.x-it.x,dy:p.y-it.y};

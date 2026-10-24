@@ -222,6 +222,11 @@ User feedback after trying the live app with the 3D view: the 3D view is smooth,
   - The "Width" label on the rectangle picture was cut off on phones; it now runs down the wall.
 - Checks: 16 new ones for the three screens (screen contents, size unlocks Next, the type names the room, the drawing pad opens, door prompt and placing, Move door, + adds a piece, problem pieces turn red, quote total and room lines, + Room, opening a room from the quote, old saved step numbers). All 124 pass (4 more for zooming, added 2026-10-23).
 - Published 2026-10-23 at https://faisaliyb-hub.github.io/furniture-fitcheck/preview/ (copies in `preview/` on `main`; the root app is unchanged).
+- Check of the live app (2026-10-24, user asked "what's wrong with the app"): all 124 checks passed on the live site with no errors. Three problems found by hand and fixed on `feat/three-screens` (127 checks pass; not live until merged into `main`):
+  - With the door prompt showing, tapping a piece moved the door to that spot instead of selecting the piece. Now only a tap on empty floor places the door.
+  - Changing the room's shape kept the old door position. Now it asks for the door again.
+  - The copied quote started "Quote for - (rep: -)" and repeated the room name ("Living room (Living room)").
+  - Not changed: the copied quote still lists internal notes such as "may not get through the door"; the 3D overview leaves wide margins on a tall phone screen.
 - Zoom (user feedback 2026-10-23, "I can't zoom in and out freely", in both views): the flat plan now zooms with a two-finger pinch (up to 8x, around the fingers) or the mouse wheel; one finger on empty floor moves a zoomed plan; a **Fit** button beside 3D shows the whole room. In 3D, zoom goes towards where you pinch or point, gets as close as 10 cm and as far as 8 times the room size, and is a bit faster.
 - Not tested yet: a real phone (the user's next step), and Safari on iPhone.
 
