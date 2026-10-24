@@ -214,6 +214,11 @@ export async function run(){
  ok('screens: Furniture asks once where the door is',S.step===2&&visible('#doorbar')&&document.body.classList.contains('doormode')&&!visible('#movedoor'));
  {const q=plan.createSVGPoint();q.x=200;q.y=378;const p=q.matrixTransform(plan.getScreenCTM());plan.dispatchEvent(new PointerEvent('pointerdown',{clientX:p.x,clientY:p.y,bubbles:true,pointerId:9}));plan.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:9}))}
  ok('screens: tapping the plan places the door and stops asking',S.doorSet&&S.dwall==='2'&&!visible('#doorbar')&&visible('#movedoor'),[S.dwall,S.doff]);
+ // while the door prompt shows, tapping a piece selects it and leaves the door alone
+ {renderSugg();$('sugg').querySelector('[data-add]').click();const pc=S.items[S.items.length-1];S.sel=null;moveDoor=true;render();const d0=[S.dwall,S.doff];
+  const q=plan.createSVGPoint();q.x=pc.x;q.y=pc.y;const p=q.matrixTransform(plan.getScreenCTM());document.elementFromPoint(p.x,p.y).dispatchEvent(new PointerEvent('pointerdown',{clientX:p.x,clientY:p.y,bubbles:true,pointerId:11}));plan.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:11}));
+  ok('door prompt: tapping a piece selects it and does not move the door',S.sel===pc.id&&S.dwall===d0[0]&&S.doff===d0[1]&&visible('#doorbar'),[S.sel,pc.id,d0,S.dwall,S.doff]);
+  $('doorskip').click();S.items=S.items.filter(i=>i.id!==pc.id);S.sel=null;render()}
  $('movedoor').click();ok('screens: Move door asks again; Cancel keeps the door',visible('#doorbar')&&($('doorskip').click(),!visible('#doorbar')&&S.dwall==='2'));
  ok('screens: Furniture shows the plan, the 3D button and the fits-here list, not the fit-check list',visible('#layoutcard')&&visible('#v3d')&&visible('#sugg')&&!visible('#issues'));
  const nAdd=$('sugg').querySelectorAll('[data-add]').length;$('sugg').querySelector('[data-add]').click();await wait(10);
@@ -235,6 +240,8 @@ export async function run(){
  $('typechips').querySelector('[data-t=bedroom]').click();ok('screens: a second bedroom is named Bedroom 2',S.name==='Bedroom 2',S.name);
  goStep(3);$('qrooms').querySelector('[data-qr="0"]').click();await wait(10);ok('screens: tapping a room line opens that room',S.cur===0&&S.step===2&&S.items.length===1);
  S.step=5;render();ok('screens: an old saved step number lands on a real screen',S.step===3);goStep(1);
+ {const qt=quoteText();ok('quote text: no empty client/rep and no repeated room name',/^Quote, /.test(qt)&&!/\(rep: -\)/.test(qt)&&!/Living room \(Living room\)/.test(qt),qt.split('\n').slice(0,3))}
+ S.doorSet=true;goStep(1);$('notrect').click();$('shapes').querySelector('[data-shape=rect]').click();ok('door prompt: a new room shape asks for the door again',S.doorSet===false);
 
  window.removeEventListener('error',onErr);
  ok('no page errors during the run',!errs.length,errs);
