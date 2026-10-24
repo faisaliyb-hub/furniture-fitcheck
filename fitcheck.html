@@ -76,6 +76,14 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 .qbig{text-align:center;margin:4px 0 14px}.qbig small{display:block;color:var(--mute);font-size:13px}.qbig b{display:block;font-size:40px;line-height:1.15}
 .qroom{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;margin-bottom:6px}.qroom small{display:block;color:var(--mute);font-size:12px}
 .steps .stp{flex:1}
+/* Wide screens (a tablet held sideways, a laptop): on Furniture the plan sits on the left and the list on the right */
+@media (min-width:1000px){
+ body[data-step="2"] main{max-width:1240px;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);align-items:start;grid-auto-flow:row dense}
+ body[data-step="2"] #stephead,body[data-step="2"] #setcard,body[data-step="2"] .navbar{grid-column:1/-1}
+ body[data-step="2"] main section.card:not(#layoutcard):not(#setcard){grid-column:2}
+ body[data-step="2"] #layoutcard{grid-column:1;grid-row:span 8;position:sticky;top:12px}
+ body[data-step="2"] #plan{max-height:calc(100vh - 330px)}
+}
 .askov{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.45);z-index:50;padding:16px}
 </style>
 </head>
@@ -1107,7 +1115,9 @@ function setPlanBox(){const F=planFull(),key=`${S.cur}|${F.w}x${F.h}`;if(pv.key!
  $('plan').setAttribute('viewBox',`${pv.x} ${pv.y} ${w} ${h}`);$('fit').hidden=pv.z<=1.01||S.step!==2}
 // zoom to z, keeping plan point P under the screen point (cx, cy)
 function zoomAt(z,P,cx,cy){const F=planFull(),r=$('plan').getBoundingClientRect();pv.z=Math.min(8,Math.max(1,z));
- const w=F.w/pv.z,h=F.h/pv.z;pv.x=P.x-(cx-r.left)/r.width*w;pv.y=P.y-(cy-r.top)/r.height*h;setPlanBox()}
+ // the drawing is centred in its box when the box has a different shape (wide layout), so map through the real scale
+ const w=F.w/pv.z,h=F.h/pv.z,k=Math.min(r.width/w,r.height/h),ox=r.left+(r.width-w*k)/2,oy=r.top+(r.height-h*k)/2;
+ pv.x=P.x-(cx-ox)/k;pv.y=P.y-(cy-oy)/k;setPlanBox()}
 $('fit').onclick=()=>{pv.z=1;setPlanBox()};
 $('plan').addEventListener('wheel',e=>{if(S.step!==2)return;e.preventDefault();zoomAt(pv.z*Math.exp(-e.deltaY*.0015),pt(e),e.clientX,e.clientY)},{passive:false});
 const endPtr=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size)pan=null};
@@ -1124,7 +1134,7 @@ $('plan').addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,{x:e.clientX,y
  try{$('plan').setPointerCapture(e.pointerId)}catch(_){}render()});
 $('plan').addEventListener('pointermove',e=>{if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(pinch&&ptrs.size>=2){const [a,b]=[...ptrs.values()];zoomAt(pinch.z0*Math.hypot(a.x-b.x,a.y-b.y)/pinch.d0,pinch.P,(a.x+b.x)/2,(a.y+b.y)/2);return}
- if(pan){const r=$('plan').getBoundingClientRect(),F=planFull();pv.x=pan.x0-(e.clientX-pan.sx)*F.w/pv.z/r.width;pv.y=pan.y0-(e.clientY-pan.sy)*F.h/pv.z/r.height;setPlanBox();return}
+ if(pan){const r=$('plan').getBoundingClientRect(),F=planFull(),k=Math.min(r.width*pv.z/F.w,r.height*pv.z/F.h);pv.x=pan.x0-(e.clientX-pan.sx)/k;pv.y=pan.y0-(e.clientY-pan.sy)/k;setPlanBox();return}
  if(!drag)return;const p=pt(e);
  if(drag.ob){const o=drag.ob;o.x=Math.round(Math.min(Math.max(0,p.x-drag.dx),Math.max(0,S.rw-o.w)));o.y=Math.round(Math.min(Math.max(0,p.y-drag.dy),Math.max(0,S.rl-o.d)));render();return}
  const it=drag.it;

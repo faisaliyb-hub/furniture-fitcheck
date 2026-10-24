@@ -239,6 +239,7 @@ User feedback after trying the live app with the 3D view: the 3D view is smooth,
   - "Share quote" (the phone's share sheet: WhatsApp, email) where available; Copy stays.
   - Seen but not changed: one drag of a piece did nothing and could not be repeated (re-check on the iPhone simulator); switching to "Draw it" clears a typed rectangle; gap labels crowd small pieces.
 - The copied quote previously listed internal notes (fixed above).
+- Tablets (2026-10-24, user: "hope we can use this on a tab"): works in any tablet browser. Portrait tablets use the phone layout with a bigger plan. On screens 1000 px wide or more (a tablet held sideways, a laptop) the Furniture screen shows the plan on the left and "Fits here" on the right; zoom and pan were fixed for that layout (the plan box is wider than the drawing there). 140 checks pass at 1180 x 820. Not tried on a real iPad yet.
   - Not changed (earlier note, now fixed): the copied quote listed internal notes such as "may not get through the door"; the 3D overview leaves wide margins on a tall phone screen.
 - Zoom (user feedback 2026-10-23, "I can't zoom in and out freely", in both views): the flat plan now zooms with a two-finger pinch (up to 8x, around the fingers) or the mouse wheel; one finger on empty floor moves a zoomed plan; a **Fit** button beside 3D shows the whole room. In 3D, zoom goes towards where you pinch or point, gets as close as 10 cm and as far as 8 times the room size, and is a bit faster.
 - Not tested yet: a real phone (the user's next step), and Safari on iPhone.
