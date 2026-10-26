@@ -1,13 +1,13 @@
 # FitCheck: Handoff
 
 ## Start here (for a new session or another Claude account)
-Checked 2026-10-26.
+Checked 2026-10-27.
 - **Folder:** `furniture-fitcheck` in the user's Project folder. Work happens on branch **`feat/three-screens`** and is merged into `main` to go live. Check with `git status` before starting.
-- **Live site:** https://faisaliyb-hub.github.io/furniture-fitcheck/ serves `main` at commit `47bd22d` (2026-10-26): 3 screens (Measure, Furniture, Quote), IKEA UK sample catalog, real product sizes (one + button per size, as many as wanted), any piece in any room (one list with filters and search), smart placement (bed/sofa centred, bedside tables beside the bed, coffee table in front of the sofa, TV facing it), wall finishes (panels, wallpaper, paint, with quantities), 3D view, zoom, Share/Copy quote, phone and tablet layouts, speed fixes. `preview/` on `main` holds an older copy and can be deleted.
+- **Live site:** https://faisaliyb-hub.github.io/furniture-fitcheck/ serves `main` at commit `49d0129` (2026-10-27): 3 screens (Measure, Furniture, Quote), IKEA UK sample catalog, real product sizes (one + button per size, as many as wanted), any piece in any room (one list with filters and search), smart placement (bed/sofa centred, bedside tables beside the bed, coffee table in front of the sofa, TV facing it), wall finishes (panels, wallpaper, paint, with quantities), 3D view with real textures and HDR light, Photo (path-traced still), zoom, Share/Copy quote, phone and tablet layouts, speed fixes. `preview/` on `main` holds an older copy and can be deleted.
 - **How publishing works:** Claude Code's safety check blocks Claude from pushing to `main` (it is the live site), so the user runs this in the `furniture-fitcheck` folder (not `Nova`), then Claude confirms the GitHub Pages build:
   `git checkout main && git merge --no-edit feat/three-screens && git push origin main && git checkout feat/three-screens`
-- **Checks:** all 158 in `tests/e2e.js` pass (2026-10-26). Run with the browser window at a real size (e.g. 1180 x 820): a collapsed 0 x 0 browser pane makes the tap-based checks fail. The full run takes 1–2 minutes.
-- **Latest (2026-10-27, on `feat/three-screens`, not live until the user runs the publish command):** realistic 3D part 1 is built: real CC0 textures and an HDR light file (`assets/3d/`, credits in `docs/ASSETS.md`) and a **Photo** button in the 3D view that path-traces a still (three-gpu-pathtracer 0.0.23, about 30 s). 160 checks pass. Next for realism: part 2, the furniture house's own products as 3D models made from their photos (they have no 3D files; see "Realistic 3D").
+- **Checks:** all 175 in `tests/e2e.js` pass (2026-10-27). Run with the browser window at a real size (e.g. 1180 x 820): a collapsed 0 x 0 browser pane makes the tap-based checks fail. The full run takes 1–2 minutes.
+- **Latest (2026-10-27, on `feat/three-screens`, not live until the user runs the publish command):** **company packs** (see "Company packs" below and `docs/COMPANY_PACK.md`): any company imports one .zip with its catalog, material photos and 3D files for what it makes (furniture, wall panels, wallpaper, doors); everything else is generic with a colour choice and is listed in the quote as "Not supplied (layout only)". New **Door style** chooser. A sample pack is in `samples/`. Realistic 3D part 1 (textures, HDR light, Photo) is already live.
 - **Also open:** the shared backend with rep logins (Supabase proposed, not approved yet); the user testing with a real room; showing it to the furniture house.
 - **iPhone simulator:** Xcode is installed with iOS 27.1 ("iPhone Duo" is the only device type it offers). It heats the Mac, so boot it only when needed and run `xcrun simctl shutdown all` afterwards.
 - **Rules:**
@@ -16,7 +16,7 @@ Checked 2026-10-26.
   - The user wants plain, short explanations and a very simple app, with no limits on what a rep can add.
 - **Paste this as the first message in the new session:** "Read docs/HANDOFF.md in this folder, start with the Start here section, tell me where we left off, then wait for my go-ahead."
 
-Last updated: 2026-10-26. Phase: **Phase 1 prototype, live on GitHub Pages**, tried on a real phone by the user (worked), not yet shown to the client.
+Last updated: 2026-10-27. Phase: **Phase 1 prototype, live on GitHub Pages**, tried on a real phone by the user (worked), not yet shown to the client.
 
 ## Goal
 A furniture house wants a system for its field marketers/sales reps to measure spaces and show which products fit. Wider hopes: architect-friendly files, marketing visibility. The client's name, furniture category, and team size are **not yet known**.
@@ -203,7 +203,7 @@ Suggested priority: non-rectangular rooms and obstacles first, then shared backe
 ## Open questions for the client
 1. Name and furniture category? Which products first?
 2. Do they have product dimensions and CAD/3D files, or only PDFs and photos? **Do they or their suppliers have 3D models of their products (any of .glb, .gltf, .fbx, .obj, .3ds/.max, SketchUp), and good photos of each material and finish (wood, fabric, metal, wall panels)?** This decides how realistic the 3D can look (see "Realistic 3D").
-6. Their real wall panels, wallpapers and paints: sizes and prices (the app's 7 finishes are samples with made-up prices).
+6. Their real wall panels, wallpapers and doors: sizes, prices and one good photo of each, ready for a company pack (`docs/COMPANY_PACK.md`). The app's finishes and doors are samples with made-up prices.
 3. Who will maintain the catalog?
 4. Rep count and phone models? Are they willing to carry a Bluetooth laser?
 5. Budget and timeline for the pilot?
@@ -265,12 +265,21 @@ The user showed a professional interior render (a door, lamp, side table, floral
   - `V3D` in fitcheck.html is the cache version of view3d.js: bump it whenever view3d.js changes, or browsers keep the old copy.
 - **Part 2, needs the client:** each product's own 3D model and material photos. The user says the furniture house has **no 3D files**, and wants to make them from product photos: AI image-to-3D tools (e.g. Meshy, Tripo, Rodin, Hunyuan3D; prices and terms not checked yet) turn 3–4 photos per product (different angles, plain background) into a .glb, which goes in the catalog's `model` column; FitCheck scales it to the catalog size. FitCheck already loads a .glb/.gltf per product from the catalog's `model` column (scaled to the catalog size). Without models: paid 3D modelling, or AI photo-to-3D tools (quality varies); wall finishes need one good photo of each material.
 
+## Company packs (asked 2026-10-27, built the same day on `feat/three-screens`)
+User request: choose door styles, panels and walls in 3D, everything very realistic; then: "any company ... can upload their own design, their texture"; what the company manufactures is theirs, "the rest can be generic ... depending on the color they want". User chose: **pack kept on the device first** (no server yet), products **furniture, wall panels and wallpaper, doors** (not tiles); start with a sample.
+- **The pack:** one .zip with a catalog `.csv`, optional `company.json` (`{"name": ...}`), and photos (`.jpg/.png/.webp`) and models (`.glb`) named in the catalog. Read with **fflate 0.8.2** (small, widely used zip library, loaded from jsdelivr only when a pack is imported). Kept in IndexedDB (`fitcheck-pack`), so it loads again on the next visit and works offline; files are served to the 3D view as blob links. Settings icon on Furniture: **Import company pack (.zip)**, **Try sample company pack**, **Download sample pack**, **Use sample** (back to the built-in samples). Full guide for companies: `docs/COMPANY_PACK.md`.
+- **Catalog columns:** the furniture columns as before, plus `kind` (furniture, panel, wallpaper, door), `texture`, `color`, `style` (door: flat, panel, fluted, glass, geometric) and `repeat_cm` (wallpaper). A pack is refused with row-by-row messages if a named file is missing or a value is wrong. `catalog-template.csv` and the app's Copy template now have all kinds.
+- **Generic items:** 16 generic furniture pieces (sofas, beds, tables, storage...), paint and a plain door are always there, each with a colour palette (or any colour). They are drawn in the plan and 3D in that colour and listed in the quote under "Not supplied (layout only)" without a price. Old saved paint finishes become generic paint in the same colour.
+- **3D:** a company photo covers the piece, the door leaf or the wall finish at its real size (one panel; one wallpaper repeat). Doors without a photo are drawn in their style. Fixed while checking: the skirting board shared a face with a wall finish and flickered (it now stands proud of the finish); a door with a photo used a different material per face, which Photo (the path tracer) mixed up across the whole room (now one material).
+- **Sample pack** (`samples/sample-company-pack.zip`, "Demo Furniture Co (sample)", made-up products and prices): velvet sofa 2- and 3-seat, oak bench, bed and wardrobe, oak veneer panel, trellis wallpaper (53 cm repeat), oak veneer door, grey geometric door. `oak.jpg` is the Poly Haven CC0 wood recoloured to light oak; `trellis.png` was drawn for it.
+- Checks: 15 new (pack read, catalog kinds, company name, device-stored photos, wrong file refused, door, panel and wallpaper priced, generic armchair not supplied, 3D door/finish/furniture photos and colours, back to samples). 175 pass. Checked by eye in 3D and Photo with the sample pack. Not tested: a real company's photos, a real .glb in a pack, a large pack on a phone.
+
 ## Suggested next steps
 1. The user publishes the realism update and tries Photo on their phone (time it; if too slow, lower the photo size or sample count).
 1b. Realistic 3D part 2: pick an image-to-3D tool with the user (check price and terms first), make one product from its photos as a test, add it via the `model` column.
 2. The user tries the live app with a real room (measure, add furniture and wall finishes, share the quote) and reports anything confusing or slow.
-3. Show it to the furniture house: give them `catalog-template.csv` (one row per size, `group` and `size` columns), and ask the open questions above, especially about 3D files, material photos and their own wall finishes.
-4. Let the furniture house add their own wall finishes through the catalog file (today the 7 finishes are built into the app).
+3. Show it to the furniture house with the sample company pack: give them `docs/COMPANY_PACK.md`, `catalog-template.csv` and `samples/sample-company-pack.zip`, and ask the open questions above (3D files, material photos, their panels, wallpaper and doors).
+4. Tap a door or wall in 3D to change it there; floor and wall tiles with real cutting (the user did not pick tiles for the first pack round).
 5. Shared backend with rep logins (proposed: Supabase, waiting for the user's OK).
 6. Laser input (Android first), then decide on an iPhone wrapper.
 

@@ -10,7 +10,7 @@ export async function run(){
  const near=(a,b,t)=>Math.abs(a-b)<=t;
  const K=OLD_KEYS;   // role -> IKEA sample SKU, e.g. K.bed is the MALM Standard Double frame
  function freshVisit(over={}){S.rooms=[];S.cur=0;
-  Object.assign(S,{client:'',rep:'',name:'Room 1',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,unit:'cm',more:false,step:1,showCl:false,doorSet:true,finishes:[]},over);
+  Object.assign(S,{client:'',rep:'',name:'Room 1',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,unit:'cm',more:false,step:1,showCl:false,doorSet:true,finishes:[],doorK:'',doorCol:''},over);
   if(!over.keepCatalog)setCatalog(SAMPLE.slice(),true);fixRoom();stash();load();renderCat();render()}
  function setTemplate(shape,lens){S.mode='walls';S.shape=shape;S.walls=wallsFor(shapeDef(shape));
   if(shape==='rect'){S.walls[0].len=S.walls[2].len=lens[0];S.walls[1].len=S.walls[3].len=lens[1]}else lens.forEach((l,i)=>S.walls[i].len=l);S.items=[];S.obs=[];onShapeChange(true)}
@@ -40,7 +40,7 @@ export async function run(){
  // ---- picture shapes ----
  freshVisit();setTemplate('rect',[450,380]);
  ok('rect: closes',S.closed);ok('rect: area 171000',usage().room===171000,usage().room);
- let sv=suggValid();ok('rect: one valid suggestion per product (12)',sv.n===products().length&&sv.n===12&&!sv.bad.length,sv);
+ let sv=suggValid();ok('rect: one valid suggestion per product (12)',products().filter(c=>!c.gen).length===12&&sv.n===products().length&&!sv.bad.length,sv);
  const L={'L-br':[450,230,200,150,250,380],'L-bl':[450,380,200,150,250,230],'L-tl':[250,380,450,230,200,150],'L-tr':[250,150,200,230,450,380]};
  const AREA={'L-br':141000,'L-bl':133500,'L-tl':141000,'L-tr':141000};  // 450 x 380 minus the missing corner
  for(const [k,v] of Object.entries(L)){setTemplate(k,v);ok(k+': closes with consistent numbers',S.closed,S.mismatch);ok(k+': area '+AREA[k],usage().room===AREA[k],usage().room);sv=suggValid();ok(k+': suggestions valid',!sv.bad.length,sv.bad)}
@@ -123,7 +123,7 @@ export async function run(){
  res=buildCatalog('sku,name,width_cm,depth_cm,height_cm,group,size\nA1,Bed small,100,200,90,bedx,Small\nA2,Bed big,160,200,90,bedx,Big\nB,Chair,45,50,80,,\n');
  ok('csv: group and size columns',!res.errs.length&&res.out[0].g==='bedx'&&res.out[1].z==='Big'&&!res.out[2].g,res.out);
  const dropped=setCatalog(SAMPLE.filter(c=>c.k!==K.coffee),false);ok('csv: missing SKU removed from every room',dropped===1,dropped);setCatalog(SAMPLE.slice(),true);
- setCatalog(res.out,false);ok('csv: rows of a group are sizes of one product',sizesOf(cat('A2')).length===2&&products().length===2,products());setCatalog(SAMPLE.slice(),true);
+ setCatalog(res.out,false);ok('csv: rows of a group are sizes of one product',sizesOf(cat('A2')).length===2&&products().filter(c=>!c.gen).length===2,products());setCatalog(SAMPLE.slice(),true);
 
  // ---- old saves ----
  const legacy=[{name:'Old rect',type:'living',rw:300,rl:300,dwall:'N',dw:90,doff:40,dh:205,items:[]},
@@ -138,8 +138,8 @@ export async function run(){
  ok('old saves: every old key exists in the sample',Object.values(OLD_KEYS).every(k=>cat(k)));
 
  // ---- product sizes and adjustable pieces ----
- const grouped=products().filter(c=>c.g);
- ok('sizes: 12 sample products, 9 with several sizes',products().length===12&&grouped.length===9&&grouped.every(c=>sizesOf(c).length>1),products().map(c=>c.n));
+ const grouped=products().filter(c=>c.g&&!c.gen);
+ ok('sizes: 12 sample products, 9 with several sizes',products().filter(c=>!c.gen).length===12&&grouped.length===9&&grouped.every(c=>sizesOf(c).length>1),products().map(c=>c.n));
  freshVisit();setTemplate('rect',[450,380]);S.items=[{id:80,k:K.bed,x:225,y:150,rot:0}];S.sel=80;goStep(2);await wait(20);$('sizebtn').click();await wait(10);
  ok('sizes: panel lists every bed size plus Custom',visible('#sizebox')&&$('sizechips').children.length===sizesOf(cat(K.bed)).length+1);
  [...$('sizechips').children].find(b=>b.textContent.startsWith('Standard King'))?.click();await wait(10);
@@ -170,11 +170,11 @@ export async function run(){
  ok('finish: fluted panels on the whole wall, door taken off: 25 panels',finCalc(F0).q===25&&finCalc(F0).cost===450,finCalc(F0));
  $('fincov').querySelector('[data-cov=part]').click();{const tIn=(el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}))};tIn($('finfrom'),'100');tIn($('finto'),'300')}$('fincov').querySelector('[data-cov=half]').click();
  ok('finish: part of the wall at half height: 6 panels',F0.part&&F0.half&&finCalc(F0).q===6,finCalc(F0));
- $('findone').click();S.finishes.push({id:S.next++,wall:'1',k:'WPP-LIN',part:false,from:0,to:380,half:false},{id:S.next++,wall:'2',k:'PT-WHT',part:false,from:0,to:450,half:false});render();
+ $('findone').click();S.finishes.push({id:S.next++,wall:'1',k:'WPP-LIN',part:false,from:0,to:380,half:false},{id:S.next++,wall:'2',k:'GEN-PAINT',col:'#f2efe9',part:false,from:0,to:450,half:false});render();
  ok('finish: wallpaper on a 380 cm wall: 3 rolls',finCalc(S.finishes[1]).q===3,finCalc(S.finishes[1]));
  ok('finish: paint on a 450 cm wall: 1 tin',finCalc(S.finishes[2]).q===1,finCalc(S.finishes[2]));
- {const qt=quoteText();ok('finish: the quote lists each finished wall',/Wall 1: 6 panels Fluted panel, oak look/.test(qt)&&/Wall 2: 3 rolls Wallpaper/.test(qt)&&/Wall 3: 1 tin Paint/.test(qt)&&qt.includes('Total: 205'),qt)}
- ok('finish: the plan shows the finished walls',(plan.innerHTML.match(/stroke="#(b98a5e|d6cbb9|f3f1ec)"/g)||[]).length===3);
+ {const qt=quoteText();ok('finish: the quote lists each finished wall',/Wall 1: 6 panels Fluted panel, oak look/.test(qt)&&/Wall 2: 3 rolls Wallpaper/.test(qt)&&/Not supplied \(layout only\): Wall 3: 1 tin of paint \(White\)/.test(qt)&&qt.includes('Total: 183'),qt)}
+ ok('finish: the plan shows the finished walls',(plan.innerHTML.match(/stroke="#(b98a5e|d6cbb9|f2efe9)"/g)||[]).length===3);
  {const RMf=roomModel();ok('finish: the 3D model gets each finish on the right wall',RMf.finishes.length===3&&RMf.finishes[0].edge===0&&RMf.finishes[0].t0===100&&RMf.finishes[0].t1===300&&RMf.finishes[0].y1===120,RMf.finishes)}
  stash();ok('finish: finishes are saved with the room',(S.rooms[S.cur].finishes||[]).length===3);
 
@@ -308,6 +308,33 @@ export async function run(){
  goStep(1);
  {const qt=quoteText();ok('quote text: no empty client/rep and no repeated room name',/^Quote, /.test(qt)&&!/\(rep: -\)/.test(qt)&&!/Living room \(Living room\)/.test(qt),qt.split('\n').slice(0,3))}
  S.doorSet=true;goStep(1);$('notrect').click();$('shapes').querySelector('[data-shape=rect]').click();ok('door prompt: a new room shape asks for the door again',S.doorSet===false);
+
+ // ---- company pack: the sample zip with furniture, a textured panel and wallpaper, and two doors ----
+ {let p=null;try{p=await readPack(new File([await (await fetch('samples/sample-company-pack.zip')).blob()],'sample-company-pack.zip'))}catch(e){ok('pack: the sample pack can be read',false,e.message)}
+  if(p){const r=buildCatalog(p.csv,Object.keys(p.files));
+   ok('pack: the sample pack has no errors',!r.errs.length,r.errs);
+   ok('pack: furniture, finishes and doors are read',r.out.length===5&&r.fin.length===2&&r.doors.length===2,[r.out.length,r.fin.length,r.doors.length]);
+   applyPack(p);setCatalog(r.out,false,true);
+   ok('pack: the company name, doors and finishes are in use',COMPANY==='Demo Furniture Co (sample)'&&CO_DOORS.length===2&&CO_FIN.length===2&&!CO_FIN.some(f=>f.k==='WPP-LIN'),COMPANY);
+   ok('pack: its photos are served from the device',/^blob:/.test(assetUrl('oak.jpg'))&&/^blob:/.test(assetUrl('trellis.png'))&&assetUrl('missing.jpg')==='');
+   ok('pack: the catalog is the company furniture plus generic pieces',cat('DF-SOFA3')&&cat('GEN-SOFA3')&&!cat(K.bed),CATALOG.length);
+   ok('pack: a wrong file name is rejected',buildCatalog(p.csv.replace('trellis.png','nope.png'),Object.keys(p.files)).errs.some(e=>/nope\.png/.test(e)));
+   freshVisit({keepCatalog:true});setTemplate('rect',[450,380]);
+   S.doorK='DF-DR-OAK';S.items.push({id:S.next++,k:'DF-BED',x:100,y:20,rot:0},{id:S.next++,k:'GEN-ARM',x:20,y:250,rot:0,col:'#7a8f9e'});
+   S.finishes.push({id:S.next++,wall:'1',k:'DF-PNL-OAK',part:false,from:0,to:380,half:false},{id:S.next++,wall:'3',k:'DF-WP-TREL',part:false,from:0,to:380,half:false});render();
+   const q=quoteLines(),qt=quoteText();
+   ok('pack: the chosen door is priced in the quote',q.priced.some(x=>x.label==='Door: Oak veneer door'&&x.cost===450),q.priced.map(x=>x.label));
+   ok('pack: panels and wallpaper are priced in the quote',q.priced.some(x=>/Oak veneer wall panel/.test(x.label))&&q.priced.some(x=>/Trellis wallpaper/.test(x.label)));
+   ok('pack: a generic piece is listed as not supplied, with its colour',q.gen.some(x=>/armchair/.test(x))&&/Not supplied \(layout only\)/.test(qt)&&!q.priced.some(x=>/Armchair/.test(x.label)),q.gen);
+   const M=roomModel(),bed=M.items.find(i=>i.name==='Oak bed 160x200'),arm=M.items.find(i=>i.name==='Armchair');
+   ok('pack: 3D gets the door style and photo',M.door&&M.door.style==='flat'&&/^blob:/.test(M.door.tex),M.door);
+   ok('pack: 3D gets the panel and wallpaper photos at their real size',M.finishes.length===2&&M.finishes.every(f=>/^blob:/.test(f.tex))&&M.finishes.some(f=>f.th===53),M.finishes.map(f=>[f.tex.slice(0,5),f.tw,f.th]));
+   ok('pack: 3D gets the furniture photo and the generic colour',/^blob:/.test(bed.tex)&&arm.color==='#7a8f9e'&&!arm.tex,[bed.tex,arm.color]);
+   S.doorK='DF-DR-GEO';ok('pack: a style door without a photo',roomModel().door.style==='geometric'&&!roomModel().door.tex);
+   S.doorK='';S.doorCol='#334455';ok('pack: the plain door takes the chosen colour and is not priced',roomModel().door.col==='#334455'&&!quoteLines().priced.some(x=>/^Door/.test(x.label)));
+  }
+  applyPack(null);setCatalog(SAMPLE.slice(),true);
+  ok('pack: going back to the samples',COMPANY==='Sample company'&&CO_FIN.some(f=>f.k==='WPP-LIN')&&cat(K.bed)&&assetUrl('oak.jpg')==='')}
 
  window.removeEventListener('error',onErr);
  ok('no page errors during the run',!errs.length,errs);

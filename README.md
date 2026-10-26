@@ -14,8 +14,11 @@ connected to IKEA. Each device keeps its own visits in the browser; nothing is s
   "Add to Home Screen" to keep it like an app.
 - Three screens: **Measure** (room type and size), **Furniture** (plan, what fits, 3D) and **Quote**. The settings icon
   (top right) shows the advanced controls.
-- Load real products with **settings icon → Import CSV** (Furniture screen). The format is in `catalog-template.csv`:
-  one row per size, and rows with the same `group` are the sizes of one product.
+- Load a company's own products with **settings icon → Import company pack (.zip)** (Furniture screen): its catalog,
+  material photos and 3D files for its furniture, wall panels, wallpaper and doors. How to make one: `docs/COMPANY_PACK.md`;
+  an example is `samples/sample-company-pack.zip` (**Try sample company pack** in the app). Anything the company does not
+  make stays generic, in the colour the rep picks, and is not priced. A catalog alone can still be loaded with **Import CSV**
+  (format in `catalog-template.csv`).
 - Automated checks: serve the folder (`python3 -m http.server 8766`), open `http://localhost:8766/fitcheck.html`, and run
   `await (await import('./tests/e2e.js')).run()` in the browser console. The 3D checks need an internet connection.
 
@@ -32,3 +35,5 @@ connected to IKEA. Each device keeps its own visits in the browser; nothing is s
 | `docs/SAMPLE_CATALOG.md` | Where each sample product's size and price comes from |
 | `assets/3d/` | Free (CC0) textures and light file used by the 3D view and Photo; see `docs/ASSETS.md` |
 | `docs/ASSETS.md` | Where each 3D asset comes from and its licence |
+| `docs/COMPANY_PACK.md` | How a company makes its pack: zip contents, catalog columns, photo tips, 3D models |
+| `samples/sample-company-pack.zip` | A complete example pack (made-up company and prices) |
