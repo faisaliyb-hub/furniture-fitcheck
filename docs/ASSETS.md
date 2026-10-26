@@ -12,3 +12,6 @@ Downloaded on 2026-10-27 at 1k resolution, to keep the download small on phones 
 | `studio_small_08_1k.hdr` | Studio Small 08 | Light and reflections in the 3D view and in Photo |
 
 If the files cannot load (for example offline), the 3D view falls back to its drawn textures and built-in light.
+
+The sample company pack (`samples/sample-company-pack.zip`) contains `oak.jpg`, made from the same Poly Haven Fine Grained Wood
+(CC0) recoloured to a light oak, and `trellis.png`, drawn for the sample. The company, products and prices in it are made up.

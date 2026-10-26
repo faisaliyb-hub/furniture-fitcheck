@@ -53,7 +53,12 @@ function greyWood(img){const c=document.createElement('canvas');c.width=img.widt
  const im=g.getImageData(0,0,c.width,c.height),d=im.data;let sum=0;for(let k=0;k<d.length;k+=4)sum+=.3*d[k]+.59*d[k+1]+.11*d[k+2];const mean=sum/(d.length/4);
  for(let k=0;k<d.length;k+=4){const l=.3*d[k]+.59*d[k+1]+.11*d[k+2],v=Math.max(0,Math.min(255,228+(l-mean)*1.1));d[k]=d[k+1]=d[k+2]=v}g.putImageData(im,0,0);
  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;t.colorSpace=THREE.SRGBColorSpace;return t}
-let photoP=null,hdrP=null;
+let photoP=null,hdrP=null,invalidate=()=>{};
+// A company's photo (furniture material, panel face, wallpaper repeat, door front), by link; repeat = tiles per UV unit.
+const TLD=new THREE.TextureLoader(),UTEX=new Map();
+function urlTex(url,rx=1,ry=1){const key=url+'|'+rx+'|'+ry;if(UTEX.has(key))return UTEX.get(key);
+ const t=TLD.load(url,()=>invalidate());t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;t.repeat.set(rx,ry);UTEX.set(key,t);return t}
+const texMat=(url,rx,ry,rough=.65)=>{const key='tex'+url+rx+ry;if(MATS.has(key))return MATS.get(key);const m=new THREE.MeshStandardMaterial({map:urlTex(url,rx,ry),roughness:rough,envMapIntensity:.45});MATS.set(key,m);return m};
 function photoTextures(){if(photoP)return photoP;textures();
  photoP=Promise.all(['laminate_floor_02_diff','laminate_floor_02_nor','laminate_floor_02_rough','fine_grained_wood_diff','fine_grained_wood_nor','denim_fabric_nor','denim_fabric_rough'].map(n=>loadImg(ASSET(n+'_1k.jpg'))))
   .then(([fd,fn,fr,wd,wn,cn,cr])=>{const fl=.5;   // the floor photo covers 2 m
@@ -81,7 +86,10 @@ function mat(kind,color){const key=kind+color;if(MATS.has(key))return MATS.get(k
  else m=new THREE.MeshStandardMaterial({color,roughness:.6});
  m.envMapIntensity=.45;MATS.set(key,m);return m}
 // Body = main panels or frame; soft = upholstery; accent = a second finish (a top, a frame).
-function finishMats(item){const parts=finishParts(item.finish),soft=parts.find(p=>p.fabric&&p.color),wood=parts.find(p=>p.wood&&p.color),first=parts.find(p=>p.color);
+function finishMats(item){
+ if(item.tex){const tm=texMat(item.tex,2,2);return{body:tm,accent:null,soft:tm,frame:null}}   // the company's material photo
+ if(item.color)return{body:mat('paint',item.color),accent:null,soft:mat('fabric',item.color),frame:null};   // a generic piece in its colour
+ const parts=finishParts(item.finish),soft=parts.find(p=>p.fabric&&p.color),wood=parts.find(p=>p.wood&&p.color),first=parts.find(p=>p.color);
  const solid=p=>p?mat(p.wood?'wood':'paint',p.color):null;
  const second=parts.filter(p=>p.color)[1];
  return{body:solid(first&&!first.fabric?first:wood)||mat('paint','#efede8'),accent:solid(second&&!second.fabric?second:null),
@@ -165,12 +173,13 @@ async function fileModel(url,it){if(!GLB.has(url))GLB.set(url,loader.loadAsync(u
 
 // ---------- room shell ----------
 // Footprint quad of a wall stretch: inner points on the outline, outer points pushed out by the wall thickness.
-function prism(q,y0,y1,m){const P=[...q.map(p=>new THREE.Vector3(p.x,y0,p.y)),...q.map(p=>new THREE.Vector3(p.x,y1,p.y))];
+function prism(q,y0,y1,m,uv){const P=[...q.map(p=>new THREE.Vector3(p.x,y0,p.y)),...q.map(p=>new THREE.Vector3(p.x,y1,p.y))];
  const c=P.reduce((a,p)=>a.add(p),new THREE.Vector3()).multiplyScalar(1/8),pos=[];
  for(const f of [[0,1,2,3],[7,6,5,4],[0,4,5,1],[1,5,6,2],[2,6,7,3],[3,7,4,0]]){const v=f.map(i=>P[i]),fc=v.reduce((a,p)=>a.add(p.clone()),new THREE.Vector3()).multiplyScalar(.25);
   const nrm=new THREE.Vector3().subVectors(v[1],v[0]).cross(new THREE.Vector3().subVectors(v[2],v[0]));if(nrm.dot(fc.sub(c))<0)v.reverse();
   for(const p of [v[0],v[1],v[2],v[0],v[2],v[3]])pos.push(p.x,p.y,p.z)}
  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.computeVertexNormals();
+ if(uv){const t=[];for(let k=0;k<pos.length;k+=3)t.push((pos[k]-uv.ox)*uv.dx+(pos[k+2]-uv.oz)*uv.dz,pos[k+1]);geo.setAttribute('uv',new THREE.Float32BufferAttribute(t,2))}
  const o=new THREE.Mesh(geo,m);o.castShadow=o.receiveShadow=true;return o}
 
 function buildRoom(R,scene){const T=textures(),H=R.H*M,loop=R.loop.map(p=>({x:p.x*M,y:p.y*M})),n=loop.length;
@@ -195,15 +204,19 @@ function buildRoom(R,scene){const T=textures(),H=R.H*M,loop=R.loop.map(p=>({x:p.
    const q=[at(s0),at(s1),oat(s1),oat(s0)];solid(q,holes,H,wg.meshes);solid(q,holes,Math.min(H,CUT_H),wg.low)}
   wg.low.forEach(o=>o.visible=false);
   // wall finishes on this edge: a thin layer on the inner face (raised slats for fluted panels), leaving doors and windows open
-  (R.finishes||[]).filter(f=>f.edge===i).forEach(f=>{const t0=f.t0*M,t1=f.t1*M,y0=f.y0*M,y1=Math.min(H,f.y1*M),fm=mat(f.f==='paint'?'paint':'wall',f.col);
+  (R.finishes||[]).filter(f=>f.edge===i).forEach(f=>{const t0=f.t0*M,t1=f.t1*M,y0=f.y0*M,y1=Math.min(H,f.y1*M),uvw={ox:a.x,oz:a.y,dx:e.dx,dz:e.dy};
+   // the company's photo tiles at its real size (one panel, or one wallpaper repeat); otherwise the colour (and slats for fluted)
+   const fm=f.tex?texMat(f.tex,1/((f.tw||50)*M),1/((f.th||50)*M),f.f==='paper'?.85:.6):mat(f.f==='paint'?'paint':'wall',f.col);
    const layer=(s0,s1,d0,d1)=>{const holes=ops.filter(o=>o.t0<=(s0+s1)/2&&o.t1>=(s0+s1)/2).sort((p,q)=>p.y0-q.y0),a0=at(s0),a1=at(s1),q=[{x:a0.x-e.x*d0,y:a0.y-e.y*d0},{x:a1.x-e.x*d0,y:a1.y-e.y*d0},{x:a1.x-e.x*d1,y:a1.y-e.y*d1},{x:a0.x-e.x*d1,y:a0.y-e.y*d1}];
-    let y=y0;const put=(ya,yb)=>{if(yb-ya>1e-3)wg.parts.push(prism(q,ya,yb,fm))};for(const o of holes){put(y,Math.min(o.y0,y1));y=Math.max(y,o.y1)}put(y,y1)};
+    let y=y0;const put=(ya,yb)=>{if(yb-ya>1e-3)wg.parts.push(prism(q,ya,yb,fm,uvw))};for(const o of holes){put(y,Math.min(o.y0,y1));y=Math.max(y,o.y1)}put(y,y1)};
    const cs=[...new Set([t0,t1,...ops.flatMap(o=>[o.t0,o.t1]).filter(t=>t>t0&&t<t1)])].sort((p,q)=>p-q);
    for(let k=0;k<cs.length-1;k++)if(cs[k+1]-cs[k]>1e-4)layer(cs[k],cs[k+1],.002,.012);
-   if(f.f==='fluted')for(let s=t0+.05;s+.03<=t1;s+=.08)layer(s-.025,s+.025,.012,.024)});
+   if(f.f==='fluted'&&!f.tex)for(let s=t0+.05;s+.03<=t1;s+=.08)layer(s-.025,s+.025,.012,.024)});
   // skirting board along the inner face, except across a door
+  // it stands proud of any finish on this wall, so the two never share a face (that flickers)
+  const fd=(R.finishes||[]).filter(f=>f.edge===i&&f.y0<.08/M).reduce((d,f)=>Math.max(d,f.f==='fluted'&&!f.tex?.024:.012),0),skD=fd?fd+.008:.012;
   const door=ops.find(o=>o.kind==='door'),runs=door?[[0,door.t0],[door.t1,e.l]]:[[0,e.l]];
-  for(const [s0,s1] of runs)if(s1-s0>.02){const p0=at(s0),p1=at(s1),sk=prism([p0,p1,{x:p1.x-e.x*.012,y:p1.y-e.y*.012},{x:p0.x-e.x*.012,y:p0.y-e.y*.012}],0,.08,trimM);wg.parts.push(sk)}
+  for(const [s0,s1] of runs)if(s1-s0>.02){const p0=at(s0),p1=at(s1),sk=prism([p0,p1,{x:p1.x-e.x*skD,y:p1.y-e.y*skD},{x:p0.x-e.x*skD,y:p0.y-e.y*skD}],0,.08,trimM);wg.parts.push(sk)}
   for(const o of ops)if(o.kind==='window'){const p0=at(o.t0),p1=at(o.t1),c={x:(p0.x+p1.x)/2+e.x*WALL_T/2,y:(p0.y+p1.y)/2+e.y*WALL_T/2},len=o.t1-o.t0,hh=o.y1-o.y0,rot=Math.atan2(e.dy,e.dx);
    const win=new THREE.Group();win.position.set(c.x,o.y0,c.y);win.rotation.y=-rot;
    const gl=new THREE.Mesh(new THREE.BoxGeometry(len,hh,.01),glassM);gl.position.y=hh/2;win.add(gl);
@@ -219,7 +232,18 @@ function buildRoom(R,scene){const T=textures(),H=R.H*M,loop=R.loop.map(p=>({x:p.
   for(const [w2,h2,x,y2] of [[.07,dh+.07,-w/2-.035,(dh+.07)/2],[.07,dh+.07,w/2+.035,(dh+.07)/2],[w+.14,.07,0,dh+.035]]){const f=new THREE.Mesh(new THREE.BoxGeometry(w2,h2,.016),trimM);f.position.set(x,y2,0);f.castShadow=true;cas.add(f)}
   g.add(cas);walls[D.edge].parts.push(cas);
   const leafW=w-.02,leaf=new THREE.Group();leaf.position.set(hx+e.dx*.02+inx*(leafW/2),0,hz+e.dy*.02+inz*(leafW/2));leaf.rotation.y=Math.atan2(inx,inz);
-  const panel=new THREE.Mesh(new THREE.BoxGeometry(.04,dh-.01,leafW),mat('paint','#f4f2ee'));panel.position.y=(dh-.01)/2;panel.castShadow=panel.receiveShadow=true;leaf.add(panel);
+  const dcol=D.col||'#f4f2ee',st=D.tex?'photo':(D.style||'flat'),base=mat(st==='fluted'?'wood':'paint',dcol),lh=dh-.01;
+  const part=(w,h,d,x,y,z,m,rx)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);if(rx)o.rotation.x=rx;o.castShadow=o.receiveShadow=true;leaf.add(o);return o};
+  if(st==='glass'){const fr=.08,gl=new THREE.MeshPhysicalMaterial({color:'#dfe9ec',roughness:.05,transparent:true,opacity:.25,depthWrite:false});   // frame and glass
+   part(.04,lh,fr,0,lh/2,-leafW/2+fr/2,base);part(.04,lh,fr,0,lh/2,leafW/2-fr/2,base);part(.04,fr,leafW-2*fr,0,lh-fr/2,0,base);part(.04,.22,leafW-2*fr,0,.11,0,base);
+   part(.012,lh-fr-.22,leafW-2*fr,0,.22+(lh-fr-.22)/2,0,gl)}
+  else{part(.04,lh,leafW,0,lh/2,0,st==='photo'?texMat(D.tex,1,1,.5):base);   // a photo covers the whole leaf, edges too (one material: Photo mixes up a list of them)
+   for(const sx of [-1,1]){const x=sx*.022;
+    if(st==='panel'){const pw=(leafW-.24)/2;for(const [zz,yy,hh] of [[-1,lh*.62,lh*.5],[1,lh*.62,lh*.5],[-1,lh*.2,lh*.26],[1,lh*.2,lh*.26]])part(.008,hh,pw,x,yy,zz*(pw/2+.04),base)}
+    else if(st==='fluted')for(let z=-leafW/2+.04;z<=leafW/2-.04;z+=.03)part(.006,lh-.04,.014,x,lh/2,z,base);
+    else if(st==='geometric'){const groove=mat('paint','#3a3633');   // thin grooves across the face, like a veneer pattern
+     for(const [u0,v0,u1,v1] of [[.38,1,.62,.62],[0,.52,1,.72],[.25,.48,.75,.28],[0,.24,1,.1]]){const z0=-leafW/2+u0*leafW,z1=-leafW/2+u1*leafW,y0=v0*lh,y1=v1*lh,len=Math.hypot(z1-z0,y1-y0);
+      part(.004,len,.006,x,(y0+y1)/2,(z0+z1)/2,groove,Math.atan2(z1-z0,y1-y0))}}}}
   for(const s of [-1,1]){const hd=new THREE.Mesh(new THREE.BoxGeometry(.02,.02,.13),mat('metal','#b4b4b2'));hd.position.set(s*.035,1.0,leafW/2-.09);leaf.add(hd)}
   g.add(leaf)}
  // cut-outs (quick rectangle mode) are solid parts of the building; fixed features
@@ -275,7 +299,7 @@ export async function open(container,R){
  // walls between the camera and the room are cut down low, like a doll's house
  function fade(){const p=camera.position;room.walls.forEach(w=>{const f=(p.x-w.mx)*w.nx+(p.z-w.mz)*w.nz>.05;if(w.faded===f)return;w.faded=f;
   w.meshes.forEach(m=>m.visible=!f);w.low.forEach(m=>m.visible=f);w.parts.forEach(o=>o.visible=!f)})}
- let dirty=true,raf=0;const resize=()=>{const w=container.clientWidth||1,h=container.clientHeight||1;renderer.setSize(w,h,false);renderer.domElement.style.width='100%';renderer.domElement.style.height='100%';camera.aspect=w/h;camera.updateProjectionMatrix();dirty=true};
+ let dirty=true,raf=0;invalidate=()=>{dirty=true};const resize=()=>{const w=container.clientWidth||1,h=container.clientHeight||1;renderer.setSize(w,h,false);renderer.domElement.style.width='100%';renderer.domElement.style.height='100%';camera.aspect=w/h;camera.updateProjectionMatrix();dirty=true};
  const ro=new ResizeObserver(resize);ro.observe(container);resize();
  const render=()=>{fade();renderer.render(scene,camera)};
  const loop=()=>{raf=requestAnimationFrame(loop);if(controls.update()||dirty){dirty=false;render()}};

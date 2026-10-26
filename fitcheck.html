@@ -61,6 +61,10 @@ body.typing .navbar{visibility:hidden}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.chip{text-align:left;line-height:1.25;padding:7px 11px}.chip small{display:block;opacity:.75;font-size:11px}.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .sg{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sg small{display:block;color:var(--mute)}.sg .tag{color:var(--warn)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:2px;border:1px solid var(--line);margin-right:6px;vertical-align:-1px}
+.pal{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.sw{width:36px;height:36px;min-height:36px;padding:0;border-radius:50%;border:2px solid var(--line)}.sw.on{outline:3px solid var(--accent);outline-offset:2px}
+.swany{display:inline-flex;align-items:center;justify-content:center;width:auto;padding:0 10px;border-radius:18px;font-size:12px;gap:6px;cursor:pointer;margin:0;color:var(--ink);background:var(--card)}.swany input{width:28px;height:24px;min-height:0;padding:0;border:none;background:none}
+#doorbox{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
 .finres{margin:6px 0 0;font-size:15px}.finres small{display:block;color:var(--mute);font-size:12px}.finlab{display:block;font-size:12px;color:var(--mute);margin:8px 0 4px}#finbox{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
 .sgtools{display:grid;gap:8px;margin-bottom:6px}.sgtools .chips{margin:0}.sgtools .chip{padding:6px 12px;min-height:36px}.sgsub{margin:14px 0 2px;font-size:13px;font-weight:600;color:var(--mute)}
 .sg button{white-space:nowrap}.sgm{display:block}.szs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.szb{text-align:left;line-height:1.2;padding:6px 10px;min-height:44px}.szb small{display:block;color:var(--mute);font-size:11px}.szb.off{opacity:.6;border-style:dashed}.sg .addbtn{min-width:44px;min-height:44px;font-size:22px;line-height:1;padding:0}
@@ -136,8 +140,8 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
  <section class="card adv" data-step="2"><h2 id="cathead">Catalog</h2>
   <input id="catq" placeholder="Search name or SKU" style="margin-bottom:8px">
   <div class="cat" id="cat" style="max-height:320px;overflow:auto"></div>
-  <div class="tools"><button id="imp">Import CSV</button><button id="tpl">Copy template</button><button id="sample">Use sample</button></div>
-  <input id="impfile" type="file" accept=".csv,text/csv" hidden>
+  <div class="tools"><button id="imppack" class="primary">Import company pack (.zip)</button><button id="samplepack">Try sample company pack</button><a class="btnlike" href="samples/sample-company-pack.zip" download>Download sample pack</a><button id="imp">Import CSV</button><button id="tpl">Copy template</button><button id="sample">Use sample</button></div>
+  <input id="impfile" type="file" accept=".csv,text/csv" hidden><input id="packfile" type="file" accept=".zip,application/zip" hidden>
   <div id="catmsg" class="hint"></div>
  </section>
 </div>
@@ -147,12 +151,13 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
   <div id="doorbar" class="doorbar" hidden><span>Tap the wall where the door is</span><button id="doorskip">Skip</button></div>
   <svg id="plan" viewBox="0 0 600 500"></svg>
   <p id="probline" class="probline" hidden></p>
-  <div class="tools" id="plantools"><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><button id="finbtn">Wall finish</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
+  <div class="tools" id="plantools"><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><button id="finbtn">Wall finish</button><button id="doorbtn">Door style</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
   <div id="finbox" hidden><div id="finttl" style="font-weight:600;margin-bottom:6px"></div><div id="finchips" role="group" aria-label="Finishes"></div>
    <div class="chips" id="fincov" role="group" aria-label="How much of the wall"></div>
    <div class="row" id="finpart" hidden><div><label for="finfrom" id="finfroml">From the wall's start</label><input id="finfrom" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="finto" id="fintol">To</label><input id="finto" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
    <div id="finres" class="finres"></div><div class="tools"><button id="findone" class="primary">Done</button><button id="finrm">Remove finish</button></div></div>
-  <div id="sizebox" hidden><div id="sizettl" style="font-weight:600;margin-bottom:6px"></div><div id="sizechips" class="chips" role="group" aria-label="Sizes"></div>
+  <div id="doorbox" hidden><div style="font-weight:600;margin-bottom:6px">Door</div><div id="doorchips" role="group" aria-label="Door styles"></div><div class="tools"><button id="doordone" class="primary">Done</button></div></div>
+  <div id="sizebox" hidden><div id="sizettl" style="font-weight:600;margin-bottom:6px"></div><div id="sizechips" class="chips" role="group" aria-label="Sizes"></div><div id="colrow" class="pal" role="group" aria-label="Colour" hidden></div>
    <div class="row3"><div><label for="szw" id="szwl">Width</label><input id="szw" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szd" id="szdl">Depth</label><input id="szd" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szh" id="szhl">Height</label><input id="szh" type="text" inputmode="decimal" autocomplete="off"></div></div>
    <div id="sizehint" class="hint"></div></div>
   <div class="hint adv">Drawn to scale: each piece covers only its own footprint. Tap a piece to see the free space around it. Orange zone = clearance needed in front.</div><div id="tipmsg" class="hint" style="color:var(--warn)"></div>
@@ -223,8 +228,26 @@ function typeOf(c){if(c.t)return c.t;const n=c.n.toLowerCase();
  return /sofa|couch|loveseat|settee/.test(n)?'sofa':/side table|end table|bedside|nightstand/.test(n)?'side':/bed/.test(n)?'bed':/chair|stool|bench/.test(n)?'chair':/table|desk/.test(n)?'table':/ward|cabinet|unit|shelf|book|dresser|drawer|sideboard|storage/.test(n)?'storage':'box'}
 const $=id=>document.getElementById(id);
 const LS='fitcheck-v1',CK='fitcheck-catalog';
-let CATALOG=SAMPLE.slice(),usingSample=true;
-try{const c=JSON.parse(localStorage.getItem(CK));if(Array.isArray(c)&&c.length){CATALOG=c;usingSample=false}}catch(e){}
+// Generic pieces for what the company does not make: any colour, shown in the layout and 3D, not priced in the quote.
+const GEN_FURN=[
+ {k:'GEN-SOFA3',n:'Sofa, 3-seat',w:210,d:92,h:85,cl:45,t:'sofa',g:'gen-sofa',z:'3-seat',r:['living']},
+ {k:'GEN-SOFA2',n:'Sofa, 2-seat',w:160,d:90,h:85,cl:45,t:'sofa',g:'gen-sofa',z:'2-seat',r:['living','office']},
+ {k:'GEN-ARM',n:'Armchair',w:80,d:82,h:88,cl:50,t:'chair',r:['living','bedroom','office']},
+ {k:'GEN-COFFEE',n:'Coffee table',w:110,d:60,h:45,cl:35,t:'table',r:['living']},
+ {k:'GEN-SIDE',n:'Side table',w:50,d:50,h:55,cl:0,t:'side',r:['living','bedroom']},
+ {k:'GEN-DINE',n:'Dining table',w:180,d:90,h:75,cl:80,t:'table',r:['dining']},
+ {k:'GEN-CHAIR',n:'Dining chair',w:45,d:52,h:90,cl:40,t:'chair',r:['dining','office','kids']},
+ {k:'GEN-BED-DBL',n:'Bed, double',w:150,d:205,h:100,cl:60,t:'bed',g:'gen-bed',z:'Double',r:['bedroom','kids']},
+ {k:'GEN-BED-SGL',n:'Bed, single',w:100,d:205,h:100,cl:60,t:'bed',g:'gen-bed',z:'Single',r:['bedroom','kids']},
+ {k:'GEN-BED-KNG',n:'Bed, king',w:190,d:215,h:100,cl:60,t:'bed',g:'gen-bed',z:'King',r:['bedroom']},
+ {k:'GEN-NIGHT',n:'Bedside table',w:45,d:40,h:55,cl:40,t:'storage',r:['bedroom','kids']},
+ {k:'GEN-WARD3',n:'Wardrobe, 3 doors',w:150,d:60,h:210,cl:80,t:'storage',g:'gen-ward',z:'3 doors',r:['bedroom','kids']},
+ {k:'GEN-WARD2',n:'Wardrobe, 2 doors',w:100,d:60,h:210,cl:80,t:'storage',g:'gen-ward',z:'2 doors',r:['bedroom','kids']},
+ {k:'GEN-TV',n:'TV unit',w:180,d:40,h:50,cl:60,t:'storage',r:['living','bedroom']},
+ {k:'GEN-BOOK',n:'Bookcase',w:80,d:30,h:200,cl:60,t:'storage',r:['living','office','bedroom','kids']},
+ {k:'GEN-DESK',n:'Desk',w:120,d:60,h:75,cl:80,t:'table',r:['office','bedroom','kids']}].map(c=>({...c,p:0,col:'#b9b0a4',gen:true}));
+let CATALOG=[...SAMPLE,...GEN_FURN],usingSample=true;
+try{const c=JSON.parse(localStorage.getItem(CK));if(Array.isArray(c)&&c.length){CATALOG=[...c.filter(x=>!x.gen),...GEN_FURN];usingSample=false}}catch(e){}
 let S={client:'',rep:'',name:'Living room',type:'living',rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],sel:null,next:1,rooms:[],cur:0,cuts:[],obs:[],rh:260,mode:'walls',walls:[],shape:'rect',unit:'cm',step:1,more:false};
 try{const s=JSON.parse(localStorage.getItem(LS));if(s){S=Object.assign(S,s);if(!s.rooms&&!s.mode)S.mode='rect'}}catch(e){}
 const save=()=>{stash();try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}};
@@ -238,13 +261,14 @@ const oldKeys=rooms=>{if(usingSample)rooms.forEach(r=>(r.items||[]).forEach(i=>{
 // One entry per product: the first row of a group stands for the whole product (its usual size).
 const products=()=>CATALOG.filter((c,i)=>!c.g||CATALOG.findIndex(x=>x.g===c.g)===i);
 // The piece as placed: catalog data with its own size on top.
-function spec(it){const c=cat(it.k);if(!c||!it.size)return c;return{...c,w:it.size.w,d:it.size.d,h:it.size.h||c.h,sized:it.size.name||'Custom size'}}
-const sizeKey=it=>it.size?`${it.size.w}x${it.size.d}x${it.size.h||''}`:'';
+function spec(it){const c=cat(it.k);if(!c)return c;const o=it.size?{...c,w:it.size.w,d:it.size.d,h:it.size.h||c.h,sized:it.size.name||'Custom size'}:c;return it.col&&c.gen?{...o,col:it.col}:o}
+const colName=h=>(PALETTE.find(([c])=>c===h)||[0,h])[1];
+const sizeKey=it=>(it.size?`${it.size.w}x${it.size.d}x${it.size.h||''}`:'')+(it.col?'|'+it.col:'');
 
 // A visit has several rooms. The active room's fields live on S; the others are stored in S.rooms.
 const ROOM_TYPES={living:'Living room',bedroom:'Bedroom',dining:'Dining room',office:'Home office',kids:"Kids' room",other:'Other'};
-const RF=['name','type','rw','rl','dwall','dw','doff','dh','items','cuts','obs','rh','mode','walls','shape','sketch','doorSet','finishes'];
-const normRoom=r=>{r.doorSet=!!r.doorSet;r.finishes=r.finishes||[];r.mode=r.mode||'rect';r.walls=r.walls||[];r.shape=r.shape||(r.mode==='walls'&&r.walls.length?'free':'rect');r.sketch=r.sketch||null;r.cuts=r.cuts||[];r.obs=r.obs||[];r.rh=r.rh||260;return r};
+const RF=['name','type','rw','rl','dwall','dw','doff','dh','items','cuts','obs','rh','mode','walls','shape','sketch','doorSet','finishes','doorK','doorCol'];
+const normRoom=r=>{r.doorSet=!!r.doorSet;r.doorK=r.doorK||'';r.doorCol=r.doorCol||'';r.finishes=(r.finishes||[]).map(f=>f.k==='PT-WHT'?{...f,k:'GEN-PAINT',col:'#f3f1ec'}:f.k==='PT-SAGE'?{...f,k:'GEN-PAINT',col:'#9fb197'}:f);r.mode=r.mode||'rect';r.walls=r.walls||[];r.shape=r.shape||(r.mode==='walls'&&r.walls.length?'free':'rect');r.sketch=r.sketch||null;r.cuts=r.cuts||[];r.obs=r.obs||[];r.rh=r.rh||260;return r};
 function fixRoom(){S.finishes=S.finishes||[];S.cuts=S.cuts||[];S.obs=S.obs||[];S.rh=S.rh||260;S.mode=S.mode||'rect';S.walls=S.walls||[];S.shape=S.shape||'rect';
  const def=shapeDef(S.shape);if(S.mode==='walls'&&def&&S.walls.length!==def.turns.length)S.walls=wallsFor(def);
  recomputeShape()}
@@ -572,7 +596,7 @@ function drawPlan(sel,print){
  h+=`<rect x="${dz.x0}" y="${dz.y0}" width="${dz.x1-dz.x0}" height="${dz.y1-dz.y0}" fill="var(--accent)" opacity=".12"/>`;
  const ds=wallSpan(S.dwall,S.doff,S.dw,S.dw),dl=ds?ds.line:[0,0,0,0];
  (S.finishes||[]).forEach(f=>{const c=finCat(f.k),R=finRegion(f),sp=c&&R.b>R.a&&wallSpan(f.wall,R.a,R.b-R.a,0);if(!sp)return;const l=sp.line,o=u*4.5,on=f.id===finSel;
-  h+=`<line x1="${l[0]+sp.n.x*o}" y1="${l[1]+sp.n.y*o}" x2="${l[2]+sp.n.x*o}" y2="${l[3]+sp.n.y*o}" stroke="${c.col}" stroke-width="${u*(on?8:6)}" stroke-opacity=".95" stroke-linecap="butt"${f.half?` stroke-dasharray="${u*8} ${u*3}"`:''}/>`});
+  h+=`<line x1="${l[0]+sp.n.x*o}" y1="${l[1]+sp.n.y*o}" x2="${l[2]+sp.n.x*o}" y2="${l[3]+sp.n.y*o}" stroke="${finCol(f)}" stroke-width="${u*(on?8:6)}" stroke-opacity=".95" stroke-linecap="butt"${f.half?` stroke-dasharray="${u*8} ${u*3}"`:''}/>`});
  h+=`<line x1="${dl[0]}" y1="${dl[1]}" x2="${dl[2]}" y2="${dl[3]}" stroke="var(--accent)" stroke-width="${u*4}"/>`;
  h+=`<defs><pattern id="hatch" width="${u*8}" height="${u*8}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${u*8}" stroke="var(--mute)" stroke-width="${u*1.2}" stroke-opacity=".55"/></pattern></defs>`;
  S.cuts.forEach(c=>{h+=`<rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.d}" fill="var(--card)"/><rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.d}" fill="url(#hatch)" stroke="var(--ink)" stroke-width="${sw}"/>`});
@@ -591,7 +615,7 @@ function drawPlan(sel,print){
  h+=`<g stroke="var(--mute)" stroke-width="${sw}"><line x1="0" y1="${L+24}" x2="${sb}" y2="${L+24}"/><line x1="0" y1="${L+20}" x2="0" y2="${L+28}"/><line x1="${sb}" y1="${L+20}" x2="${sb}" y2="${L+28}"/></g><text x="${sb+8}" y="${L+24+fs*.35}" font-size="${fs}" fill="var(--mute)">${sbl} scale</text>`;
  const halo=`paint-order="stroke" stroke="var(--room)" stroke-width="${u*3}" stroke-linejoin="round"`;
  const bad=new Set(problems().flatMap(p=>p[2]));
- S.items.forEach(it=>{const c=spec(it),b=body(it),f=front(it),bw=b.x1-b.x0,bh=b.y1-b.y0,on=it.id===sel,s2=on?sw*1.6:sw,col=bad.has(it.id)?'var(--err)':'var(--accent)';
+ S.items.forEach(it=>{const c=spec(it),b=body(it),f=front(it),bw=b.x1-b.x0,bh=b.y1-b.y0,on=it.id===sel,s2=on?sw*1.6:sw,col=bad.has(it.id)?'var(--err)':c.gen?(c.col||'var(--accent)'):'var(--accent)';
   if(S.showCl||on)h+=`<rect x="${f.x0}" y="${f.y0}" width="${f.x1-f.x0}" height="${f.y1-f.y0}" fill="var(--warn)" fill-opacity=".08" stroke="var(--warn)" stroke-dasharray="${u*5} ${u*4}" stroke-width="${sw*.7}"/>`;
   h+=`<g data-id="${it.id}" style="cursor:grab"><rect x="${b.x0+s2/2}" y="${b.y0+s2/2}" width="${bw-s2}" height="${bh-s2}" fill="${col}" fill-opacity="${on?.5:.28}" stroke="${col}" stroke-width="${s2}"/>`;
   h+=`<g transform="translate(${it.x} ${it.y}) rotate(${it.rot})" fill="none" stroke="var(--ink)" stroke-opacity=".4" stroke-width="${u*1.1}" pointer-events="none">${detail(c,u)}</g>`;
@@ -721,12 +745,13 @@ function paintSugg(){const box=$('sugg');$('sgcats').innerHTML=CATS.map(([k,v])=
  // as many as they like. Sizes that do not fit well are still offered (dimmed): adding one shows it red on the plan.
  const fits=new Map();suggList.forEach(x=>fits.set(x.c.k,true));
  const fitsK=c=>{if(!fits.has(c.k))fits.set(c.k,c.h<=S.rh&&c.w*c.d<=free&&((c.w<=fr.w&&c.d<=fr.d)||(c.d<=fr.w&&c.w<=fr.d)));return fits.get(c.k)};   // quick: fits the largest free area
- const sizeBtn=(s,i)=>{const ok=s.k===(suggList[i]||{}).c?.k||fitsK(s);return `<button class="szb${ok?'':' off'}" ${s.k===(suggList[i]||{}).c?.k?`data-add="${i}"`:`data-addk="${esc(s.k)}"`} aria-label="Add ${esc(s.n)}"><b>+ ${esc(s.z||s.n)}</b><small>${UU(s.w,s.d)} &middot; ${s.p.toLocaleString()}${ok?'':' &middot; tight'}</small></button>`};
+ const sizeBtn=(s,i)=>{const ok=s.k===(suggList[i]||{}).c?.k||fitsK(s);return `<button class="szb${ok?'':' off'}" ${s.k===(suggList[i]||{}).c?.k?`data-add="${i}"`:`data-addk="${esc(s.k)}"`} aria-label="Add ${esc(s.n)}"><b>+ ${esc(s.z||s.n)}</b><small>${UU(s.w,s.d)}${s.gen?'':` &middot; ${s.p.toLocaleString()}`}${ok?'':' &middot; tight'}</small></button>`};
  const row=(x,i)=>{const list=sizesOf(x.from||x.c);
   if(list.length>1)return `<div class="sg sgm" data-i="${i}"><b>${esc(groupTitle(list))}</b><div class="szs">${list.map(s=>sizeBtn(s,i)).join('')}</div></div>`;
-  return `<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b><small>${UU(x.c.w,x.c.d)} &middot; ${x.c.p.toLocaleString()}${x.door?'':' <span class="tag adv">&middot; check door access</span>'}</small></div><button data-add="${i}" class="addbtn" aria-label="Add ${esc(x.c.n)}">+</button></div>`};
- const rows=suggList.map((x,i)=>show(sizesOf(x.from||x.c))?row(x,i):'').join(''),tight=no.filter(([c])=>show(sizesOf(c)));
+  return `<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b><small>${UU(x.c.w,x.c.d)}${x.c.gen?' &middot; any colour':` &middot; ${x.c.p.toLocaleString()}`}${x.door?'':' <span class="tag adv">&middot; check door access</span>'}</small></div><button data-add="${i}" class="addbtn" aria-label="Add ${esc(x.c.n)}">+</button></div>`};
+ const rows=suggList.map((x,i)=>!x.c.gen&&show(sizesOf(x.from||x.c))?row(x,i):'').join(''),genRows=suggList.map((x,i)=>x.c.gen&&show(sizesOf(x.from||x.c))?row(x,i):'').join(''),tight=no.filter(([c])=>show(sizesOf(c)));
  h+=rows||(tight.length?'':`<div class="hint">${suggQ||suggCat!=='all'?'Nothing matches.':'Nothing fits the space that is left.'}</div>`);
+ if(genRows)h+=`<div class="sgsub">Generic: any colour, not in the quote</div>${genRows}`;
  if(tight.length)h+=`<div class="sgsub">Needs more space (${tight.length})</div><div class="sgtight">${tight.map(([c,r])=>{const list=sizesOf(c);return `<div class="sg${list.length>1?' sgm':''}"><div><b>${esc(list.length>1?groupTitle(list):c.n)}</b><small>${r}</small></div>${list.length>1?`<div class="szs">${list.map(s=>sizeBtn(s,-1)).join('')}</div>`:`<button data-addk="${esc(c.k)}" class="addbtn" aria-label="Add ${esc(c.n)}">+</button>`}</div>`}).join('')}</div>`;
  box.className='';box.innerHTML=h}
 // The list refreshes 120 ms after a change, so the spot is worked out again on the tap (the room may have just changed).
@@ -750,7 +775,7 @@ function render(){
  const has=S.items.some(i=>i.id===S.sel);['rot','sizebtn','del','wall'].forEach(id=>$(id).hidden=!has);$('movedoor').hidden=has||doorAsk();
  $('sizebtn').setAttribute('aria-expanded',String(has&&sizeOpen));$('sizebtn').classList.toggle('on',has&&sizeOpen);
  const pr=problems();$('probline').hidden=!pr.length;$('probline').textContent=pr.length?pr[0][1]+(pr.length>1?` (+${pr.length-1} more)`:''):'';
- if(S.sel!=null)finSel=null;if(S.step!==2)finPick=false;$('finbar').hidden=!finPick;$('finbtn').hidden=has||finPick||(S.mode==='walls'&&!S.closed);
+ if(S.sel!=null)finSel=null;if(S.step!==2)finPick=false;$('finbar').hidden=!finPick;$('finbtn').hidden=$('doorbtn').hidden=has||finPick||(S.mode==='walls'&&!S.closed);
  const asking=doorAsk()&&!finPick;document.body.classList.toggle('doormode',asking||finPick);$('doorbar').hidden=!asking;$('doorskip').textContent=S.doorSet?'Cancel':'Skip';
  $('showcl').checked=!!S.showCl;
  const us=usage(),free=us.free;
@@ -768,24 +793,35 @@ function render(){
  $('qrooms').innerHTML=lines.map(x=>`<button class="qroom" data-qr="${x.i}"><span>${esc(x.name||'Room')}<small>${x.open?'not measured yet':`${x.n} item${x.n===1?'':'s'}`}</small></span><b>${x.t.toLocaleString()}</b></button>`).join('');
  $('qtable').innerHTML=parts+`<table style="margin-top:8px"><tr><th>Visit total (${S.rooms.length} room${S.rooms.length>1?'s':''})</th><th class="n">${grand.t.toLocaleString()}</th></tr></table>`;
  $('showq').disabled=$('copyq').disabled=!grand.n;if(!$('quote').hidden){$('quote').hidden=true;$('showq').textContent='Show full quote'}
- renderRooms();renderTypes();applyStep();renderSizebox();renderFinbox();
+ if(S.sel!=null||finSel!=null)doorOpen=false;
+ renderRooms();renderTypes();applyStep();renderSizebox();renderFinbox();renderDoorbox();
  save();scheduleSugg();
 }
 
 // One room's quote block (for the room currently loaded in S). print=true adds the plan and fit notes.
 function roomBlock(print){
  const W=+S.rw||1,L=+S.rl||1,m=40,us=usage(),free=us.free;
- const g=groupItems(),fins=(S.finishes||[]).map(f=>({f,r:finCalc(f)})).filter(x=>x.r&&x.r.q);
- const rows=fins.map(({f,r})=>`<tr><td>${esc(wallName(f.wall))}: ${esc(r.c.n)}${f.part||f.half?`<br><small style="color:var(--mute)">${f.part?`${U(r.R.b-r.R.a)} of the wall`:'whole wall'}${f.half?', half height':''}</small>`:''}</td><td class="n">${r.q} ${r.unit}</td><td class="n">${r.cost.toLocaleString()}</td></tr>`).join('')+g.map(({c,q})=>`<tr><td>${esc(c.n)}${c.sized?`<br><small style="color:var(--mute)">${esc(c.sized)}, ${UUU(c.w,c.d,c.h)}, price to confirm</small>`:''}</td><td class="n">${q}</td><td class="n">${(c.p*q).toLocaleString()}</td></tr>`).join('');
- const total=g.reduce((s,{c,q})=>s+c.p*q,0)+fins.reduce((s,{r})=>s+r.cost,0);
+ const Q=quoteLines(),total=Q.total;
+ const rows=Q.priced.map(x=>`<tr><td>${esc(x.label)}${x.sub?`<br><small style="color:var(--mute)">${esc(x.sub)}</small>`:''}</td><td class="n">${esc(x.qty)}</td><td class="n">${x.cost.toLocaleString()}</td></tr>`).join('');
  const open=S.mode==='walls'&&!S.closed;
  let h=`<h3 style="margin:14px 0 4px">${esc(S.name)} <span style="font-weight:400;color:var(--mute)">${ROOM_TYPES[S.type]||''} &middot; ${open?'not measured':`${UU(W,L)} &middot; door ${UU(S.dw,S.dh)} &middot; ceiling ${U(S.rh)} &middot; free floor ${UA(free)}`}</span></h3>`;
- h+=rows?`<table><tr><th>Item</th><th class="n">Qty</th><th class="n">Price</th></tr>${rows}<tr><th>Room total</th><th></th><th class="n">${total.toLocaleString()}</th></tr></table>`:'<div class="hint">No items in this room yet.</div>';
+ h+=rows?`<table><tr><th>Item</th><th class="n">Qty</th><th class="n">Price</th></tr>${rows}<tr><th>Room total</th><th></th><th class="n">${total.toLocaleString()}</th></tr></table>`:(Q.gen.length?'':'<div class="hint">No items in this room yet.</div>');
+ if(Q.gen.length)h+=`<p class="hint" style="margin:6px 0 0">Not supplied (layout only): ${Q.gen.map(esc).join('; ')}.</p>`;
  if(print&&S.mode==='walls'&&S.closed)h+=`<p style="font-size:13px">Walls, in measuring order: ${S.wallGeo.map((g,i)=>`${i+1}: ${U(g.len)}${g.curve?` (curved, ${U(g.curve.depth)} deep)`:''}`).join(', ')}. Floor area ${UA(us.room)}.</p>`;
  if(print){const ft=[...S.cuts.map(c=>`Cut-out ${UU(c.w,c.d)}`),...S.obs.map(o=>{const k=OBS[o.kind];return !k?'':k.wall?`Window ${U(o.w)} wide, sill ${U(o.sill)} (${S.mode==='walls'?'wall '+((+o.wall)+1):WALLS[o.wall]+' wall'})`:`${k.label} ${UU(o.w,o.d)}${o.kind==='low'?`, max height ${U(o.h)}`:''}`})].filter(Boolean);
   if(ft.length)h+=`<p style="font-size:13px">Room features: ${ft.map(esc).join('; ')}.</p>`}
  if(print)h+=`<svg viewBox="${-m} ${-m} ${W+2*m} ${L+2*m}" style="max-width:480px;page-break-inside:avoid">${drawPlan(null,true)}</svg><ul>${check().filter(([t])=>t!=='ok').map(([t,mm])=>`<li>${mm}</li>`).join('')||'<li>All pieces fit and clearances are respected.</li>'}</ul>`;
- return{html:h,total,count:S.items.length+fins.length}}
+ return{html:h,total,count:Q.priced.length+Q.gen.length}}
+// The current room's quote: priced lines (the company's furniture, wall finishes and door) and generic items that are
+// shown in the layout but not supplied (listed without a price).
+function quoteLines(){const priced=[],gen=[],open=S.mode==='walls'&&!S.closed;
+ const d=doorCat(S.doorK);if(d&&!d.gen&&!open)priced.push({label:`Door: ${d.n}`,sub:UU(d.w,d.h),qty:'1',cost:d.p,txt:`Door: ${d.n}`});
+ (S.finishes||[]).forEach(f=>{const r=finCalc(f);if(!r||!r.q)return;const where=f.part||f.half?`${f.part?`${U(r.R.b-r.R.a)} of the wall`:'whole wall'}${f.half?', half height':''}`:'';
+  if(r.c.gen)gen.push(`${wallName(f.wall)}: ${r.q} ${r.unit} of ${r.c.n.toLowerCase()} (${colName(finCol(f))})`);
+  else priced.push({label:`${wallName(f.wall)}: ${r.c.n}`,sub:where,qty:`${r.q} ${r.unit}`,cost:r.cost,txt:`${wallName(f.wall)}: ${r.q} ${r.unit} ${r.c.n}${where?` (${where})`:''}`})});
+ groupItems().forEach(({c,q})=>{if(c.gen)gen.push(`${q} x ${c.n.toLowerCase()} (${colName(c.col)})`);
+  else priced.push({label:c.n,sub:c.sized?`${c.sized}, ${UUU(c.w,c.d,c.h)}, price to confirm`:'',qty:String(q),cost:c.p*q,txt:`${q} x ${c.n}${c.sized?` (${c.sized}, ${UUU(c.w,c.d,c.h)}, price to confirm)`:''}`})});
+ return{priced,gen,total:priced.reduce((a,x)=>a+x.cost,0)}}
 // Pieces of the current room grouped by product and size: [{c (spec), q}].
 function groupItems(){const m=new Map();S.items.forEach(it=>{const key=it.k+'|'+sizeKey(it);if(!m.has(key))m.set(key,{c:spec(it),q:0});m.get(key).q++});return[...m.values()]}
 function buildQuote(){stash();let body='',grand=0;
@@ -807,7 +843,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 // catalog
 const priceNote=()=>usingSample?SAMPLE_NOTE:'Prices from the imported catalog.';
 function renderCat(){const q=$('catq').value.trim().toLowerCase();
- $('cathead').textContent=`Catalog (${usingSample?'IKEA UK sample':'imported'}, ${CATALOG.length} items)`;
+ $('cathead').textContent=`Catalog: ${usingSample?'sample (IKEA UK furniture)':COMPANY} (${CATALOG.filter(c=>!c.gen).length} furniture, ${CO_FIN.length} wall finishes, ${CO_DOORS.length} doors)`;
  const list=CATALOG.filter(c=>!q||c.n.toLowerCase().includes(q)||String(c.k).toLowerCase().includes(q)).sort((a,b)=>suits(b)-suits(a));
  $('cat').innerHTML=list.map(c=>`<button data-k="${esc(c.k)}"${suits(c)?'':' style="opacity:.5" title="Usually for other room types"'}>${esc(c.n)}<small>${UUU(c.w,c.d,c.h)}</small></button>`).join('')||'<div class="hint">No match.</div>'}
 $('cat').onclick=e=>{const b=e.target.closest('button');if(!b)return;
@@ -827,34 +863,69 @@ function parseCSV(t){const rows=[];let r=[],f='',q=false;t=t.replace(/^﻿/,'');
   else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;r.push(f);f='';if(r.some(x=>x.trim()))rows.push(r);r=[]}
   else f+=c}
  r.push(f);if(r.some(x=>x.trim()))rows.push(r);return rows}
-function buildCatalog(text){
+// One catalog for everything the company makes. Column `kind`: furniture (default), panel, wallpaper or door.
+// Optional: texture (a photo: furniture material, panel face, one wallpaper repeat, or the door front), model (.glb/.gltf),
+// color (#rrggbb), style (door: flat, panel, fluted, glass, geometric), repeat_cm (wallpaper pattern repeat).
+// `files` = names of the files in the pack; a texture or model must be one of them, or a web link.
+function buildCatalog(text,files){
  const rows=parseCSV(text),errs=[];
  if(rows.length<2)return{errs:['The file has no product rows.']};
  const head=rows[0].map(h=>h.trim().toLowerCase()),col=n=>head.indexOf(n);
  const need=['sku','name','width_cm','depth_cm','height_cm'].filter(n=>col(n)<0);
  if(need.length)return{errs:[`Missing column(s): ${need.join(', ')}.`]};
- const seen=new Set(),out=[];
+ const seen=new Set(),out=[],fin=[],doors=[],isUrl=x=>/^https?:\/\//i.test(x);
  rows.slice(1).forEach((r,i)=>{const n=i+2,g=c=>col(c)<0?'':(r[col(c)]||'').trim();
   const sku=g('sku'),name=g('name'),num=c=>g(c).replace(',','.')===''?NaN:Number(g(c).replace(',','.'));
   if(!sku||!name){errs.push(`Row ${n}: sku and name are required.`);return}
   if(seen.has(sku)){errs.push(`Row ${n}: duplicate sku "${sku}".`);return}
   seen.add(sku);
-  const w=num('width_cm'),d=num('depth_cm'),h=num('height_cm');
-  for(const [lab,v] of [['width_cm',w],['depth_cm',d],['height_cm',h]])
-   if(!(v>0&&v<=1000))errs.push(`Row ${n} (${sku}): ${lab} must be a number between 0 and 1000 cm.`);
-  let cl=num('front_clearance_cm'),p=num('price');const ty=g('type').toLowerCase();
+  const kind=(g('kind')||'furniture').toLowerCase();
+  if(!['furniture','panel','wallpaper','door'].includes(kind)){errs.push(`Row ${n} (${sku}): kind must be furniture, panel, wallpaper or door.`);return}
+  const w=num('width_cm'),d=num('depth_cm'),h=num('height_cm'),hMax=kind==='wallpaper'?5000:1000;
+  for(const [lab,v,req] of [['width_cm',w,1],['depth_cm',d,kind==='furniture'],['height_cm',h,1]])
+   if((req||!isNaN(v))&&!(v>0&&v<=(lab==='height_cm'?hMax:1000)))errs.push(`Row ${n} (${sku}): ${lab} must be a number between 0 and ${lab==='height_cm'?hMax:1000} cm.`);
+  let p=num('price');if(isNaN(p))p=0;else if(p<0)errs.push(`Row ${n} (${sku}): price cannot be negative.`);
+  const tex=g('texture'),mdl=g('model'),color=g('color'),style=g('style').toLowerCase();
+  const fileOk=(x,lab)=>{if(x&&!isUrl(x)&&!(files&&files.includes(x)))errs.push(`Row ${n} (${sku}): ${lab} "${x}" is not in the pack${files?'':' (import a pack with it, or use a web link)'}.`)};
+  fileOk(tex,'texture');fileOk(mdl,'model');
+  if(tex&&!/\.(jpe?g|png|webp)(\?\S*)?$/i.test(tex))errs.push(`Row ${n} (${sku}): texture must be a .jpg, .png or .webp image.`);
+  if(mdl&&!/\.(glb|gltf)(\?\S*)?$/i.test(mdl))errs.push(`Row ${n} (${sku}): model must be a .glb or .gltf file.`);
+  if(color&&!/^#[0-9a-f]{6}$/i.test(color))errs.push(`Row ${n} (${sku}): color must look like #b98a5e.`);
+  if(kind==='panel'){fin.push({k:sku,n:name,u:'panel',w,h,p,col:color||'#cbbfae',f:/flut|slat|ribbed/i.test(name+' '+style)?'fluted':'panel',tx:tex||undefined});return}
+  if(kind==='wallpaper'){const rp=num('repeat_cm');fin.push({k:sku,n:name,u:'roll',w,h,rep:rp>0?rp:0,p,col:color||'#d6cbb9',f:'paper',tx:tex||undefined});return}
+  if(kind==='door'){if(style&&!DOOR_STYLES.includes(style))errs.push(`Row ${n} (${sku}): style must be one of ${DOOR_STYLES.join(', ')}.`);
+   doors.push({k:sku,n:name,style:style||'flat',w,h,p,col:color||'#f1efea',tx:tex||undefined});return}
+  let cl=num('front_clearance_cm');const ty=g('type').toLowerCase();
   const rm=g('rooms').toLowerCase().split('|').map(x=>x.trim()).filter(Boolean),badr=rm.filter(x=>!ROOMKEYS.includes(x));
   if(badr.length)errs.push(`Row ${n} (${sku}): rooms must be separated by | and be from ${ROOMKEYS.join(', ')} (got ${badr.join(', ')}).`);
   if(ty&&!TYPES.includes(ty))errs.push(`Row ${n} (${sku}): type must be one of ${TYPES.join(', ')} (or empty).`);
   if(isNaN(cl))cl=50;else if(cl<0||cl>300)errs.push(`Row ${n} (${sku}): front_clearance_cm must be 0-300.`);
-  if(isNaN(p))p=0;else if(p<0)errs.push(`Row ${n} (${sku}): price cannot be negative.`);
-  const grp=g('group'),sz=g('size'),fin=g('finish'),mdl=g('model');
-  if(mdl&&!/^\S+\.(glb|gltf)(\?\S*)?$/i.test(mdl))errs.push(`Row ${n} (${sku}): model must be a link to a .glb or .gltf file.`);
-  out.push({k:sku,n:name,w,d,h,cl,p,t:ty||undefined,r:rm.length?rm:undefined,g:grp||undefined,z:sz||undefined,f:fin||undefined,m:mdl||undefined})});
- return{errs,out}}
-function setCatalog(list,sample){
- CATALOG=list;usingSample=sample;
- try{sample?localStorage.removeItem(CK):localStorage.setItem(CK,JSON.stringify(list))}catch(e){}
+  const grp=g('group'),sz=g('size'),f2=g('finish');
+  out.push({k:sku,n:name,w,d,h,cl,p,t:ty||undefined,r:rm.length?rm:undefined,g:grp||undefined,z:sz||undefined,f:f2||undefined,m:mdl||undefined,tx:tex||undefined,col:color||undefined})});
+ return{errs,out,fin,doors}}
+// ---- Company pack: a .zip with one catalog .csv, optional company.json {"name": "..."}, and the photos and 3D files it names.
+// Kept on this device (IndexedDB), so it is still there next time; reps on other devices import the same zip.
+let PACK_URL={};
+const assetUrl=n=>!n?'':/^(https?:|data:|blob:)/i.test(n)?n:(PACK_URL[n]||'');
+const PACK_MIME={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',glb:'model/gltf-binary',gltf:'model/gltf+json',bin:'application/octet-stream'};
+function packDb(){return new Promise((ok,no)=>{const q=indexedDB.open('fitcheck-pack',1);q.onupgradeneeded=()=>q.result.createObjectStore('pack');q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)})}
+async function packSave(p){const db=await packDb();await new Promise((ok,no)=>{const t=db.transaction('pack','readwrite'),st=t.objectStore('pack');p?st.put(p,'current'):st.delete('current');t.oncomplete=ok;t.onerror=()=>no(t.error)});
+ try{p?localStorage.setItem('fitcheck-haspack','1'):localStorage.removeItem('fitcheck-haspack')}catch(e){}}
+async function packLoad(){const db=await packDb();return new Promise((ok,no)=>{const q=db.transaction('pack').objectStore('pack').get('current');q.onsuccess=()=>ok(q.result||null);q.onerror=()=>no(q.error)})}
+async function readPack(file){const {unzipSync}=await import('https://cdn.jsdelivr.net/npm/fflate@0.8.2/esm/browser.js');
+ const z=unzipSync(new Uint8Array(await file.arrayBuffer())),files={},dec=new TextDecoder();let csv='',company='';
+ for(const [path,data] of Object.entries(z)){if(path.endsWith('/')||/(^|\/)(__MACOSX|\.)/.test(path))continue;const name=path.split('/').pop(),ext=name.split('.').pop().toLowerCase();
+  if(ext==='csv'&&!csv)csv=dec.decode(data);else if(name.toLowerCase()==='company.json'){try{company=String(JSON.parse(dec.decode(data)).name||'')}catch(e){}}
+  else if(PACK_MIME[ext])files[name]=new Blob([data],{type:PACK_MIME[ext]})}
+ return{csv,company:company||file.name.replace(/\.zip$/i,''),files}}
+// Puts a pack's photos and 3D files in place and its finishes and doors in use; null goes back to the samples.
+function applyPack(p){Object.values(PACK_URL).forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});PACK_URL={};
+ if(!p){COMPANY='Sample company';CO_FIN=SAMPLE_FIN.slice();CO_DOORS=SAMPLE_DOORS.slice();return null}
+ for(const [n,b] of Object.entries(p.files||{}))PACK_URL[n]=URL.createObjectURL(b);
+ const r=buildCatalog(p.csv,Object.keys(p.files||{}));if(!r.errs.length){COMPANY=p.company||'Company';CO_FIN=r.fin;CO_DOORS=r.doors}return r}
+function setCatalog(list,sample,fromPack){
+ list=list.filter(c=>!c.gen);CATALOG=[...list,...GEN_FURN];usingSample=sample;
+ try{sample||fromPack?localStorage.removeItem(CK):localStorage.setItem(CK,JSON.stringify(list))}catch(e){}
  uCache.clear();stash();let gone=0;S.rooms.forEach(r=>{const n=r.items.length;r.items=r.items.filter(i=>cat(i.k));gone+=n-r.items.length});loadRoom(S.cur);
  renderCat();render();return gone}
 $('imp').onclick=()=>$('impfile').click();
@@ -863,10 +934,22 @@ $('impfile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)retu
   if(errs.length){m.style.color='var(--err)';m.innerHTML=`Import rejected, nothing changed:<br>${errs.slice(0,8).map(esc).join('<br>')}${errs.length>8?`<br>...and ${errs.length-8} more`:''}`;return}
   const dropped=setCatalog(out,false);m.style.color='var(--ok)';
   m.textContent=`Imported ${out.length} products.${dropped?` ${dropped} placed item(s) were removed because their SKU is not in the new catalog.`:''}`})};
-$('sample').onclick=()=>{const d=setCatalog(SAMPLE.slice(),true);$('catmsg').style.color='';$('catmsg').textContent=`Sample catalog restored.${d?` ${d} placed item(s) removed.`:''}`};
-$('tpl').onclick=()=>{
- const csv='sku,name,width_cm,depth_cm,height_cm,front_clearance_cm,price,type,rooms,group,size,finish,model\n'+SAMPLE.map(c=>[c.k,'"'+c.n+'"',c.w,c.d,c.h,c.cl,c.p,typeOf(c),(c.r||[]).join('|'),c.g||'',c.z?'"'+c.z+'"':'',c.f?'"'+c.f+'"':'',c.m||''].join(',')).join('\n')+'\n';
- copyText(csv,$('catmsg'),'Template (paste it into a spreadsheet, fill it in, save as CSV)')};
+$('imppack').onclick=()=>$('packfile').click();
+$('packfile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importPack(f)};
+$('samplepack').onclick=async()=>{try{const b=await (await fetch('samples/sample-company-pack.zip')).blob();importPack(new File([b],'sample-company-pack.zip'))}catch(e){$('catmsg').textContent=`The sample pack could not be loaded (${e.message}).`}};
+async function importPack(f){const m=$('catmsg');m.style.color='';m.textContent='Reading the pack...';
+ try{const p=await readPack(f);if(!p.csv)throw new Error('there is no catalog .csv file in the zip');const r=buildCatalog(p.csv,Object.keys(p.files));
+  if(r.errs.length){m.style.color='var(--err)';m.innerHTML=`Pack not imported, nothing changed:<br>${r.errs.slice(0,8).map(esc).join('<br>')}${r.errs.length>8?`<br>...and ${r.errs.length-8} more`:''}`;return}
+  await packSave(p);applyPack(p);const gone=setCatalog(r.out,false,true);m.style.color='var(--ok)';
+  m.textContent=`Imported ${COMPANY}: ${r.out.length} furniture, ${r.fin.length} wall finishes, ${r.doors.length} doors, ${Object.keys(p.files).length} files.${gone?` ${gone} placed item(s) were removed (not in this catalog).`:''}`}
+ catch(err){m.style.color='var(--err)';m.textContent=`The pack could not be read (${err.message}).`}}
+$('sample').onclick=()=>{packSave(null).catch(()=>{});applyPack(null);const d=setCatalog(SAMPLE.slice(),true);$('catmsg').style.color='';$('catmsg').textContent=`Sample catalog restored.${d?` ${d} placed item(s) removed.`:''}`};
+$('tpl').onclick=()=>{const q=x=>x==null||x===''?'':/[,"]/.test(String(x))?'"'+String(x).replace(/"/g,'""')+'"':String(x);
+ const H='kind,sku,name,width_cm,depth_cm,height_cm,front_clearance_cm,price,type,rooms,group,size,finish,model,texture,color,style,repeat_cm';
+ const rows=[...SAMPLE.map(c=>['furniture',c.k,c.n,c.w,c.d,c.h,c.cl,c.p,typeOf(c),(c.r||[]).join('|'),c.g,c.z,c.f,c.m,'','','','']),
+  ...SAMPLE_FIN.map(c=>[c.u==='roll'?'wallpaper':'panel',c.k,c.n,c.w,'',c.h,'',c.p,'','','','','','','',c.col,'',c.rep||'']),
+  ...SAMPLE_DOORS.map(c=>['door',c.k,c.n,c.w,4,c.h,'',c.p,'','','','','','','',c.col,c.style,''])];
+ copyText(H+'\n'+rows.map(r=>r.map(q).join(',')).join('\n')+'\n',$('catmsg'),'Template (paste it into a spreadsheet, fill it in, save as catalog.csv)')};
 
 // room shape and features editor
 function fillKinds(){$('addkind').innerHTML=(S.mode==='walls'?'':'<option value="cut">Cut-out (L/U/T shape)</option>')+Object.entries(OBS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}
@@ -1011,7 +1094,10 @@ function renderSizebox(){const it=S.step===2&&sizeOpen&&S.items.find(i=>i.id===S
   `<button class="chip${it.size?' on':''}" data-sz="custom">Custom<small>type below</small></button>`;
  [['szw',c.w],['szd',c.d],['szh',c.h]].forEach(([id,v])=>{const el=$(id);el.inputMode=imperial()?'text':'decimal';if(document.activeElement!==el){el.value=U(v,true);el.classList.remove('bad')}});
  const un=UNITS[S.unit];$('szwl').textContent=`Width (${un})`;$('szdl').textContent=`Depth (${un})`;$('szhl').textContent=`Height (${un})`;
+ $('colrow').hidden=!base.gen;if(base.gen)$('colrow').innerHTML=palHtml(it.col||base.col,'icol');
  $('sizehint').className='hint adv';$('sizehint').textContent=(many?`The sizes this product comes in, each with its own catalog price.`:'This product comes in one size in the catalog.')+' A custom size (made to measure) has no catalog price: the quote marks it "price to confirm".'}
+$('colrow').onclick=e=>{const b=e.target.closest('[data-icol]'),it=b&&S.items.find(i=>i.id===S.sel);if(it){it.col=b.dataset.icol;render()}};
+$('colrow').addEventListener('input',e=>{const it=S.items.find(i=>i.id===S.sel);if(it&&e.target.matches('[data-icolany]')){it.col=e.target.value;render()}});
 $('sizechips').onclick=e=>{const b=e.target.closest('[data-sz]'),it=b&&S.items.find(i=>i.id===S.sel);if(!it)return;const v=b.dataset.sz;
  if(v==='cat')delete it.size;
  else if(v==='custom'){const c=spec(it);it.size={w:c.w,d:c.d,h:c.h,name:'Custom size'};render();$('szw').focus();$('szw').select();return}
@@ -1033,15 +1119,16 @@ function roomModel(){
   const a=loop[e],b=loop[(e+1)%loop.length],l=Math.hypot(b.x-a.x,b.y-a.y)||1,ux=(b.x-a.x)/l,uy=(b.y-a.y)/l;
   const t=[[sp.line[0],sp.line[1]],[sp.line[2],sp.line[3]]].map(([x,y])=>(x-a.x)*ux+(y-a.y)*uy).sort((p,q)=>p-q);
   return{edge:e,t0:Math.max(0,t[0]),t1:Math.min(l,t[1]),y0,y1,kind}};
- const door=opening(S.dwall,+S.doff,+S.dw,0,Math.min(+S.dh||205,H-5),'door');
+ const dd=doorCat(S.doorK)||GEN_DOOR,door0=opening(S.dwall,+S.doff,+S.dw,0,Math.min(+S.dh||205,H-5),'door');
+ const door=door0&&{...door0,style:dd.style,col:dd.gen?(S.doorCol||dd.col):dd.col,tex:assetUrl(dd.tx)};
  // A window's height is not measured: it is drawn from the sill to 210 cm (at least 60 cm tall, and 25 cm below the ceiling).
  const wins=windows().map(o=>opening(o.wall,+o.off,+o.w,+o.sill||0,Math.min(H-25,Math.max((+o.sill||0)+60,210)),'window')).filter(Boolean);
- const finishes=(S.finishes||[]).map(f=>{const c=finCat(f.k),R=finRegion(f),o=c&&R.b>R.a&&opening(f.wall,R.a,R.b-R.a,R.h0,R.h1,'finish');return o&&{...o,col:c.col,f:c.f}}).filter(Boolean);
+ const finishes=(S.finishes||[]).map(f=>{const c=finCat(f.k),R=finRegion(f),o=c&&R.b>R.a&&opening(f.wall,R.a,R.b-R.a,R.h0,R.h1,'finish');return o&&{...o,col:finCol(f),f:c.f,tex:assetUrl(c.tx),tw:c.u==='roll'?c.w:c.w,th:c.u==='roll'?(c.rep||c.w):c.h}}).filter(Boolean);
  return{H,loop,door,finishes,openings:[door,...wins].filter(Boolean),cuts:S.cuts.map(c=>({x:c.x,y:c.y,w:c.w,d:c.d})),
   obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
-  items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:c.m||''}})}}
+  items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:assetUrl(c.m),tex:assetUrl(c.tx),color:c.gen||c.col&&!c.f?c.col||'':''}})}}
 // Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
-const V3D='2026-10-27d';
+const V3D='2026-10-27h';
 let view3d=null,v3dTimer=0;
 async function open3d(){
  if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
@@ -1120,10 +1207,9 @@ $('showq').onclick=()=>{const q=$('quote');if(q.hidden){buildQuote();q.hidden=fa
 function quoteText(){stash();const who=[S.client&&`for ${S.client}`,S.rep&&`by ${S.rep}`].filter(Boolean).join(' ');
  const L=[`Quote${who?' '+who:''}, ${new Date().toLocaleDateString()}`,''];let grand=0;
  S.rooms.forEach((r,i)=>{const run=()=>{const tl=ROOM_TYPES[S.type];L.push(`${S.name}${S.name===tl||S.type==='other'?'':` (${tl})`}, ${S.closed?UU(S.rw,S.rl):'not measured'}, ceiling ${U(S.rh)}`);
-  let t=0;
-  (S.finishes||[]).forEach(f=>{const r=finCalc(f);if(r&&r.q){L.push(`  ${wallName(f.wall)}: ${r.q} ${r.unit} ${r.c.n}${f.part?` (${U(r.R.b-r.R.a)} of the wall${f.half?', half height':''})`:f.half?' (half height)':''}: ${r.cost.toLocaleString()}`);t+=r.cost}});
-  groupItems().forEach(({c,q})=>{L.push(`  ${q} x ${c.n}${c.sized?` (${c.sized}, ${UUU(c.w,c.d,c.h)}, price to confirm)`:''}: ${(c.p*q).toLocaleString()}`);t+=c.p*q});
-  L.push(`  Room total: ${t.toLocaleString()}`,'');grand+=t};
+  const Q=quoteLines();Q.priced.forEach(x=>L.push(`  ${x.txt}: ${x.cost.toLocaleString()}`));
+  if(Q.gen.length)L.push(`  Not supplied (layout only): ${Q.gen.join('; ')}`);
+  L.push(`  Room total: ${Q.total.toLocaleString()}`,'');grand+=Q.total};
   i===S.cur?run():withRoom(r,run)});
  L.push(`Total: ${grand.toLocaleString()}`,'Indicative only. Verify on site before ordering. '+priceNote());return L.join('\n')}
 // Copy to the clipboard; if the browser refuses, show the text in a box to select and copy by hand.
@@ -1162,17 +1248,33 @@ function placeDoorAt(p){
 // ---- Wall finishes: panels, wallpaper and paint on a whole wall or part of it ----
 // Sample finishes: typical sizes; prices are placeholders, not from a supplier. A finish sits on a straight wall (ref as for doors),
 // optionally on part of it (from/to along the wall, measured like the door offset) and optionally at half height (to 120 cm).
-const FINISHES=[
+// The company's own wall finishes (panels, wallpaper) and doors come from its pack; these samples stand in until one is
+// imported. Paint and a plain door are generic: any colour, shown in the layout and 3D, not priced in the quote.
+const SAMPLE_FIN=[
  {k:'WP-FL-OAK',n:'Fluted panel, oak look',u:'panel',w:16,h:280,p:18,col:'#b98a5e',f:'fluted'},
  {k:'WP-FL-BLK',n:'Fluted panel, black',u:'panel',w:16,h:280,p:18,col:'#34302d',f:'fluted'},
  {k:'WP-3D-WHT',n:'3D wave panel, white',u:'panel',w:50,h:50,p:6,col:'#ece9e2',f:'panel'},
  {k:'WPP-LIN',n:'Wallpaper, linen look',u:'roll',w:53,h:1005,rep:0,p:25,col:'#d6cbb9',f:'paper'},
- {k:'WPP-LEAF',n:'Wallpaper, leaf pattern',u:'roll',w:53,h:1005,rep:53,p:35,col:'#8da489',f:'paper'},
- {k:'PT-WHT',n:'Paint, matt white',u:'tin',l:2.5,cov:12,coats:2,p:22,col:'#f3f1ec',f:'paint'},
- {k:'PT-SAGE',n:'Paint, sage green',u:'tin',l:2.5,cov:12,coats:2,p:24,col:'#9fb197',f:'paint'}];
+ {k:'WPP-LEAF',n:'Wallpaper, leaf pattern',u:'roll',w:53,h:1005,rep:53,p:35,col:'#8da489',f:'paper'}];
+const SAMPLE_DOORS=[
+ {k:'DR-FLAT-WHT',n:'Flat door, white',style:'flat',w:90,h:205,p:120,col:'#f1efea'},
+ {k:'DR-PANEL-WHT',n:'4-panel door, white',style:'panel',w:90,h:205,p:150,col:'#f3f1ec'},
+ {k:'DR-FLUTE-OAK',n:'Fluted door, oak',style:'fluted',w:90,h:205,p:240,col:'#b98a5e'},
+ {k:'DR-GLASS-BLK',n:'Glass door, black frame',style:'glass',w:90,h:205,p:280,col:'#2b2a28'},
+ {k:'DR-GEO-GRY',n:'Geometric veneer door, grey',style:'geometric',w:90,h:205,p:320,col:'#8d877f'}];
+const GEN_FIN=[{k:'GEN-PAINT',n:'Paint',u:'tin',l:2.5,cov:12,coats:2,p:0,col:'#f3f1ec',f:'paint',gen:true}];
+const GEN_DOOR={k:'GEN-DOOR',n:'Plain door',style:'flat',w:90,h:205,p:0,col:'#f1efea',gen:true};
+const DOOR_STYLES=['flat','panel','fluted','glass','geometric'];
+// Colours offered for generic pieces, paint and the plain door (plus "any colour").
+const PALETTE=[['#f2efe9','White'],['#d9cfc1','Beige'],['#b9b0a4','Greige'],['#8d9092','Grey'],['#4a4c4f','Charcoal'],['#262524','Black'],['#c39a6b','Oak'],['#6a4930','Walnut'],['#7d8b7e','Sage'],['#3f5b7f','Navy'],['#8e3b35','Terracotta'],['#d6b44a','Mustard']];
+let CO_FIN=SAMPLE_FIN.slice(),CO_DOORS=SAMPLE_DOORS.slice(),COMPANY='Sample company';
+const allFin=()=>[...CO_FIN,...GEN_FIN];
+const finCat=k=>allFin().find(f=>f.k===k);
+const finCol=f=>f.col||(finCat(f.k)||{}).col;   // an instance colour (generic paint) wins
+const doorCat=k=>CO_DOORS.find(d=>d.k===k)||(k===GEN_DOOR.k?GEN_DOOR:null);
+const palHtml=(cur,attr)=>PALETTE.map(([c,n])=>`<button class="sw${cur===c?' on':''}" data-${attr}="${c}" title="${n}" aria-label="${n}" style="background:${c}"></button>`).join('')+`<label class="sw swany" title="Any colour">Any<input type="color" data-${attr}any value="${/^#[0-9a-f]{6}$/i.test(cur||'')?cur:'#888888'}"></label>`;
 const FKIND={panel:'Panels',roll:'Wallpaper',tin:'Paint'};
-const finCat=k=>FINISHES.find(f=>f.k===k);
-let finPick=false,finSel=null;
+let finPick=false,finSel=null,doorOpen=false;
 function wallLen(ref){if(S.mode==='walls'){const g=S.wallGeo[+ref];return g&&!g.curve?g.len:0}return({N:+S.rw,S:+S.rw,E:+S.rl,W:+S.rl})[ref]||0}
 const wallName=ref=>S.mode==='walls'?`Wall ${+ref+1}`:`${WALLS[ref][0].toUpperCase()+WALLS[ref].slice(1)} wall`;
 const winTop=o=>Math.min((+S.rh||260)-25,Math.max((+o.sill||0)+60,210));   // windows have no measured height (as in 3D)
@@ -1192,22 +1294,35 @@ function finCalc(f){const c=finCat(f.k);if(!c)return null;const R=finRegion(f),w
 function nearestWall(p){if(S.mode==='walls'){let best=null;S.wallGeo.forEach((g,i)=>{if(g.curve)return;const t=Math.max(0,Math.min(g.len,(p.x-g.a.x)*g.dx+(p.y-g.a.y)*g.dy)),d=Math.hypot(p.x-g.a.x-g.dx*t,p.y-g.a.y-g.dy*t);if(!best||d<best.d)best={ref:String(i),d}});return best&&best.ref}
  const W=+S.rw,L=+S.rl;return[['N',p.y],['S',L-p.y],['W',p.x],['E',W-p.x]].sort((a,b)=>a[1]-b[1])[0][0]}
 function openFinish(ref){if(ref==null)return;let f=S.finishes.find(x=>String(x.wall)===String(ref));
- if(!f){f={id:S.next++,wall:String(ref),k:FINISHES[0].k,part:false,from:0,to:Math.round(wallLen(ref)),half:false};S.finishes.push(f)}
+ if(!f){f={id:S.next++,wall:String(ref),k:allFin()[0].k,part:false,from:0,to:Math.round(wallLen(ref)),half:false};S.finishes.push(f)}
  finSel=f.id;S.sel=null;render()}
 function renderFinbox(){const f=S.step===2&&S.finishes.find(x=>x.id===finSel),box=$('finbox');box.hidden=!f;if(!f)return;const r=finCalc(f),len=wallLen(f.wall);
  $('finttl').textContent=`${wallName(f.wall)} · ${U(len)}`;
- $('finchips').innerHTML=Object.entries(FKIND).map(([u,lab])=>`<span class="finlab">${lab}</span><div class="chips" style="margin:0">${FINISHES.filter(c=>c.u===u).map(c=>`<button class="chip${f.k===c.k?' on':''}" data-fk="${c.k}"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${c.col};border:1px solid var(--line);margin-right:6px"></span>${esc(c.n)}<small>${c.u==='tin'?`${c.l} L tin`:c.u==='roll'?`${U(c.w)} roll, ${c.h/100} m`:UU(c.w,c.h)} &middot; ${c.p.toLocaleString()}</small></button>`).join('')}</div>`).join('');
+ const chip=c=>`<button class="chip${f.k===c.k?' on':''}" data-fk="${esc(c.k)}"><span class="dot" style="background:${c.gen?finCol(f.k===c.k?f:c):c.col}"></span>${esc(c.n)}<small>${c.u==='tin'?`${c.l} L tins &middot; any colour`:(c.u==='roll'?`${U(c.w)} roll, ${c.h/100} m`:UU(c.w,c.h))+` &middot; ${c.p.toLocaleString()}`}</small></button>`;
+ $('finchips').innerHTML=['panel','roll'].map(u=>{const l=CO_FIN.filter(c=>c.u===u);return l.length?`<span class="finlab">${esc(COMPANY)}: ${FKIND[u].toLowerCase()}</span><div class="chips" style="margin:0">${l.map(chip).join('')}</div>`:''}).join('')+
+  `<span class="finlab">Generic (not in the quote)</span><div class="chips" style="margin:0">${GEN_FIN.map(chip).join('')}</div>`+(finCat(f.k)&&finCat(f.k).gen?`<div class="pal" role="group" aria-label="Paint colour">${palHtml(finCol(f),'fcol')}</div>`:'');
  $('fincov').innerHTML=`<button class="chip${f.part?'':' on'}" data-cov="whole">Whole wall</button><button class="chip${f.part?' on':''}" data-cov="part">Part of the wall</button><button class="chip${f.half?'':' on'}" data-cov="full">Full height</button><button class="chip${f.half?' on':''}" data-cov="half">Half height (120 cm)</button>`;
  $('finpart').hidden=!f.part;['finfrom','finto'].forEach((id,ix)=>{const el=$(id);if(document.activeElement!==el){el.value=U(ix?f.to:f.from,true);el.classList.remove('bad')}});
  $('finres').innerHTML=r&&r.q?`<b>${r.q} ${r.unit} &middot; ${r.cost.toLocaleString()}</b><small>${esc(r.how)}</small>`:'<small>Nothing to cover on this part of the wall.</small>'}
 $('finbtn').onclick=()=>{finPick=true;S.sel=null;render()};
 $('fincancel').onclick=()=>{finPick=false;render()};
-$('finchips').onclick=e=>{const b=e.target.closest('[data-fk]'),f=b&&S.finishes.find(x=>x.id===finSel);if(f){f.k=b.dataset.fk;render()}};
+$('finchips').onclick=e=>{const f=S.finishes.find(x=>x.id===finSel);if(!f)return;const b=e.target.closest('[data-fk]'),c=e.target.closest('[data-fcol]');
+ if(b){f.k=b.dataset.fk;if(!finCat(f.k).gen)delete f.col;render()}else if(c){f.col=c.dataset.fcol;render()}};
+$('finchips').addEventListener('input',e=>{const f=S.finishes.find(x=>x.id===finSel);if(f&&e.target.matches('[data-fcolany]')){f.col=e.target.value;render()}});
 $('fincov').onclick=e=>{const b=e.target.closest('[data-cov]'),f=b&&S.finishes.find(x=>x.id===finSel);if(!f)return;const v=b.dataset.cov;
  if(v==='whole')f.part=false;else if(v==='part'){f.part=true;if(!(f.to>f.from)){f.from=0;f.to=Math.round(wallLen(f.wall))}}else f.half=v==='half';render()};
 ['finfrom','finto'].forEach((id,ix)=>{const el=$(id);el.oninput=()=>{const f=S.finishes.find(x=>x.id===finSel),cm=parseLen(el.value);el.classList.toggle('bad',el.value.trim()!==''&&!isFinite(cm));if(!f||!isFinite(cm))return;f[ix?'to':'from']=Math.round(cm*10)/10;render()};
  el.addEventListener('change',()=>{const f=S.finishes.find(x=>x.id===finSel);if(f){el.value=U(ix?f.to:f.from,true);el.classList.remove('bad')}})});
 $('findone').onclick=()=>{finSel=null;render()};
+// Door style: the company's doors (their photo or style, size and price) or a generic plain door in any colour.
+function renderDoorbox(){const box=$('doorbox'),show=doorOpen&&S.step===2&&S.sel==null&&finSel==null;box.hidden=!show;if(!show)return;const cur=doorCat(S.doorK)||GEN_DOOR;
+ const chip=d=>`<button class="chip${cur.k===d.k?' on':''}" data-dk="${esc(d.k)}"><span class="dot" style="background:${d.gen?(S.doorCol||d.col):d.col}"></span>${esc(d.n)}<small>${d.gen?'any colour &middot; not in the quote':`${UU(d.w,d.h)} &middot; ${d.p.toLocaleString()}`}</small></button>`;
+ $('doorchips').innerHTML=(CO_DOORS.length?`<span class="finlab">${esc(COMPANY)}</span><div class="chips" style="margin:0">${CO_DOORS.map(chip).join('')}</div>`:'')+`<span class="finlab">Generic</span><div class="chips" style="margin:0">${chip(GEN_DOOR)}</div>`+(cur.gen?`<div class="pal">${palHtml(S.doorCol||GEN_DOOR.col,'dcol')}</div>`:'')}
+$('doorbtn').onclick=()=>{doorOpen=true;finSel=null;S.sel=null;render()};
+$('doordone').onclick=()=>{doorOpen=false;render()};
+$('doorchips').onclick=e=>{const b=e.target.closest('[data-dk]'),c=e.target.closest('[data-dcol]');
+ if(b){S.doorK=b.dataset.dk;const d=doorCat(S.doorK);if(d&&!d.gen){S.dw=d.w;S.dh=d.h;$('dw').value=U(S.dw,true);$('dh').value=U(S.dh,true)}render()}else if(c){S.doorCol=c.dataset.dcol;render()}};
+$('doorchips').addEventListener('input',e=>{if(e.target.matches('[data-dcolany]')){S.doorCol=e.target.value;render()}});
 $('finrm').onclick=()=>{S.finishes=S.finishes.filter(x=>x.id!==finSel);finSel=null;render()};
 
 // ---- Zooming the plan: pinch (two fingers) or the mouse wheel; one finger on empty floor moves a zoomed plan; Fit shows it all. ----
@@ -1256,8 +1371,11 @@ $('plan').addEventListener('pointermove',e=>{if(ptrs.has(e.pointerId))ptrs.set(e
  it.x=Math.round(it.x);it.y=Math.round(it.y);render()});
 $('plan').addEventListener('pointerup',()=>{drag=null});
 if(!Array.isArray(S.rooms)||!S.rooms.length){S.rooms=[];S.cur=0;stash()}
-S.cur=Math.min(S.cur||0,S.rooms.length-1);oldKeys(S.rooms);S.rooms.forEach(r=>r.items=(r.items||[]).filter(i=>cat(i.k)));loadRoom(S.cur);
-load();renderCat();render();
+// Start: a company pack saved on this device is loaded first, so the saved visit's pieces are found in its catalog.
+(async()=>{let hasPack=false;try{hasPack=localStorage.getItem('fitcheck-haspack')==='1'}catch(e){}
+ if(hasPack)try{const p=await packLoad(),r=p&&applyPack(p);if(r&&!r.errs.length){CATALOG=[...r.out,...GEN_FURN];usingSample=false}}catch(e){}
+ S.cur=Math.min(S.cur||0,S.rooms.length-1);oldKeys(S.rooms);S.rooms.forEach(r=>r.items=(r.items||[]).filter(i=>cat(i.k)));loadRoom(S.cur);
+ load();renderCat();render()})();
 </script>
 </body>
 </html>
