@@ -226,7 +226,7 @@ export async function run(){
  ok('screens: tapping the plan places the door and stops asking',S.doorSet&&S.dwall==='2'&&!visible('#doorbar')&&visible('#movedoor'),[S.dwall,S.doff]);
  // while the door prompt shows, tapping a piece selects it and leaves the door alone
  {renderSugg();$('sugg').querySelector('[data-add]').click();const pc=S.items[S.items.length-1];S.sel=null;moveDoor=true;render();const d0=[S.dwall,S.doff];
-  const q=plan.createSVGPoint();q.x=pc.x;q.y=pc.y;const p=q.matrixTransform(plan.getScreenCTM());document.elementFromPoint(p.x,p.y).dispatchEvent(new PointerEvent('pointerdown',{clientX:p.x,clientY:p.y,bubbles:true,pointerId:11}));plan.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:11}));
+  plan.scrollIntoView({block:'center'});const q=plan.createSVGPoint();q.x=pc.x;q.y=pc.y;const p=q.matrixTransform(plan.getScreenCTM());document.elementFromPoint(p.x,p.y).dispatchEvent(new PointerEvent('pointerdown',{clientX:p.x,clientY:p.y,bubbles:true,pointerId:11}));plan.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:11}));
   ok('door prompt: tapping a piece selects it and does not move the door',S.sel===pc.id&&S.dwall===d0[0]&&S.doff===d0[1]&&visible('#doorbar'),[S.sel,pc.id,d0,S.dwall,S.doff]);
   $('doorskip').click();S.items=S.items.filter(i=>i.id!==pc.id);S.sel=null;render()}
  $('movedoor').click();ok('screens: Move door asks again; Cancel keeps the door',visible('#doorbar')&&($('doorskip').click(),!visible('#doorbar')&&S.dwall==='2'));
@@ -272,9 +272,20 @@ export async function run(){
  ok('choice: two 3-seat sofas and a 2-seat can be added',S.items.filter(i=>i.k==='694.405.96').length===2&&S.items.filter(i=>i.k==='294.405.98').length===1,S.items.map(i=>i.k));
  renderSugg();ok('choice: the sofa row stays in place after adding',!!sofaRow());
  freshVisit({type:'living',name:'Living room'});setTemplate('rect',[250,250]);goStep(2);renderSugg();
- const tight=[...$('sugg').querySelectorAll('details')].find(d=>/Tight fit/.test(d.textContent));
- ok('choice: pieces that do not fit well are listed with an add button',!!tight&&!!tight.querySelector('[data-addk]'));
+ const tight=$('sugg').querySelector('.sgtight');
+ ok('choice: pieces that do not fit well are listed with an add button',!!tight&&!!tight.querySelector('[data-addk]')&&/Needs more space/.test($('sugg').textContent));
  if(tight){const n=S.items.length;tight.querySelector('[data-addk]').click();ok('choice: adding a tight piece places it and the plan shows the problem',S.items.length===n+1&&(problems().length>0||check().some(([t])=>t!=='ok')))}
+ // any piece in any room: a sofa is right there in a bedroom's list, nothing folded away; filters and search
+ freshVisit({type:'bedroom',name:'Bedroom'});setTemplate('rect',[450,400]);goStep(2);renderSugg();
+ ok('choice: a bedroom lists sofas too, in the main list',/KIVIK sofa/.test($('sugg').textContent)&&!$('sugg').querySelector('details'));
+ $('sgcats').querySelector('[data-cat=bed]').click();ok('choice: the Beds filter shows only beds',/MALM/.test($('sugg').textContent)&&!/KIVIK|BILLY|LACK/.test($('sugg').textContent),$('sugg').textContent.slice(0,120));
+ $('sgcats').querySelector('[data-cat=all]').click();$('sgq').value='kivik';$('sgq').dispatchEvent(new Event('input'));
+ ok('choice: search finds a product by name',/KIVIK/.test($('sugg').textContent)&&!/MALM/.test($('sugg').textContent));
+ $('sgq').value='';$('sgq').dispatchEvent(new Event('input'));
+ // typing a rectangle, then "Draw it", then drawing a rectangle keeps the typed size
+ freshVisit();goStep(1);const typeIn2=(el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}))};typeIn2($('tw0'),'430');typeIn2($('tw1'),'360');
+ $('notrect').click();padStrokes=[[[20,20],[150,20],[280,20]],[[280,20],[280,100],[280,190]],[[280,190],[150,190],[20,190]],[[20,190],[20,100],[20,22]]];padFinish();
+ ok('draw: a drawn rectangle keeps the typed length and width',S.walls.length===4&&S.walls[0].len===430&&S.walls[1].len===360&&S.closed,S.walls.map(w=>w.len));
  goStep(1);
  {const qt=quoteText();ok('quote text: no empty client/rep and no repeated room name',/^Quote, /.test(qt)&&!/\(rep: -\)/.test(qt)&&!/Living room \(Living room\)/.test(qt),qt.split('\n').slice(0,3))}
  S.doorSet=true;goStep(1);$('notrect').click();$('shapes').querySelector('[data-shape=rect]').click();ok('door prompt: a new room shape asks for the door again',S.doorSet===false);
