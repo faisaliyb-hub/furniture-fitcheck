@@ -1,18 +1,22 @@
 # FitCheck: Handoff
 
 ## Start here (for a new session or another Claude account)
-Checked 2026-10-23.
-- **Folder:** `furniture-fitcheck` in the user's Project folder. Work continues on branch **`feat/three-screens`**: `main`, plus the 3-screen version, plus the latest version of this file. Check with `git status` before starting.
-- **Live site:** https://faisaliyb-hub.github.io/furniture-fitcheck/ serves `main` at commit `e1c9867`. That version has the IKEA sample catalog, product sizes and the 3D view. GitHub has only `main`; every other branch exists only on this computer.
-- **Checks:** all 124 in `tests/e2e.js` pass on `feat/three-screens` (run 2026-10-23; how to run them is under Current state). `main` has the earlier 104.
-- **Latest work (2026-10-23):** the simpler 3-screen version (with free zoom on the plan and in 3D) **is now the main app**: the user approved it and ran the merge of `feat/three-screens` into `main` themself (commit `46b1760`, live, checked). `preview/` still holds the same version and can be removed. **Next:** the user tries it with a real room, then show it to the furniture house; after that, the shared backend with rep logins (waiting for the user's OK).
+Checked 2026-10-26.
+- **Folder:** `furniture-fitcheck` in the user's Project folder. Work happens on branch **`feat/three-screens`** and is merged into `main` to go live. Check with `git status` before starting.
+- **Live site:** https://faisaliyb-hub.github.io/furniture-fitcheck/ serves `main` at commit `47bd22d` (2026-10-26): 3 screens (Measure, Furniture, Quote), IKEA UK sample catalog, real product sizes (one + button per size, as many as wanted), any piece in any room (one list with filters and search), smart placement (bed/sofa centred, bedside tables beside the bed, coffee table in front of the sofa, TV facing it), wall finishes (panels, wallpaper, paint, with quantities), 3D view, zoom, Share/Copy quote, phone and tablet layouts, speed fixes. `preview/` on `main` holds an older copy and can be deleted.
+- **How publishing works:** Claude Code's safety check blocks Claude from pushing to `main` (it is the live site), so the user runs this in the `furniture-fitcheck` folder (not `Nova`), then Claude confirms the GitHub Pages build:
+  `git checkout main && git merge --no-edit feat/three-screens && git push origin main && git checkout feat/three-screens`
+- **Checks:** all 158 in `tests/e2e.js` pass (2026-10-26). Run with the browser window at a real size (e.g. 1180 x 820): a collapsed 0 x 0 browser pane makes the tap-based checks fail. The full run takes 1–2 minutes.
+- **Latest (2026-10-27, on `feat/three-screens`, not live until the user runs the publish command):** realistic 3D part 1 is built: real CC0 textures and an HDR light file (`assets/3d/`, credits in `docs/ASSETS.md`) and a **Photo** button in the 3D view that path-traces a still (three-gpu-pathtracer 0.0.23, about 30 s). 160 checks pass. Next for realism: part 2, the furniture house's own products as 3D models made from their photos (they have no 3D files; see "Realistic 3D").
+- **Also open:** the shared backend with rep logins (Supabase proposed, not approved yet); the user testing with a real room; showing it to the furniture house.
+- **iPhone simulator:** Xcode is installed with iOS 27.1 ("iPhone Duo" is the only device type it offers). It heats the Mac, so boot it only when needed and run `xcrun simctl shutdown all` afterwards.
 - **Rules:**
   - Ask before pushing to `main`, because it changes the live site.
   - The repo is public, so never commit client data or secrets.
-  - The user wants plain, short explanations and a very simple app.
+  - The user wants plain, short explanations and a very simple app, with no limits on what a rep can add.
 - **Paste this as the first message in the new session:** "Read docs/HANDOFF.md in this folder, start with the Start here section, tell me where we left off, then wait for my go-ahead."
 
-Last updated: 2026-10-23. Phase: **Phase 1 prototype, live on GitHub Pages**, tried on a real phone by the user (worked), not yet shown to the client.
+Last updated: 2026-10-26. Phase: **Phase 1 prototype, live on GitHub Pages**, tried on a real phone by the user (worked), not yet shown to the client.
 
 ## Goal
 A furniture house wants a system for its field marketers/sales reps to measure spaces and show which products fit. Wider hopes: architect-friendly files, marketing visibility. The client's name, furniture category, and team size are **not yet known**.
@@ -198,7 +202,8 @@ Suggested priority: non-rectangular rooms and obstacles first, then shared backe
 
 ## Open questions for the client
 1. Name and furniture category? Which products first?
-2. Do they have product dimensions and CAD/3D files, or only PDFs and photos?
+2. Do they have product dimensions and CAD/3D files, or only PDFs and photos? **Do they or their suppliers have 3D models of their products (any of .glb, .gltf, .fbx, .obj, .3ds/.max, SketchUp), and good photos of each material and finish (wood, fabric, metal, wall panels)?** This decides how realistic the 3D can look (see "Realistic 3D").
+6. Their real wall panels, wallpapers and paints: sizes and prices (the app's 7 finishes are samples with made-up prices).
 3. Who will maintain the catalog?
 4. Rep count and phone models? Are they willing to carry a Bluetooth laser?
 5. Budget and timeline for the pilot?
@@ -249,11 +254,25 @@ User feedback after trying the live app with the 3D view: the 3D view is smooth,
 - Zoom (user feedback 2026-10-23, "I can't zoom in and out freely", in both views): the flat plan now zooms with a two-finger pinch (up to 8x, around the fingers) or the mouse wheel; one finger on empty floor moves a zoomed plan; a **Fit** button beside 3D shows the whole room. In 3D, zoom goes towards where you pinch or point, gets as close as 10 cm and as far as 8 times the room size, and is a bit faster.
 - Not tested yet: a real phone (the user's next step), and Safari on iPhone.
 
+## Realistic 3D (asked 2026-10-26; part 1 built 2026-10-27)
+The user showed a professional interior render (a door, lamp, side table, floral mural, metallic wall) and asked whether the view can look like that, based on the furniture house's inventory. Answer given:
+- That picture is an offline render: hand-made detailed 3D models with photographed materials, and minutes to hours of light calculation. FitCheck's live 3D is real time on a phone, with simplified product shapes and plain colours.
+- **Part 1, possible now without the client:** real material textures (wood, fabric, metal, wall finishes), better lighting (an HDR light file, soft contact shadows) in the live view, and a **"Take photo" button** that path-traces a near-photo-quality still on the phone in about 10–30 s, for the rep to share. New dependencies to approve: `three-gpu-pathtracer` (a widely used add-on for three.js) and a few CC0 files from Poly Haven (free, no attribution; textures plus one HDRI, a few MB).
+- **Part 1 as built (2026-10-27, user said "yes go ahead"):**
+  - Files: 8 CC0 files from Poly Haven in `assets/3d/` (4.6 MB, 1k): laminate floor (colour, relief, roughness), fine-grained wood (colour turned grey and tinted per finish, relief), denim fabric weave (relief, roughness; tinted per finish), studio_small_08 HDR light. Loaded only when 3D opens; if they cannot load, the old drawn textures and built-in light are used.
+  - Libraries (import map, CDN): `three-gpu-pathtracer@0.0.23` (the newest release needing three 0.160; 0.0.24+ needs three 0.180+) and `three-mesh-bvh@0.7.8`. Two shims for three 0.160: every `THREE.Scene` gets default `environmentRotation`, `backgroundRotation` and `environmentIntensity` (the tracer reads them, also on a scene it makes itself), and the tracer's `dispose()` error is ignored (it trips over a part it never made).
+  - **Photo** (3D bar): traces the current view for up to 96 samples or 30 s, then shows the picture with Save photo, Share photo (where the phone can share files) and Back to 3D. The drawn contact shadows are hidden during the photo (real shadows replace them). In the throttled test browser it reached about 12 samples in 30 s: realistic light and shadows with slight grain. Eye level ("Door view") shows the difference best. **Not yet timed on a real phone.**
+  - `V3D` in fitcheck.html is the cache version of view3d.js: bump it whenever view3d.js changes, or browsers keep the old copy.
+- **Part 2, needs the client:** each product's own 3D model and material photos. The user says the furniture house has **no 3D files**, and wants to make them from product photos: AI image-to-3D tools (e.g. Meshy, Tripo, Rodin, Hunyuan3D; prices and terms not checked yet) turn 3–4 photos per product (different angles, plain background) into a .glb, which goes in the catalog's `model` column; FitCheck scales it to the catalog size. FitCheck already loads a .glb/.gltf per product from the catalog's `model` column (scaled to the catalog size). Without models: paid 3D modelling, or AI photo-to-3D tools (quality varies); wall finishes need one good photo of each material.
+
 ## Suggested next steps
-1. Publish `feat/three-screens` at `https://faisaliyb-hub.github.io/furniture-fitcheck/preview/` (copy `fitcheck.html` and `view3d.js` into `preview/` on `main` and push, with the user's OK). Then let the user try it on a phone, and replace the main app only after they approve.
-2. Show it to the furniture house and give them `catalog-template.csv` to fill in with real dimensions, one row per size (`group` and `size` columns). How complete it comes back tells us how ready their data is.
-3. Choose a backend for the shared catalog and visits, and add rep logins (proposed: Supabase, waiting for the user's OK).
-4. Add laser input (Android first), then decide on an iPhone wrapper.
+1. The user publishes the realism update and tries Photo on their phone (time it; if too slow, lower the photo size or sample count).
+1b. Realistic 3D part 2: pick an image-to-3D tool with the user (check price and terms first), make one product from its photos as a test, add it via the `model` column.
+2. The user tries the live app with a real room (measure, add furniture and wall finishes, share the quote) and reports anything confusing or slow.
+3. Show it to the furniture house: give them `catalog-template.csv` (one row per size, `group` and `size` columns), and ask the open questions above, especially about 3D files, material photos and their own wall finishes.
+4. Let the furniture house add their own wall finishes through the catalog file (today the 7 finishes are built into the app).
+5. Shared backend with rep logins (proposed: Supabase, waiting for the user's OK).
+6. Laser input (Android first), then decide on an iPhone wrapper.
 
 ## Housekeeping
 - Project folder: `furniture-fitcheck` in the user's Project folder.

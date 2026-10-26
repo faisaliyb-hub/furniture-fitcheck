@@ -30,3 +30,5 @@ connected to IKEA. Each device keeps its own visits in the browser; nothing is s
 | `tools/make_artifact.py` | Builds the claude.ai preview version into `dist/` |
 | `docs/HANDOFF.md` | Project state, decisions, limits and next steps |
 | `docs/SAMPLE_CATALOG.md` | Where each sample product's size and price comes from |
+| `assets/3d/` | Free (CC0) textures and light file used by the 3D view and Photo; see `docs/ASSETS.md` |
+| `docs/ASSETS.md` | Where each 3D asset comes from and its licence |

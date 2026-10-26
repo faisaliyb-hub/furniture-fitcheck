@@ -8,7 +8,13 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {RGBELoader} from 'three/addons/loaders/RGBELoader.js';
 
+// three.js 0.160 scenes have no environmentRotation / backgroundRotation / environmentIntensity (added in later versions);
+// the path tracer reads them on every scene, including one it makes itself, so every scene gets these defaults.
+for(const k of ['environmentRotation','backgroundRotation'])if(!(k in THREE.Scene.prototype))
+ Object.defineProperty(THREE.Scene.prototype,k,{configurable:true,get(){return this['_'+k]||(this['_'+k]=new THREE.Euler())},set(x){this['_'+k]=x}});
+if(!('environmentIntensity' in THREE.Scene.prototype))THREE.Scene.prototype.environmentIntensity=1;
 const M=.01, WALL_T=.12, CUT_H=.3;   // cm -> m; wall thickness drawn outside the measured outline; height of a cut-away wall
 const V2=(x,y)=>new THREE.Vector2(x,y);
 
@@ -37,6 +43,24 @@ function textures(){if(TEX.wood)return TEX;
  TEX.shadow=canvasTex(128,(g,s)=>{const gr=g.createRadialGradient(s/2,s/2,s*.12,s/2,s/2,s/2);gr.addColorStop(0,'rgba(0,0,0,.7)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,s,s)});
  return TEX}
 
+// ---------- photographed materials and light (CC0 files from Poly Haven in assets/3d; see docs/ASSETS.md) ----------
+// Loaded once when 3D first opens. Offline or blocked: the drawn textures above stay in use.
+const ASSET=n=>new URL('assets/3d/'+n,import.meta.url).href;
+const loadImg=src=>new Promise((ok,no)=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>ok(i);i.onerror=()=>no(new Error('missing '+src));i.src=src});
+function texImg(img,srgb,rep){const t=new THREE.Texture(img);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;if(srgb)t.colorSpace=THREE.SRGBColorSpace;if(rep)t.repeat.set(rep,rep);t.needsUpdate=true;return t}
+// The wood photo becomes a light grey grain, so one photo serves every wood colour (the material colour tints it).
+function greyWood(img){const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const g=c.getContext('2d');g.drawImage(img,0,0);
+ const im=g.getImageData(0,0,c.width,c.height),d=im.data;let sum=0;for(let k=0;k<d.length;k+=4)sum+=.3*d[k]+.59*d[k+1]+.11*d[k+2];const mean=sum/(d.length/4);
+ for(let k=0;k<d.length;k+=4){const l=.3*d[k]+.59*d[k+1]+.11*d[k+2],v=Math.max(0,Math.min(255,228+(l-mean)*1.1));d[k]=d[k+1]=d[k+2]=v}g.putImageData(im,0,0);
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;t.colorSpace=THREE.SRGBColorSpace;return t}
+let photoP=null,hdrP=null;
+function photoTextures(){if(photoP)return photoP;textures();
+ photoP=Promise.all(['laminate_floor_02_diff','laminate_floor_02_nor','laminate_floor_02_rough','fine_grained_wood_diff','fine_grained_wood_nor','denim_fabric_nor','denim_fabric_rough'].map(n=>loadImg(ASSET(n+'_1k.jpg'))))
+  .then(([fd,fn,fr,wd,wn,cn,cr])=>{const fl=.5;   // the floor photo covers 2 m
+   Object.assign(TEX,{floor:texImg(fd,true,fl),floorNor:texImg(fn,false,fl),floorRough:texImg(fr,false,fl),wood:greyWood(wd),woodNor:texImg(wn,false),fabricNor:texImg(cn,false,4),fabricRough:texImg(cr,false,4),photo:true});MATS.clear()})
+  .catch(()=>{});return photoP}
+function hdrLight(){if(!hdrP)hdrP=new RGBELoader().loadAsync(ASSET('studio_small_08_1k.hdr')).then(t=>{t.mapping=THREE.EquirectangularReflectionMapping;return t}).catch(()=>null);return hdrP}
+
 // ---------- finishes: the catalog's free-text finish ("beige-grey fabric", "birch, light beige fabric") -> materials ----------
 const COLORS=[['grey-green','#7d8b7e'],['black-brown','#3b2d26'],['light brown','#a8835e'],['beige-grey','#b9b0a4'],['light beige','#d8ccb7'],['dark grey','#4a4c4f'],
  ['light grey','#c9cac8'],['white','#efede8'],['black','#262524'],['oak','#c39a6b'],['ash','#d6c19c'],['birch','#dcc29a'],['walnut','#6a4930'],['pine','#d8b27a'],
@@ -46,11 +70,14 @@ function finishParts(f){return String(f||'').toLowerCase().split(',').map(p=>p.t
  .map(p=>({color:(COLORS.find(([k])=>p.includes(k))||[])[1],wood:WOOD.test(p),fabric:FABRIC.test(p)}))}
 const MATS=new Map();
 function mat(kind,color){const key=kind+color;if(MATS.has(key))return MATS.get(key);const T=textures();let m;
- if(kind==='fabric')m=new THREE.MeshPhysicalMaterial({color,map:T.fabric,bumpMap:T.fabricBump,bumpScale:1.5,roughness:.95,sheen:.35,sheenRoughness:.8,sheenColor:new THREE.Color(color).lerp(new THREE.Color('#ffffff'),.2)});
- else if(kind==='wood')m=new THREE.MeshStandardMaterial({color,map:T.wood,roughness:.5});
+ const sheenC=new THREE.Color(color).lerp(new THREE.Color('#ffffff'),.2);
+ if(kind==='fabric')m=T.photo?new THREE.MeshPhysicalMaterial({color,normalMap:T.fabricNor,normalScale:new THREE.Vector2(.7,.7),roughnessMap:T.fabricRough,roughness:1,sheen:.4,sheenRoughness:.8,sheenColor:sheenC})
+  :new THREE.MeshPhysicalMaterial({color,map:T.fabric,bumpMap:T.fabricBump,bumpScale:1.5,roughness:.95,sheen:.35,sheenRoughness:.8,sheenColor:sheenC});
+ else if(kind==='wood')m=new THREE.MeshStandardMaterial({color,map:T.wood,roughness:.5,...(T.woodNor?{normalMap:T.woodNor,normalScale:new THREE.Vector2(.25,.25)}:{})});
  else if(kind==='paint')m=new THREE.MeshStandardMaterial({color,roughness:.38});
  else if(kind==='metal')m=new THREE.MeshStandardMaterial({color,metalness:1,roughness:.32});
- else if(kind==='linen')m=new THREE.MeshPhysicalMaterial({color,map:T.fabric,bumpMap:T.fabricBump,bumpScale:.8,roughness:1,sheen:.3,sheenColor:new THREE.Color('#ffffff')});
+ else if(kind==='linen')m=T.photo?new THREE.MeshPhysicalMaterial({color,normalMap:T.fabricNor,normalScale:new THREE.Vector2(.35,.35),roughness:1,sheen:.3,sheenColor:new THREE.Color('#ffffff')})
+  :new THREE.MeshPhysicalMaterial({color,map:T.fabric,bumpMap:T.fabricBump,bumpScale:.8,roughness:1,sheen:.3,sheenColor:new THREE.Color('#ffffff')});
  else m=new THREE.MeshStandardMaterial({color,roughness:.6});
  m.envMapIntensity=.45;MATS.set(key,m);return m}
 // Body = main panels or frame; soft = upholstery; accent = a second finish (a top, a frame).
@@ -155,7 +182,7 @@ function buildRoom(R,scene){const T=textures(),H=R.H*M,loop=R.loop.map(p=>({x:p.
   return{x:p.x+ux*WALL_T*k,y:p.y+uy*WALL_T*k}});
  const g=new THREE.Group(),walls=[];scene.add(g);
  // floor
- const shape=new THREE.Shape(loop.map(p=>V2(p.x,-p.y))),fl=new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshStandardMaterial({map:T.floor,roughness:.5,envMapIntensity:.4}));
+ const shape=new THREE.Shape(loop.map(p=>V2(p.x,-p.y))),fl=new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshStandardMaterial({map:T.floor,roughness:T.floorRough?1:.5,envMapIntensity:.4,...(T.floorRough?{roughnessMap:T.floorRough,normalMap:T.floorNor,normalScale:new THREE.Vector2(.6,.6)}:{})}));
  fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;g.add(fl);
  // walls, edge by edge, split around doors and windows
  loop.forEach((a,i)=>{const e=out[i],b=loop[(i+1)%n],ops=R.openings.filter(o=>o.edge===i).map(o=>({t0:o.t0*M,t1:o.t1*M,y0:o.y0*M,y1:o.y1*M,kind:o.kind}));
@@ -215,8 +242,10 @@ export async function open(container,R){
  const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.9;container.appendChild(renderer.domElement);
- const scene=new THREE.Scene(),pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(new RoomEnvironment(renderer),.04).texture;pm.dispose();
+ await photoTextures();const hdr=await hdrLight();
+ const scene=new THREE.Scene();if(hdr)scene.environment=hdr;else{const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(new RoomEnvironment(renderer),.04).texture;pm.dispose()}
  scene.background=new THREE.Color('#e7e9ea');
+
  const room=buildRoom(R,scene),cx=(room.min.x+room.max.x)/2,cz=(room.min.z+room.max.z)/2,size=Math.max(room.max.x-room.min.x,room.max.z-room.min.z,2);
  scene.add(new THREE.HemisphereLight('#ffffff','#cdbfae',.45));
  const lamp=new THREE.PointLight('#ffe9cc',18,0,2);lamp.position.set(cx,room.H-.15,cz);scene.add(lamp);   // ceiling light: fills the walls from inside
@@ -230,7 +259,7 @@ export async function open(container,R){
   if(!g)g=modelFor(it);
   g.position.set(it.x*M,0,it.y*M);g.rotation.y=-it.rot*Math.PI/180;g.userData.item=it;scene.add(g);
   const sh=new THREE.Mesh(new THREE.PlaneGeometry(it.w*M*1.18,it.d*M*1.18),new THREE.MeshBasicMaterial({map:textures().shadow,transparent:true,depthWrite:false}));
-  sh.rotation.x=-Math.PI/2;sh.position.y=.002;g.add(sh);pieces.push(g)}
+  sh.rotation.x=-Math.PI/2;sh.position.y=.002;sh.userData.contact=true;g.add(sh);pieces.push(g)}
  // camera and controls
  const camera=new THREE.PerspectiveCamera(45,1,.05,200),controls=new OrbitControls(camera,renderer.domElement);
  controls.enableDamping=true;controls.maxPolarAngle=Math.PI*.495;controls.minDistance=.1;controls.maxDistance=size*8;controls.zoomSpeed=1.4;controls.zoomToCursor=true;controls.screenSpacePanning=true;   // zoom goes where you pinch or point
@@ -251,5 +280,16 @@ export async function open(container,R){
  const render=()=>{fade();renderer.render(scene,camera)};
  const loop=()=>{raf=requestAnimationFrame(loop);if(controls.update()||dirty){dirty=false;render()}};
  setView('overview');loop();
- return{scene,camera,renderer,controls,pieces,walls:room.walls,notes,setView,render,
+ // A photo: the same view, with light traced as it really bounces (three-gpu-pathtracer). Stops when `samples` are done
+ // or after `maxMs`, whichever comes first, then hands back a JPEG data URL. The drawn contact shadows step aside (real ones replace them).
+ let shooting=false;
+ async function photo(onProgress,{samples=96,maxMs=30000}={}){if(shooting)throw new Error('busy');shooting=true;cancelAnimationFrame(raf);
+  const hidden=[];scene.traverse(o=>{if(o.userData.contact&&o.visible){o.visible=false;hidden.push(o)}});let pt=null;
+  try{const {WebGLPathTracer}=await import('three-gpu-pathtracer');fade();pt=new WebGLPathTracer(renderer);pt.minSamples=1;pt.bounces=5;pt.filteredGlossyFactor=.5;pt.tiles.set(2,2);
+   pt.setScene(scene,camera);const t0=performance.now();
+   while(pt.samples<samples&&performance.now()-t0<maxMs){pt.renderSample();onProgress&&onProgress(Math.min(1,pt.samples/samples));await new Promise(r=>requestAnimationFrame(r))}
+   return renderer.domElement.toDataURL('image/jpeg',.92)}
+  finally{try{if(pt)pt.dispose()}catch(e){}   // 0.0.23's dispose can trip over a part it never made; the photo is already taken
+   hidden.forEach(o=>o.visible=true);shooting=false;dirty=true;loop()}}
+ return{scene,camera,renderer,controls,pieces,walls:room.walls,notes,setView,render,photo,
   close(){cancelAnimationFrame(raf);ro.disconnect();controls.dispose();scene.traverse(o=>{if(o.isMesh)o.geometry.dispose()});renderer.dispose();renderer.domElement.remove()}}}
