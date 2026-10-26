@@ -167,6 +167,13 @@ function buildRoom(R,scene){const T=textures(),H=R.H*M,loop=R.loop.map(p=>({x:p.
   for(let k=0;k<cuts.length-1;k++){const s0=cuts[k],s1=cuts[k+1];if(s1-s0<1e-4)continue;const mid=(s0+s1)/2,holes=ops.filter(o=>o.t0<=mid&&o.t1>=mid).sort((p,q)=>p.y0-q.y0);
    const q=[at(s0),at(s1),oat(s1),oat(s0)];solid(q,holes,H,wg.meshes);solid(q,holes,Math.min(H,CUT_H),wg.low)}
   wg.low.forEach(o=>o.visible=false);
+  // wall finishes on this edge: a thin layer on the inner face (raised slats for fluted panels), leaving doors and windows open
+  (R.finishes||[]).filter(f=>f.edge===i).forEach(f=>{const t0=f.t0*M,t1=f.t1*M,y0=f.y0*M,y1=Math.min(H,f.y1*M),fm=mat(f.f==='paint'?'paint':'wall',f.col);
+   const layer=(s0,s1,d0,d1)=>{const holes=ops.filter(o=>o.t0<=(s0+s1)/2&&o.t1>=(s0+s1)/2).sort((p,q)=>p.y0-q.y0),a0=at(s0),a1=at(s1),q=[{x:a0.x-e.x*d0,y:a0.y-e.y*d0},{x:a1.x-e.x*d0,y:a1.y-e.y*d0},{x:a1.x-e.x*d1,y:a1.y-e.y*d1},{x:a0.x-e.x*d1,y:a0.y-e.y*d1}];
+    let y=y0;const put=(ya,yb)=>{if(yb-ya>1e-3)wg.parts.push(prism(q,ya,yb,fm))};for(const o of holes){put(y,Math.min(o.y0,y1));y=Math.max(y,o.y1)}put(y,y1)};
+   const cs=[...new Set([t0,t1,...ops.flatMap(o=>[o.t0,o.t1]).filter(t=>t>t0&&t<t1)])].sort((p,q)=>p-q);
+   for(let k=0;k<cs.length-1;k++)if(cs[k+1]-cs[k]>1e-4)layer(cs[k],cs[k+1],.002,.012);
+   if(f.f==='fluted')for(let s=t0+.05;s+.03<=t1;s+=.08)layer(s-.025,s+.025,.012,.024)});
   // skirting board along the inner face, except across a door
   const door=ops.find(o=>o.kind==='door'),runs=door?[[0,door.t0],[door.t1,e.l]]:[[0,e.l]];
   for(const [s0,s1] of runs)if(s1-s0>.02){const p0=at(s0),p1=at(s1),sk=prism([p0,p1,{x:p1.x-e.x*.012,y:p1.y-e.y*.012},{x:p0.x-e.x*.012,y:p0.y-e.y*.012}],0,.08,trimM);wg.parts.push(sk)}
@@ -229,10 +236,12 @@ export async function open(container,R){
  controls.enableDamping=true;controls.maxPolarAngle=Math.PI*.495;controls.minDistance=.1;controls.maxDistance=size*8;controls.zoomSpeed=1.4;controls.zoomToCursor=true;controls.screenSpacePanning=true;   // zoom goes where you pinch or point
  // Overview looks from the side opposite the door, so the door's wall stays solid; "from the door" stands just past the open leaf.
  const de=R.door?room.out[R.door.edge]:{x:0,y:-1,dx:1,dy:0};
+ // a room with a wall finish opens looking at that wall (from the opposite side), so the finish is in view
+ const fe=R.finishes&&R.finishes.length?room.out[R.finishes[0].edge]:null,ov=fe||de;   // same rule as for the door: the camera stands on the far side, so this wall stays solid
  function setView(v){if(v==='eye'&&R.door){const a=room.loop[R.door.edge],t=(R.door.t0+R.door.t1)/2*M+(R.door.t1-R.door.t0)*M*.35,inn=(R.door.t1-R.door.t0)*M+.35;
    camera.position.set(a.x+de.dx*t-de.x*inn,1.6,a.y+de.dy*t-de.y*inn);controls.target.set(cx,.9,cz)}
   else{const f=Math.max(1,.95/camera.aspect);   // tall phone screens: step back just enough for the room to fill the width
-   camera.position.set(cx+(-de.x*size*1.05+de.dx*size*.5)*f,room.H+size*.95*f,cz+(-de.y*size*1.05+de.dy*size*.5)*f);controls.target.set(cx,.3,cz)}
+   camera.position.set(cx+(-ov.x*size*1.05+ov.dx*size*.5)*f,room.H+size*.95*f,cz+(-ov.y*size*1.05+ov.dy*size*.5)*f);controls.target.set(cx,.3,cz)}
   controls.update();dirty=true}
  // walls between the camera and the room are cut down low, like a doll's house
  function fade(){const p=camera.position;room.walls.forEach(w=>{const f=(p.x-w.mx)*w.nx+(p.z-w.mz)*w.nz>.05;if(w.faded===f)return;w.faded=f;

@@ -61,6 +61,7 @@ body.typing .navbar{visibility:hidden}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.chip{text-align:left;line-height:1.25;padding:7px 11px}.chip small{display:block;opacity:.75;font-size:11px}.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .sg{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sg small{display:block;color:var(--mute)}.sg .tag{color:var(--warn)}
+.finres{margin:6px 0 0;font-size:15px}.finres small{display:block;color:var(--mute);font-size:12px}.finlab{display:block;font-size:12px;color:var(--mute);margin:8px 0 4px}#finbox{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
 .sgtools{display:grid;gap:8px;margin-bottom:6px}.sgtools .chips{margin:0}.sgtools .chip{padding:6px 12px;min-height:36px}.sgsub{margin:14px 0 2px;font-size:13px;font-weight:600;color:var(--mute)}
 .sg button{white-space:nowrap}.sgm{display:block}.szs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.szb{text-align:left;line-height:1.2;padding:6px 10px;min-height:44px}.szb small{display:block;color:var(--mute);font-size:11px}.szb.off{opacity:.6;border-style:dashed}.sg .addbtn{min-width:44px;min-height:44px;font-size:22px;line-height:1;padding:0}
 details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
@@ -139,10 +140,15 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 </div>
 <div class="col">
  <section class="card" id="layoutcard" data-step="2"><h2 id="layouth">Layout</h2><button id="v3d" class="corner" aria-label="3D view">3D</button><button id="fit" class="corner corner2" hidden>Fit</button>
+  <div id="finbar" class="doorbar" hidden><span>Tap the wall to finish</span><button id="fincancel">Cancel</button></div>
   <div id="doorbar" class="doorbar" hidden><span>Tap the wall where the door is</span><button id="doorskip">Skip</button></div>
   <svg id="plan" viewBox="0 0 600 500"></svg>
   <p id="probline" class="probline" hidden></p>
-  <div class="tools" id="plantools"><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
+  <div class="tools" id="plantools"><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><button id="finbtn">Wall finish</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
+  <div id="finbox" hidden><div id="finttl" style="font-weight:600;margin-bottom:6px"></div><div id="finchips" role="group" aria-label="Finishes"></div>
+   <div class="chips" id="fincov" role="group" aria-label="How much of the wall"></div>
+   <div class="row" id="finpart" hidden><div><label for="finfrom" id="finfroml">From the wall's start</label><input id="finfrom" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="finto" id="fintol">To</label><input id="finto" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
+   <div id="finres" class="finres"></div><div class="tools"><button id="findone" class="primary">Done</button><button id="finrm">Remove finish</button></div></div>
   <div id="sizebox" hidden><div id="sizettl" style="font-weight:600;margin-bottom:6px"></div><div id="sizechips" class="chips" role="group" aria-label="Sizes"></div>
    <div class="row3"><div><label for="szw" id="szwl">Width</label><input id="szw" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szd" id="szdl">Depth</label><input id="szd" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szh" id="szhl">Height</label><input id="szh" type="text" inputmode="decimal" autocomplete="off"></div></div>
    <div id="sizehint" class="hint"></div></div>
@@ -233,9 +239,9 @@ const sizeKey=it=>it.size?`${it.size.w}x${it.size.d}x${it.size.h||''}`:'';
 
 // A visit has several rooms. The active room's fields live on S; the others are stored in S.rooms.
 const ROOM_TYPES={living:'Living room',bedroom:'Bedroom',dining:'Dining room',office:'Home office',kids:"Kids' room",other:'Other'};
-const RF=['name','type','rw','rl','dwall','dw','doff','dh','items','cuts','obs','rh','mode','walls','shape','sketch','doorSet'];
-const normRoom=r=>{r.doorSet=!!r.doorSet;r.mode=r.mode||'rect';r.walls=r.walls||[];r.shape=r.shape||(r.mode==='walls'&&r.walls.length?'free':'rect');r.sketch=r.sketch||null;r.cuts=r.cuts||[];r.obs=r.obs||[];r.rh=r.rh||260;return r};
-function fixRoom(){S.cuts=S.cuts||[];S.obs=S.obs||[];S.rh=S.rh||260;S.mode=S.mode||'rect';S.walls=S.walls||[];S.shape=S.shape||'rect';
+const RF=['name','type','rw','rl','dwall','dw','doff','dh','items','cuts','obs','rh','mode','walls','shape','sketch','doorSet','finishes'];
+const normRoom=r=>{r.doorSet=!!r.doorSet;r.finishes=r.finishes||[];r.mode=r.mode||'rect';r.walls=r.walls||[];r.shape=r.shape||(r.mode==='walls'&&r.walls.length?'free':'rect');r.sketch=r.sketch||null;r.cuts=r.cuts||[];r.obs=r.obs||[];r.rh=r.rh||260;return r};
+function fixRoom(){S.finishes=S.finishes||[];S.cuts=S.cuts||[];S.obs=S.obs||[];S.rh=S.rh||260;S.mode=S.mode||'rect';S.walls=S.walls||[];S.shape=S.shape||'rect';
  const def=shapeDef(S.shape);if(S.mode==='walls'&&def&&S.walls.length!==def.turns.length)S.walls=wallsFor(def);
  recomputeShape()}
 const clone=o=>JSON.parse(JSON.stringify(o));
@@ -561,6 +567,8 @@ function drawPlan(sel,print){
  else h=`<rect x="0" y="0" width="${W}" height="${L}" fill="var(--room)"/><rect x="${-sw/2}" y="${-sw/2}" width="${W+sw}" height="${L+sw}" fill="none" stroke="var(--ink)" stroke-width="${sw}"/>`;
  h+=`<rect x="${dz.x0}" y="${dz.y0}" width="${dz.x1-dz.x0}" height="${dz.y1-dz.y0}" fill="var(--accent)" opacity=".12"/>`;
  const ds=wallSpan(S.dwall,S.doff,S.dw,S.dw),dl=ds?ds.line:[0,0,0,0];
+ (S.finishes||[]).forEach(f=>{const c=finCat(f.k),R=finRegion(f),sp=c&&R.b>R.a&&wallSpan(f.wall,R.a,R.b-R.a,0);if(!sp)return;const l=sp.line,o=u*4.5,on=f.id===finSel;
+  h+=`<line x1="${l[0]+sp.n.x*o}" y1="${l[1]+sp.n.y*o}" x2="${l[2]+sp.n.x*o}" y2="${l[3]+sp.n.y*o}" stroke="${c.col}" stroke-width="${u*(on?8:6)}" stroke-opacity=".95" stroke-linecap="butt"${f.half?` stroke-dasharray="${u*8} ${u*3}"`:''}/>`});
  h+=`<line x1="${dl[0]}" y1="${dl[1]}" x2="${dl[2]}" y2="${dl[3]}" stroke="var(--accent)" stroke-width="${u*4}"/>`;
  h+=`<defs><pattern id="hatch" width="${u*8}" height="${u*8}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${u*8}" stroke="var(--mute)" stroke-width="${u*1.2}" stroke-opacity=".55"/></pattern></defs>`;
  S.cuts.forEach(c=>{h+=`<rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.d}" fill="var(--card)"/><rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.d}" fill="url(#hatch)" stroke="var(--ink)" stroke-width="${sw}"/>`});
@@ -738,7 +746,8 @@ function render(){
  const has=S.items.some(i=>i.id===S.sel);['rot','sizebtn','del','wall'].forEach(id=>$(id).hidden=!has);$('movedoor').hidden=has||doorAsk();
  $('sizebtn').setAttribute('aria-expanded',String(has&&sizeOpen));$('sizebtn').classList.toggle('on',has&&sizeOpen);
  const pr=problems();$('probline').hidden=!pr.length;$('probline').textContent=pr.length?pr[0][1]+(pr.length>1?` (+${pr.length-1} more)`:''):'';
- const asking=doorAsk();document.body.classList.toggle('doormode',asking);$('doorbar').hidden=!asking;$('doorskip').textContent=S.doorSet?'Cancel':'Skip';
+ if(S.sel!=null)finSel=null;if(S.step!==2)finPick=false;$('finbar').hidden=!finPick;$('finbtn').hidden=has||finPick||(S.mode==='walls'&&!S.closed);
+ const asking=doorAsk()&&!finPick;document.body.classList.toggle('doormode',asking||finPick);$('doorbar').hidden=!asking;$('doorskip').textContent=S.doorSet?'Cancel':'Skip';
  $('showcl').checked=!!S.showCl;
  const us=usage(),free=us.free;
  $('space').innerHTML=`<table><tr><td>Room floor${S.cuts.length?' (without cut-outs)':''}</td><td class="n">${UA(us.room)}</td></tr>${us.fixed?`<tr><td>Fixed features (columns, radiators...)</td><td class="n">${UA(us.fixed)}</td></tr>`:''}<tr><td>Furniture footprint</td><td class="n">${UA(us.used)} (${us.room?Math.round(us.used/us.room*100):0}%)</td></tr><tr><th>Free floor space</th><th class="n">${UA(free)}</th></tr></table>${us.overlap?'<div class="hint">Some pieces overlap each other or a fixed feature, so these figures are approximate.</div>':''}`;
@@ -752,19 +761,19 @@ function render(){
    lines.push({i,name:S.name,n:b.count,t:b.total,open:S.mode==='walls'&&!S.closed});return b.html};return i===S.cur?run():withRoom(r,run)}).join('');
  // quote screen: one big total and one line per room (tap a line to open that room)
  $('qtotal').textContent=grand.t.toLocaleString();$('qnote').textContent=usingSample?'Sample prices: IKEA UK, in £':'';
- $('qrooms').innerHTML=lines.map(x=>`<button class="qroom" data-qr="${x.i}"><span>${esc(x.name||'Room')}<small>${x.open?'not measured yet':`${x.n} piece${x.n===1?'':'s'}`}</small></span><b>${x.t.toLocaleString()}</b></button>`).join('');
+ $('qrooms').innerHTML=lines.map(x=>`<button class="qroom" data-qr="${x.i}"><span>${esc(x.name||'Room')}<small>${x.open?'not measured yet':`${x.n} item${x.n===1?'':'s'}`}</small></span><b>${x.t.toLocaleString()}</b></button>`).join('');
  $('qtable').innerHTML=parts+`<table style="margin-top:8px"><tr><th>Visit total (${S.rooms.length} room${S.rooms.length>1?'s':''})</th><th class="n">${grand.t.toLocaleString()}</th></tr></table>`;
  $('showq').disabled=$('copyq').disabled=!grand.n;if(!$('quote').hidden){$('quote').hidden=true;$('showq').textContent='Show full quote'}
- renderRooms();renderTypes();applyStep();renderSizebox();
+ renderRooms();renderTypes();applyStep();renderSizebox();renderFinbox();
  save();scheduleSugg();
 }
 
 // One room's quote block (for the room currently loaded in S). print=true adds the plan and fit notes.
 function roomBlock(print){
  const W=+S.rw||1,L=+S.rl||1,m=40,us=usage(),free=us.free;
- const g=groupItems();
- const rows=g.map(({c,q})=>`<tr><td>${esc(c.n)}${c.sized?`<br><small style="color:var(--mute)">${esc(c.sized)}, ${UUU(c.w,c.d,c.h)}, price to confirm</small>`:''}</td><td class="n">${q}</td><td class="n">${(c.p*q).toLocaleString()}</td></tr>`).join('');
- const total=g.reduce((s,{c,q})=>s+c.p*q,0);
+ const g=groupItems(),fins=(S.finishes||[]).map(f=>({f,r:finCalc(f)})).filter(x=>x.r&&x.r.q);
+ const rows=fins.map(({f,r})=>`<tr><td>${esc(wallName(f.wall))}: ${esc(r.c.n)}${f.part||f.half?`<br><small style="color:var(--mute)">${f.part?`${U(r.R.b-r.R.a)} of the wall`:'whole wall'}${f.half?', half height':''}</small>`:''}</td><td class="n">${r.q} ${r.unit}</td><td class="n">${r.cost.toLocaleString()}</td></tr>`).join('')+g.map(({c,q})=>`<tr><td>${esc(c.n)}${c.sized?`<br><small style="color:var(--mute)">${esc(c.sized)}, ${UUU(c.w,c.d,c.h)}, price to confirm</small>`:''}</td><td class="n">${q}</td><td class="n">${(c.p*q).toLocaleString()}</td></tr>`).join('');
+ const total=g.reduce((s,{c,q})=>s+c.p*q,0)+fins.reduce((s,{r})=>s+r.cost,0);
  const open=S.mode==='walls'&&!S.closed;
  let h=`<h3 style="margin:14px 0 4px">${esc(S.name)} <span style="font-weight:400;color:var(--mute)">${ROOM_TYPES[S.type]||''} &middot; ${open?'not measured':`${UU(W,L)} &middot; door ${UU(S.dw,S.dh)} &middot; ceiling ${U(S.rh)} &middot; free floor ${UA(free)}`}</span></h3>`;
  h+=rows?`<table><tr><th>Item</th><th class="n">Qty</th><th class="n">Price</th></tr>${rows}<tr><th>Room total</th><th></th><th class="n">${total.toLocaleString()}</th></tr></table>`:'<div class="hint">No items in this room yet.</div>';
@@ -772,7 +781,7 @@ function roomBlock(print){
  if(print){const ft=[...S.cuts.map(c=>`Cut-out ${UU(c.w,c.d)}`),...S.obs.map(o=>{const k=OBS[o.kind];return !k?'':k.wall?`Window ${U(o.w)} wide, sill ${U(o.sill)} (${S.mode==='walls'?'wall '+((+o.wall)+1):WALLS[o.wall]+' wall'})`:`${k.label} ${UU(o.w,o.d)}${o.kind==='low'?`, max height ${U(o.h)}`:''}`})].filter(Boolean);
   if(ft.length)h+=`<p style="font-size:13px">Room features: ${ft.map(esc).join('; ')}.</p>`}
  if(print)h+=`<svg viewBox="${-m} ${-m} ${W+2*m} ${L+2*m}" style="max-width:480px;page-break-inside:avoid">${drawPlan(null,true)}</svg><ul>${check().filter(([t])=>t!=='ok').map(([t,mm])=>`<li>${mm}</li>`).join('')||'<li>All pieces fit and clearances are respected.</li>'}</ul>`;
- return{html:h,total,count:S.items.length}}
+ return{html:h,total,count:S.items.length+fins.length}}
 // Pieces of the current room grouped by product and size: [{c (spec), q}].
 function groupItems(){const m=new Map();S.items.forEach(it=>{const key=it.k+'|'+sizeKey(it);if(!m.has(key))m.set(key,{c:spec(it),q:0});m.get(key).q++});return[...m.values()]}
 function buildQuote(){stash();let body='',grand=0;
@@ -1023,11 +1032,12 @@ function roomModel(){
  const door=opening(S.dwall,+S.doff,+S.dw,0,Math.min(+S.dh||205,H-5),'door');
  // A window's height is not measured: it is drawn from the sill to 210 cm (at least 60 cm tall, and 25 cm below the ceiling).
  const wins=windows().map(o=>opening(o.wall,+o.off,+o.w,+o.sill||0,Math.min(H-25,Math.max((+o.sill||0)+60,210)),'window')).filter(Boolean);
- return{H,loop,door,openings:[door,...wins].filter(Boolean),cuts:S.cuts.map(c=>({x:c.x,y:c.y,w:c.w,d:c.d})),
+ const finishes=(S.finishes||[]).map(f=>{const c=finCat(f.k),R=finRegion(f),o=c&&R.b>R.a&&opening(f.wall,R.a,R.b-R.a,R.h0,R.h1,'finish');return o&&{...o,col:c.col,f:c.f}}).filter(Boolean);
+ return{H,loop,door,finishes,openings:[door,...wins].filter(Boolean),cuts:S.cuts.map(c=>({x:c.x,y:c.y,w:c.w,d:c.d})),
   obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
   items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:c.m||''}})}}
 // Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
-const V3D='2026-10-24a';
+const V3D='2026-10-26b';
 let view3d=null,v3dTimer=0;
 async function open3d(){
  if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
@@ -1099,6 +1109,7 @@ function quoteText(){stash();const who=[S.client&&`for ${S.client}`,S.rep&&`by $
  const L=[`Quote${who?' '+who:''}, ${new Date().toLocaleDateString()}`,''];let grand=0;
  S.rooms.forEach((r,i)=>{const run=()=>{const tl=ROOM_TYPES[S.type];L.push(`${S.name}${S.name===tl||S.type==='other'?'':` (${tl})`}, ${S.closed?UU(S.rw,S.rl):'not measured'}, ceiling ${U(S.rh)}`);
   let t=0;
+  (S.finishes||[]).forEach(f=>{const r=finCalc(f);if(r&&r.q){L.push(`  ${wallName(f.wall)}: ${r.q} ${r.unit} ${r.c.n}${f.part?` (${U(r.R.b-r.R.a)} of the wall${f.half?', half height':''})`:f.half?' (half height)':''}: ${r.cost.toLocaleString()}`);t+=r.cost}});
   groupItems().forEach(({c,q})=>{L.push(`  ${q} x ${c.n}${c.sized?` (${c.sized}, ${UUU(c.w,c.d,c.h)}, price to confirm)`:''}: ${(c.p*q).toLocaleString()}`);t+=c.p*q});
   L.push(`  Room total: ${t.toLocaleString()}`,'');grand+=t};
   i===S.cur?run():withRoom(r,run)});
@@ -1124,7 +1135,7 @@ $('wall').onclick=()=>{const i=S.items.findIndex(x=>x.id===S.sel);if(i<0)return;
 $('showcl').onchange=e=>{S.showCl=e.target.checked;render()};
 $('px').oninput=e=>{const it=S.items.find(i=>i.id===S.sel),cm=parseLen(e.target.value);e.target.classList.toggle('bad',e.target.value.trim()!==''&&!isFinite(cm));if(it&&isFinite(cm)){it.x=cm+dims(it).w/2;render()}};
 $('py').oninput=e=>{const it=S.items.find(i=>i.id===S.sel),cm=parseLen(e.target.value);e.target.classList.toggle('bad',e.target.value.trim()!==''&&!isFinite(cm));if(it&&isFinite(cm)){it.y=cm+dims(it).d/2;render()}};
-$('reset').onclick=async()=>{if(await ask('Start a new visit? All rooms and layouts are cleared.','Start new visit')){S.rooms=[];S.cur=0;Object.assign(S,{name:'Living room',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,client:'',rep:'',doorSet:false,step:1});showShapes=false;fixRoom();stash();load();renderCat();render();window.scrollTo(0,0)}};
+$('reset').onclick=async()=>{if(await ask('Start a new visit? All rooms and layouts are cleared.','Start new visit')){S.rooms=[];S.cur=0;Object.assign(S,{name:'Living room',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,client:'',rep:'',doorSet:false,step:1,finishes:[]});showShapes=false;fixRoom();stash();load();renderCat();render();window.scrollTo(0,0)}};
 
 // drag with wall snapping
 let drag=null;
@@ -1136,6 +1147,57 @@ function placeDoorAt(p){
   if(!best)return;const g=S.wallGeo[best.i];S.dwall=String(best.i);S.doff=Math.round(Math.max(0,Math.min(g.len-S.dw,best.t-S.dw/2)))}
  else{const W=+S.rw,L=+S.rl,c=[['N',p.y,p.x,W],['S',L-p.y,p.x,W],['W',p.x,p.y,L],['E',W-p.x,p.y,L]].sort((a,b)=>a[1]-b[1])[0];S.dwall=c[0];S.doff=Math.round(Math.max(0,Math.min(c[3]-S.dw,c[2]-S.dw/2)))}
  $('dwall').value=S.dwall;$('doff').value=U(S.doff,true);render()}
+// ---- Wall finishes: panels, wallpaper and paint on a whole wall or part of it ----
+// Sample finishes: typical sizes; prices are placeholders, not from a supplier. A finish sits on a straight wall (ref as for doors),
+// optionally on part of it (from/to along the wall, measured like the door offset) and optionally at half height (to 120 cm).
+const FINISHES=[
+ {k:'WP-FL-OAK',n:'Fluted panel, oak look',u:'panel',w:16,h:280,p:18,col:'#b98a5e',f:'fluted'},
+ {k:'WP-FL-BLK',n:'Fluted panel, black',u:'panel',w:16,h:280,p:18,col:'#34302d',f:'fluted'},
+ {k:'WP-3D-WHT',n:'3D wave panel, white',u:'panel',w:50,h:50,p:6,col:'#ece9e2',f:'panel'},
+ {k:'WPP-LIN',n:'Wallpaper, linen look',u:'roll',w:53,h:1005,rep:0,p:25,col:'#d6cbb9',f:'paper'},
+ {k:'WPP-LEAF',n:'Wallpaper, leaf pattern',u:'roll',w:53,h:1005,rep:53,p:35,col:'#8da489',f:'paper'},
+ {k:'PT-WHT',n:'Paint, matt white',u:'tin',l:2.5,cov:12,coats:2,p:22,col:'#f3f1ec',f:'paint'},
+ {k:'PT-SAGE',n:'Paint, sage green',u:'tin',l:2.5,cov:12,coats:2,p:24,col:'#9fb197',f:'paint'}];
+const FKIND={panel:'Panels',roll:'Wallpaper',tin:'Paint'};
+const finCat=k=>FINISHES.find(f=>f.k===k);
+let finPick=false,finSel=null;
+function wallLen(ref){if(S.mode==='walls'){const g=S.wallGeo[+ref];return g&&!g.curve?g.len:0}return({N:+S.rw,S:+S.rw,E:+S.rl,W:+S.rl})[ref]||0}
+const wallName=ref=>S.mode==='walls'?`Wall ${+ref+1}`:`${WALLS[ref][0].toUpperCase()+WALLS[ref].slice(1)} wall`;
+const winTop=o=>Math.min((+S.rh||260)-25,Math.max((+o.sill||0)+60,210));   // windows have no measured height (as in 3D)
+function finRegion(f){const len=wallLen(f.wall),a=f.part?Math.max(0,Math.min(len,+f.from||0)):0,b=f.part?Math.max(a,Math.min(len,+f.to||0)):len;
+ return{a,b,h0:0,h1:f.half?Math.min(120,+S.rh||260):+S.rh||260,len}}
+function finOpenings(ref){const o=[];if(String(S.dwall)===String(ref))o.push([+S.doff,+S.doff+(+S.dw),0,+S.dh]);
+ windows().forEach(w=>{if(String(w.wall)===String(ref))o.push([+w.off,+w.off+(+w.w),+w.sill||0,winTop(w)])});return o}
+// Quantity: panels = area to cover (door and windows taken off) / panel area + 10% for cuts; wallpaper = strips across the
+// width, how many strips (wall height + pattern repeat) one roll gives; paint = area x coats / coverage, in whole tins.
+function finCalc(f){const c=finCat(f.k);if(!c)return null;const R=finRegion(f),wd=R.b-R.a,ht=R.h1-R.h0;
+ const cut=finOpenings(f.wall).reduce((s,[x0,x1,y0,y1])=>s+Math.max(0,Math.min(x1,R.b)-Math.max(x0,R.a))*Math.max(0,Math.min(y1,R.h1)-Math.max(y0,R.h0)),0),net=Math.max(0,wd*ht-cut);
+ let q,unit,how;
+ if(c.u==='panel'){q=Math.ceil(net/(c.w*c.h)*1.1);unit=q===1?'panel':'panels';how=`${UA(net)} to cover (door and windows taken off), plus 10% for cuts`}
+ else if(c.u==='roll'){const drops=Math.ceil(wd/c.w),per=Math.max(1,Math.floor(c.h/(ht+(c.rep||0))));q=Math.ceil(drops/per);unit=q===1?'roll':'rolls';how=`${drops} strips of ${U(ht)}${c.rep?' plus the pattern repeat':''}, ${per} from each roll`}
+ else{q=Math.ceil(net/10000*c.coats/c.cov/c.l);unit=q===1?'tin':'tins';how=`${UA(net)}, ${c.coats} coats, ${c.cov} m² per litre, ${c.l} L tins`}
+ if(!wd||!ht)q=0;return{c,q,unit,how,cost:q*c.p,net,R}}
+function nearestWall(p){if(S.mode==='walls'){let best=null;S.wallGeo.forEach((g,i)=>{if(g.curve)return;const t=Math.max(0,Math.min(g.len,(p.x-g.a.x)*g.dx+(p.y-g.a.y)*g.dy)),d=Math.hypot(p.x-g.a.x-g.dx*t,p.y-g.a.y-g.dy*t);if(!best||d<best.d)best={ref:String(i),d}});return best&&best.ref}
+ const W=+S.rw,L=+S.rl;return[['N',p.y],['S',L-p.y],['W',p.x],['E',W-p.x]].sort((a,b)=>a[1]-b[1])[0][0]}
+function openFinish(ref){if(ref==null)return;let f=S.finishes.find(x=>String(x.wall)===String(ref));
+ if(!f){f={id:S.next++,wall:String(ref),k:FINISHES[0].k,part:false,from:0,to:Math.round(wallLen(ref)),half:false};S.finishes.push(f)}
+ finSel=f.id;S.sel=null;render()}
+function renderFinbox(){const f=S.step===2&&S.finishes.find(x=>x.id===finSel),box=$('finbox');box.hidden=!f;if(!f)return;const r=finCalc(f),len=wallLen(f.wall);
+ $('finttl').textContent=`${wallName(f.wall)} · ${U(len)}`;
+ $('finchips').innerHTML=Object.entries(FKIND).map(([u,lab])=>`<span class="finlab">${lab}</span><div class="chips" style="margin:0">${FINISHES.filter(c=>c.u===u).map(c=>`<button class="chip${f.k===c.k?' on':''}" data-fk="${c.k}"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${c.col};border:1px solid var(--line);margin-right:6px"></span>${esc(c.n)}<small>${c.u==='tin'?`${c.l} L tin`:c.u==='roll'?`${U(c.w)} roll, ${c.h/100} m`:UU(c.w,c.h)} &middot; ${c.p.toLocaleString()}</small></button>`).join('')}</div>`).join('');
+ $('fincov').innerHTML=`<button class="chip${f.part?'':' on'}" data-cov="whole">Whole wall</button><button class="chip${f.part?' on':''}" data-cov="part">Part of the wall</button><button class="chip${f.half?'':' on'}" data-cov="full">Full height</button><button class="chip${f.half?' on':''}" data-cov="half">Half height (120 cm)</button>`;
+ $('finpart').hidden=!f.part;['finfrom','finto'].forEach((id,ix)=>{const el=$(id);if(document.activeElement!==el){el.value=U(ix?f.to:f.from,true);el.classList.remove('bad')}});
+ $('finres').innerHTML=r&&r.q?`<b>${r.q} ${r.unit} &middot; ${r.cost.toLocaleString()}</b><small>${esc(r.how)}</small>`:'<small>Nothing to cover on this part of the wall.</small>'}
+$('finbtn').onclick=()=>{finPick=true;S.sel=null;render()};
+$('fincancel').onclick=()=>{finPick=false;render()};
+$('finchips').onclick=e=>{const b=e.target.closest('[data-fk]'),f=b&&S.finishes.find(x=>x.id===finSel);if(f){f.k=b.dataset.fk;render()}};
+$('fincov').onclick=e=>{const b=e.target.closest('[data-cov]'),f=b&&S.finishes.find(x=>x.id===finSel);if(!f)return;const v=b.dataset.cov;
+ if(v==='whole')f.part=false;else if(v==='part'){f.part=true;if(!(f.to>f.from)){f.from=0;f.to=Math.round(wallLen(f.wall))}}else f.half=v==='half';render()};
+['finfrom','finto'].forEach((id,ix)=>{const el=$(id);el.oninput=()=>{const f=S.finishes.find(x=>x.id===finSel),cm=parseLen(el.value);el.classList.toggle('bad',el.value.trim()!==''&&!isFinite(cm));if(!f||!isFinite(cm))return;f[ix?'to':'from']=Math.round(cm*10)/10;render()};
+ el.addEventListener('change',()=>{const f=S.finishes.find(x=>x.id===finSel);if(f){el.value=U(ix?f.to:f.from,true);el.classList.remove('bad')}})});
+$('findone').onclick=()=>{finSel=null;render()};
+$('finrm').onclick=()=>{S.finishes=S.finishes.filter(x=>x.id!==finSel);finSel=null;render()};
+
 // ---- Zooming the plan: pinch (two fingers) or the mouse wheel; one finger on empty floor moves a zoomed plan; Fit shows it all. ----
 // pv is the visible part of the plan in cm (z = zoom, 1 = whole room). It resets when the room or its size changes.
 let pv={z:1,x:0,y:0,key:''},pinch=null,pan=null;const ptrs=new Map();
@@ -1156,6 +1218,7 @@ $('plan').addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,{x:e.clientX,y
  if(ptrs.size===2&&S.step===2){const [a,b]=[...ptrs.values()],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;drag=null;pan=null;   // a second finger: pinch instead of drag
   pinch={d0:Math.hypot(a.x-b.x,a.y-b.y)||1,z0:pv.z,P:pt({clientX:mx,clientY:my})};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}return}
  if(ptrs.size>2||pinch)return;
+ if(finPick&&S.step===2){finPick=false;openFinish(nearestWall(pt(e)));return}   // picking the wall for a finish
  const g=e.target.closest('[data-id]'),og=!g&&e.target.closest('[data-ob]');
  if(doorAsk()&&!g&&!og){S.doorSet=true;moveDoor=false;placeDoorAt(pt(e));return}   // a tap on a piece still selects it
  if(og){const o=S.obs.find(x=>x.id==og.dataset.ob);if(o){const p=pt(e);drag={ob:o,dx:p.x-o.x,dy:p.y-o.y};S.sel=null;try{$('plan').setPointerCapture(e.pointerId)}catch(_){}render()}return}
