@@ -61,6 +61,7 @@ body.typing .navbar{visibility:hidden}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.chip{text-align:left;line-height:1.25;padding:7px 11px}.chip small{display:block;opacity:.75;font-size:11px}.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .sg{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
 .sg small{display:block;color:var(--mute)}.sg .tag{color:var(--warn)}
+.sgtools{display:grid;gap:8px;margin-bottom:6px}.sgtools .chips{margin:0}.sgtools .chip{padding:6px 12px;min-height:36px}.sgsub{margin:14px 0 2px;font-size:13px;font-weight:600;color:var(--mute)}
 .sg button{white-space:nowrap}.sgm{display:block}.szs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.szb{text-align:left;line-height:1.2;padding:6px 10px;min-height:44px}.szb small{display:block;color:var(--mute);font-size:11px}.szb.off{opacity:.6;border-style:dashed}.sg .addbtn{min-width:44px;min-height:44px;font-size:22px;line-height:1;padding:0}
 details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 #quote{margin-top:14px;padding-top:6px;border-top:1px solid var(--line)}
@@ -151,7 +152,9 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
   <div id="selbox" hidden style="margin-top:10px"><div id="selinfo" class="hint" style="font-size:14px;color:var(--ink);margin:0 0 8px"></div>
    <div class="row"><div><label id="pxl">Gap from left wall</label><input id="px" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label id="pyl">Gap from top wall</label><input id="py" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div></div>
  </section>
- <section class="card" data-step="2"><h2 id="sgh">Fits here</h2><div id="sugg" class="hint">Calculating...</div></section>
+ <section class="card" data-step="2"><h2 id="sgh">Furniture</h2>
+  <div class="sgtools"><div class="chips" id="sgcats" role="group" aria-label="Filter furniture"></div><input id="sgq" type="search" placeholder="Search furniture" autocomplete="off" aria-label="Search furniture"></div>
+  <div id="sugg" class="hint">Calculating...</div></section>
  <section class="card adv" data-step="2"><h2>Fit check</h2><div id="issues"></div></section>
  <section class="card" data-step="3">
   <div class="qbig"><small>Total</small><b id="qtotal">0</b><small id="qnote"></small></div>
@@ -587,7 +590,8 @@ function drawPlan(sel,print){
   h+=`<text x="${it.x}" y="${it.y-(lines.length-1)*f1*.55+f1*.3}" text-anchor="middle" font-size="${f1}" font-weight="600" fill="var(--ink)" ${halo} pointer-events="none">${lines.map((l,i)=>`<tspan x="${it.x}" dy="${i?f1*1.1:0}">${esc(l)}</tspan>`).join('')}</text>`;
   if(on)h+=`<text x="${it.x}" y="${it.y+lines.length*f1*.55+f1*.55}" text-anchor="middle" font-size="${f1*.8}" fill="var(--ink)" ${halo} pointer-events="none">${UU(bw,bh)}</text>`;
   h+='</g>';
-  if(on){const g=gaps(it),dim=(x1,y1,x2,y2,v)=>{if(v<.5)return '';const tx=(x1+x2)/2,ty=(y1+y2)/2,hz=y1===y2;
+  if(on){const g=gaps(it),dim=(x1,y1,x2,y2,v)=>{if(v<12)return '';   // gaps under 12 cm are not labelled (they crowd small pieces)
+   const tx=(x1+x2)/2,ty=(y1+y2)/2,hz=y1===y2;
     return `<g stroke="var(--ink)" stroke-width="${sw*.7}"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`+
      (hz?`<line x1="${x1}" y1="${y1-u*4}" x2="${x1}" y2="${y1+u*4}"/><line x1="${x2}" y1="${y2-u*4}" x2="${x2}" y2="${y2+u*4}"/>`:`<line x1="${x1-u*4}" y1="${y1}" x2="${x1+u*4}" y2="${y1}"/><line x1="${x2-u*4}" y1="${y2}" x2="${x2+u*4}" y2="${y2}"/>`)+
      `</g><text x="${hz?tx:tx+u*7}" y="${hz?ty-u*6:ty+fs*.35}" text-anchor="${hz?'middle':'start'}" font-size="${fs}" font-weight="600" fill="var(--ink)" ${halo} pointer-events="none">${U(v)}</text>`};
@@ -678,9 +682,9 @@ function mainPiece(c){const is=c=>{const t=typeOf(c),n=c.n.toLowerCase();return 
  return is(c)&&!S.items.some(it=>is(spec(it)))?1:0}
 function renderSugg(){
  const W=+S.rw,L=+S.rl,box=$('sugg');
- if(S.mode==='walls'&&!S.closed){suggList=[];box.className='hint';box.textContent='Measure the room first.';return}
+ if(S.mode==='walls'&&!S.closed){suggList=[];suggData=null;box.className='hint';box.textContent='Measure the room first.';return}
  if(W<1||L<1){box.textContent='Enter the room size to see suggestions.';return}
- if(W>3000||L>3000){suggList=[];box.className='hint';box.textContent='This room is over 30 m long. Check the size and its unit.';return}
+ if(W>3000||L>3000){suggList=[];suggData=null;box.className='hint';box.textContent='This room is over 30 m long. Check the size and its unit.';return}
  const fr=freeRect(),free=usage().free;suggList=[];const no=[];
  products().forEach(c=>{
   const spot=c.w*c.d<=free&&findSpot(c,c.cl);
@@ -690,7 +694,16 @@ function renderSugg(){
   if(alt){suggList.push(alt);return}
   no.push([c,c.w*c.d>free?'Too big for the free floor space.':findSpot(c,0)?`Fits the floor, but not with its ${U(c.cl)} front clearance.`:'Too big for the space that is left.'])});
  suggList.forEach(x=>{x.suit=suits(x.c);x.key=mainPiece(x.c)});
- suggList.sort((a,b)=>(b.suit-a.suit)||(b.key-a.key)||(b.c.w*b.c.d-a.c.w*a.c.d));   // a steady order: an added piece stays where it was
+ suggList.sort((a,b)=>(b.key-a.key)||(b.suit-a.suit)||(b.c.w*b.c.d-a.c.w*a.c.d));   // a steady order: an added piece stays where it was
+ suggData={fr,free,no};paintSugg()}
+// Every piece can go in any room: the room's usual pieces come first, everything else follows in the same list,
+// and pieces that need more space are listed last (adding one shows it red). Filters and search only change what is shown.
+let suggData=null,suggCat='all',suggQ='';
+const CATS=[['all','All'],['seat','Seating'],['bed','Beds'],['table','Tables'],['storage','Storage']];
+const catOf=c=>{const t=typeOf(c);return t==='sofa'||t==='chair'?'seat':t==='bed'?'bed':t==='table'||t==='side'?'table':'storage'};
+function paintSugg(){const box=$('sugg');$('sgcats').innerHTML=CATS.map(([k,v])=>`<button class="chip${suggCat===k?' on':''}" data-cat="${k}">${v}</button>`).join('');
+ if(!suggData)return;const {fr,free,no}=suggData;
+ const show=list=>list.some(c=>(suggCat==='all'||catOf(c)===suggCat)&&(!suggQ||`${c.n} ${c.z||''} ${c.k}`.toLowerCase().includes(suggQ)));
  let h=`<div class="hint adv" style="margin:0 0 6px">Largest free area: <b>${UU(fr.w,fr.d)}</b> (clearances not included). Suggestions respect clearances, the door swing and other pieces, and show pieces suited to this room type first.</div>`;
  // One row per product. A product with several sizes gets one button per size, so the rep picks the size and can add
  // as many as they like. Sizes that do not fit well are still offered (dimmed): adding one shows it red on the plan.
@@ -700,12 +713,13 @@ function renderSugg(){
  const row=(x,i)=>{const list=sizesOf(x.from||x.c);
   if(list.length>1)return `<div class="sg sgm" data-i="${i}"><b>${esc(groupTitle(list))}</b><div class="szs">${list.map(s=>sizeBtn(s,i)).join('')}</div></div>`;
   return `<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b><small>${UU(x.c.w,x.c.d)} &middot; ${x.c.p.toLocaleString()}${x.door?'':' <span class="tag adv">&middot; check door access</span>'}</small></div><button data-add="${i}" class="addbtn" aria-label="Add ${esc(x.c.n)}">+</button></div>`};
- const mine=suggList.map((x,i)=>x.suit?row(x,i):'').join(''),other=suggList.map((x,i)=>x.suit?'':row(x,i)).join(''),nOther=suggList.filter(x=>!x.suit).length;
- h+=mine||`<div class="hint">Nothing for a ${ROOM_TYPES[S.type].toLowerCase()} fits the space that is left.</div>`;
- if(nOther)h+=`<details><summary>Also fits, usually for other rooms (${nOther})</summary>${other}</details>`;
- if(no.length)h+=`<details><summary>Tight fit: needs more space (${no.length})</summary>${no.map(([c,r])=>{const list=sizesOf(c);return `<div class="sg${list.length>1?' sgm':''}"><div><b>${esc(list.length>1?groupTitle(list):c.n)}</b><small>${r}</small></div>${list.length>1?`<div class="szs">${list.map(s=>sizeBtn(s,-1)).join('')}</div>`:`<button data-addk="${esc(c.k)}" class="addbtn" aria-label="Add ${esc(c.n)}">+</button>`}</div>`}).join('')}</details>`;
+ const rows=suggList.map((x,i)=>show(sizesOf(x.from||x.c))?row(x,i):'').join(''),tight=no.filter(([c])=>show(sizesOf(c)));
+ h+=rows||(tight.length?'':`<div class="hint">${suggQ||suggCat!=='all'?'Nothing matches.':'Nothing fits the space that is left.'}</div>`);
+ if(tight.length)h+=`<div class="sgsub">Needs more space (${tight.length})</div><div class="sgtight">${tight.map(([c,r])=>{const list=sizesOf(c);return `<div class="sg${list.length>1?' sgm':''}"><div><b>${esc(list.length>1?groupTitle(list):c.n)}</b><small>${r}</small></div>${list.length>1?`<div class="szs">${list.map(s=>sizeBtn(s,-1)).join('')}</div>`:`<button data-addk="${esc(c.k)}" class="addbtn" aria-label="Add ${esc(c.n)}">+</button>`}</div>`}).join('')}</div>`;
  box.className='';box.innerHTML=h}
 // The list refreshes 120 ms after a change, so the spot is worked out again on the tap (the room may have just changed).
+$('sgcats').onclick=e=>{const b=e.target.closest('[data-cat]');if(!b)return;suggCat=b.dataset.cat;paintSugg()};
+$('sgq').oninput=e=>{suggQ=e.target.value.trim().toLowerCase();paintSugg()};
 $('sugg').onclick=e=>{const b=e.target.closest('[data-add],[data-addk]');if(!b)return;const x=b.dataset.addk?{c:cat(b.dataset.addk)}:suggList[+b.dataset.add];if(!x||!x.c)return;
  if(S.mode==='walls'&&!S.closed)return;const c=x.c,sp=pairSpot(c)||findSpot(c,c.cl)||findSpot(c,0);   // no spot: the middle of the room, shown red
  ghost=null;const it={id:S.next++,k:c.k,x:sp?sp.x:S.rw/2,y:sp?sp.y:S.rl/2,rot:sp?sp.rot:0};S.items.push(it);S.sel=it.id;render()};
@@ -928,7 +942,8 @@ function padDraw(){const all=padAll();$('padline').setAttribute('points',all.map
  $('padhint').style.display=all.length?'none':'';$('padundo').disabled=$('padclear').disabled=!padStrokes.length;$('paddone').disabled=padAll().length<8}
 function padFinish(){const r=sketchToShape(padAll());
  if(r.err){$('padmsg').style.color='var(--err)';$('padmsg').textContent=r.err.replace(' Draw it again','')+' Undo the last stroke, or Clear to start over.';return}
- padStrokes=[];S.sketch=r;S.walls=wallsFor(shapeDef('sketch'));onShapeChange(true);const first=$('tw0');if(first)first.focus()}
+ padStrokes=[];S.sketch=r;S.walls=wallsFor(shapeDef('sketch'));
+ if(keepRect&&keepRect[0]&&keepRect[1]&&S.walls.length===4&&r.turns.every(t=>t==='R')&&!(r.curves||[]).some(Boolean)){S.walls[0].len=S.walls[2].len=keepRect[0];S.walls[1].len=S.walls[3].len=keepRect[1]}   /* a drawn rectangle keeps the typed size */onShapeChange(true);const first=$('tw0');if(first)first.focus()}
 // back at the start after going round: finish by itself
 function padClosed(){const all=padAll();if(all.length<20)return false;const X=all.map(p=>p[0]),Y=all.map(p=>p[1]),diag=Math.hypot(Math.max(...X)-Math.min(...X),Math.max(...Y)-Math.min(...Y));
  let len=0;for(let i=1;i<all.length;i++)len+=Math.hypot(all[i][0]-all[i-1][0],all[i][1]-all[i-1][1]);
@@ -1055,7 +1070,8 @@ $('stepnav').onclick=e=>{const b=e.target.closest('[data-go]');if(b)goStep(+b.da
 $('back').onclick=()=>goStep((S.step||1)-1);
 $('next').onclick=()=>goStep((S.step||1)+1);
 $('gear').onclick=()=>{S.more=!S.more;renderShapes();render()};
-$('notrect').onclick=()=>{showShapes=true;S.mode='walls';S.shape='sketch';S.sketch=null;S.walls=[];onShapeChange(true)};
+let keepRect=null;
+$('notrect').onclick=()=>{keepRect=S.shape==='rect'&&S.walls.length===4?[+S.walls[0].len||0,+S.walls[1].len||0]:null;showShapes=true;S.mode='walls';S.shape='sketch';S.sketch=null;S.walls=[];onShapeChange(true)};
 $('sizebtn').onclick=()=>{sizeOpen=!sizeOpen;render()};
 $('movedoor').onclick=()=>{moveDoor=true;render()};
 $('doorskip').onclick=()=>{S.doorSet=true;moveDoor=false;render()};
