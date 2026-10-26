@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FitCheck Prototype</title>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","three/examples/jsm/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","three-mesh-bvh":"https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.8/build/index.module.js","three-gpu-pathtracer":"https://cdn.jsdelivr.net/npm/three-gpu-pathtracer@0.0.23/build/index.module.js"}}</script>
 <style>
 :root{--bg:#f6f3ee;--card:#fff;--ink:#1f1d1a;--mute:#7a746a;--line:#e3ded5;--accent:#2f6f5e;--accent-ink:#fff;--warn:#c9821a;--err:#c0392b;--ok:#2f6f5e;--room:#fbfaf7;--info:#3b78b4}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161513;--card:#1f1e1b;--ink:#f0ece4;--mute:#a49d90;--line:#34312c;--accent:#5fb89f;--accent-ink:#10231d;--warn:#e0a040;--err:#e5685a;--ok:#5fb89f;--room:#252420;--info:#79b4e8;color-scheme:dark}}
@@ -88,6 +88,9 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
  body[data-step="2"] #layoutcard{grid-column:1;grid-row:span 8;position:sticky;top:12px}
  body[data-step="2"] #plan{max-height:calc(100vh - 330px)}
 }
+.v3dshot{position:absolute;inset:0;z-index:2;background:#e7e9ea;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px}
+.v3dshot img{max-width:100%;max-height:calc(100% - 70px);border-radius:8px;box-shadow:0 2px 16px rgba(0,0,0,.25)}
+.btnlike{display:inline-flex;align-items:center;font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:9px 12px;min-height:40px;text-decoration:none}
 .askov{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.45);z-index:50;padding:16px}
 </style>
 </head>
@@ -175,7 +178,8 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 </div>
 <div class="navbar"><button id="back">Back</button><button id="next" class="primary">Next</button><p id="navmsg" class="hint"></p></div>
 </main>
-<div id="v3dwrap" class="v3d" hidden role="dialog" aria-modal="true" aria-labelledby="v3dttl"><div class="v3dbar"><b id="v3dttl">3D view</b><button id="v3dov">Overview</button><button id="v3deye">Door view</button><button id="v3dx" class="primary">Close</button></div><div id="v3dcanvas"><p class="v3dnote" id="v3dmsg"></p></div></div>
+<div id="v3dwrap" class="v3d" hidden role="dialog" aria-modal="true" aria-labelledby="v3dttl"><div class="v3dbar"><b id="v3dttl">3D view</b><button id="v3dshoot">Photo</button><button id="v3dov">Overview</button><button id="v3deye">Door view</button><button id="v3dx" class="primary">Close</button></div><div id="v3dcanvas"><p class="v3dnote" id="v3dmsg"></p>
+ <div id="v3dshot" class="v3dshot" hidden><img id="v3dimg" alt="Photo of the room"><div class="tools"><button id="shotshare" class="primary" hidden>Share photo</button><a id="shotsave" class="btnlike" download="room.jpg" href="#">Save photo</a><button id="shotclose">Back to 3D</button></div></div></div></div>
 <div id="ask" class="askov" hidden role="dialog" aria-modal="true" aria-labelledby="askmsg"><div class="card" style="max-width:380px"><p id="askmsg" style="margin:0 0 12px"></p><div class="tools" style="margin:0"><button id="askyes" class="primary">Continue</button><button id="askno">Cancel</button></div></div></div>
 <script>
 // Sample catalog: 26 real IKEA UK products (sizes and GBP prices as listed on ikea.com/gb on 2026-10-22; sources in docs/SAMPLE_CATALOG.md).
@@ -1037,7 +1041,7 @@ function roomModel(){
   obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
   items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:c.m||''}})}}
 // Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
-const V3D='2026-10-26b';
+const V3D='2026-10-27d';
 let view3d=null,v3dTimer=0;
 async function open3d(){
  if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
@@ -1046,9 +1050,17 @@ async function open3d(){
   msg.textContent=[...view3d.notes,'Drag to turn, pinch to zoom, two fingers to move. Every piece is drawn at its catalog size; its shape and finish are close to the product, not exact.'].join(' ');
   clearTimeout(v3dTimer);v3dTimer=setTimeout(()=>{if(view3d&&!view3d.notes.length)msg.hidden=true},7000)}
  catch(e){msg.textContent=`The 3D view could not start (${e.message}). It needs an internet connection the first time, and a browser that can show 3D (WebGL).`}}
-function close3d(){if(view3d){view3d.close();view3d=null}$('v3dwrap').hidden=true}
+function close3d(){if(view3d){view3d.close();view3d=null}$('v3dshot').hidden=true;$('v3dwrap').hidden=true}
 $('v3d').onclick=open3d;$('v3dx').onclick=close3d;
-$('v3dov').onclick=()=>view3d&&view3d.setView('overview');$('v3deye').onclick=()=>view3d&&view3d.setView('eye');
+$('v3dov').onclick=()=>{$('v3dshot').hidden=true;view3d&&view3d.setView('overview')};
+// Photo: a near-photo-quality still of the current 3D view (light traced on the device; about 10-30 s on a phone).
+$('v3dshoot').onclick=async()=>{if(!view3d)return;const msg=$('v3dmsg'),btn=$('v3dshoot');btn.disabled=true;msg.hidden=false;msg.textContent='Making the photo... hold still.';clearTimeout(v3dTimer);
+ try{const url=await view3d.photo(p=>{msg.textContent=`Making the photo... ${Math.round(p*100)}%`});
+  $('v3dimg').src=url;$('shotsave').href=url;$('shotsave').download=`${(S.name||'room').replace(/[^\w -]/g,'')}.jpg`;
+  $('shotshare').hidden=!(navigator.canShare&&navigator.canShare({files:[new File([''],'x.jpg',{type:'image/jpeg'})]}));$('v3dshot').hidden=false;msg.hidden=true}
+ catch(e){msg.textContent=`The photo could not be made on this device (${e.message}).`}finally{btn.disabled=false}};
+$('shotclose').onclick=()=>{$('v3dshot').hidden=true};
+$('shotshare').onclick=async()=>{try{const b=await (await fetch($('v3dimg').src)).blob();await navigator.share({files:[new File([b],$('shotsave').download,{type:'image/jpeg'})],title:S.name||'Room'})}catch(e){}};$('v3deye').onclick=()=>view3d&&view3d.setView('eye');
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('v3dwrap').hidden)close3d()});
 
 // ---- Three screens: Measure, Furniture, Quote. The settings icon shows the advanced controls on every screen. ----

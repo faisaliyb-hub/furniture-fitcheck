@@ -195,6 +195,8 @@ export async function run(){
  ok('3D: view opens (needs internet the first time)',opened,$('v3dmsg').textContent);
  if(opened){
   ok('3D: one model per placed piece',view3d.pieces.length===S.items.length,[view3d.pieces.length,S.items.length]);
+  ok('3D: lit by the real light file (studio HDR)',!!view3d.scene.environment&&view3d.scene.environment.isDataTexture);
+  {let url='';try{url=await view3d.photo(null,{samples:1,maxMs:3000})}catch(e){url='ERR '+e.message}ok('3D: Photo makes a picture',/^data:image\/jpeg/.test(url),url.slice(0,60))}
   const tf=(e,x,y,z)=>[e[0]*x+e[4]*y+e[8]*z+e[12],e[1]*x+e[5]*y+e[9]*z+e[13],e[2]*x+e[6]*y+e[10]*z+e[14]];const off=[];
   for(const g of view3d.pieces){const pl=S.items.find(i=>i.id===g.userData.item.id),bd=body(pl),c=spec(pl);g.updateMatrixWorld(true);const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
    g.traverse(o=>{if(!o.isMesh||(o.geometry.type==='PlaneGeometry'&&o.material.transparent))return;o.geometry.computeBoundingBox();const b=o.geometry.boundingBox,e=o.matrixWorld.elements;
