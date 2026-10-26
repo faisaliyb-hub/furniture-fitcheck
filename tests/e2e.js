@@ -10,7 +10,7 @@ export async function run(){
  const near=(a,b,t)=>Math.abs(a-b)<=t;
  const K=OLD_KEYS;   // role -> IKEA sample SKU, e.g. K.bed is the MALM Standard Double frame
  function freshVisit(over={}){S.rooms=[];S.cur=0;
-  Object.assign(S,{client:'',rep:'',name:'Room 1',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,unit:'cm',more:false,step:1,showCl:false,doorSet:true},over);
+  Object.assign(S,{client:'',rep:'',name:'Room 1',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,unit:'cm',more:false,step:1,showCl:false,doorSet:true,finishes:[]},over);
   if(!over.keepCatalog)setCatalog(SAMPLE.slice(),true);fixRoom();stash();load();renderCat();render()}
  function setTemplate(shape,lens){S.mode='walls';S.shape=shape;S.walls=wallsFor(shapeDef(shape));
   if(shape==='rect'){S.walls[0].len=S.walls[2].len=lens[0];S.walls[1].len=S.walls[3].len=lens[1]}else lens.forEach((l,i)=>S.walls[i].len=l);S.items=[];S.obs=[];onShapeChange(true)}
@@ -161,6 +161,23 @@ export async function run(){
   ok('sizes: Add places the smaller bed and it really fits',S.items.length===1&&S.items[0].k==='490.099.47'&&!issues().filter(m=>!m.includes('Verify access')).length,issues())}
  S.items=[];S.type='living';goStep(1);
 
+ // ---- wall finishes ----
+ freshVisit();setTemplate('rect',[450,380]);goStep(2);
+ $('finbtn').click();ok('finish: Wall finish asks to tap a wall',visible('#finbar')&&finPick);
+ {plan.scrollIntoView({block:'center'});const q=plan.createSVGPoint();q.x=225;q.y=4;const p=q.matrixTransform(plan.getScreenCTM());plan.dispatchEvent(new PointerEvent('pointerdown',{clientX:p.x,clientY:p.y,bubbles:true,pointerId:31}));plan.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:31}))}
+ const F0=S.finishes[0];ok('finish: tapping the top wall opens its finish',!!F0&&F0.wall==='0'&&visible('#finbox')&&!finPick,S.finishes);
+ [...$('finchips').querySelectorAll('[data-fk]')].find(b=>b.dataset.fk==='WP-FL-OAK').click();
+ ok('finish: fluted panels on the whole wall, door taken off: 25 panels',finCalc(F0).q===25&&finCalc(F0).cost===450,finCalc(F0));
+ $('fincov').querySelector('[data-cov=part]').click();{const tIn=(el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}))};tIn($('finfrom'),'100');tIn($('finto'),'300')}$('fincov').querySelector('[data-cov=half]').click();
+ ok('finish: part of the wall at half height: 6 panels',F0.part&&F0.half&&finCalc(F0).q===6,finCalc(F0));
+ $('findone').click();S.finishes.push({id:S.next++,wall:'1',k:'WPP-LIN',part:false,from:0,to:380,half:false},{id:S.next++,wall:'2',k:'PT-WHT',part:false,from:0,to:450,half:false});render();
+ ok('finish: wallpaper on a 380 cm wall: 3 rolls',finCalc(S.finishes[1]).q===3,finCalc(S.finishes[1]));
+ ok('finish: paint on a 450 cm wall: 1 tin',finCalc(S.finishes[2]).q===1,finCalc(S.finishes[2]));
+ {const qt=quoteText();ok('finish: the quote lists each finished wall',/Wall 1: 6 panels Fluted panel, oak look/.test(qt)&&/Wall 2: 3 rolls Wallpaper/.test(qt)&&/Wall 3: 1 tin Paint/.test(qt)&&qt.includes('Total: 205'),qt)}
+ ok('finish: the plan shows the finished walls',(plan.innerHTML.match(/stroke="#(b98a5e|d6cbb9|f3f1ec)"/g)||[]).length===3);
+ {const RMf=roomModel();ok('finish: the 3D model gets each finish on the right wall',RMf.finishes.length===3&&RMf.finishes[0].edge===0&&RMf.finishes[0].t0===100&&RMf.finishes[0].t1===300&&RMf.finishes[0].y1===120,RMf.finishes)}
+ stash();ok('finish: finishes are saved with the room',(S.rooms[S.cur].finishes||[]).length===3);
+
  // ---- 3D view (needs an internet connection: three.js comes from a CDN) ----
  // room model handed to the 3D view: door and windows land on the right outline edges
  freshVisit();setTemplate('L-br',[450,230,200,150,250,380]);S.dwall='2';S.doff=50;S.obs=[{id:930,kind:'window',wall:0,off:120,w:160,sill:90}];render();
@@ -226,7 +243,7 @@ export async function run(){
  ok('screens: tapping the plan places the door and stops asking',S.doorSet&&S.dwall==='2'&&!visible('#doorbar')&&visible('#movedoor'),[S.dwall,S.doff]);
  // while the door prompt shows, tapping a piece selects it and leaves the door alone
  {renderSugg();$('sugg').querySelector('[data-add]').click();const pc=S.items[S.items.length-1];S.sel=null;moveDoor=true;render();const d0=[S.dwall,S.doff];
-  plan.scrollIntoView({block:'center'});const q=plan.createSVGPoint();q.x=pc.x;q.y=pc.y;const p=q.matrixTransform(plan.getScreenCTM());document.elementFromPoint(p.x,p.y).dispatchEvent(new PointerEvent('pointerdown',{clientX:p.x,clientY:p.y,bubbles:true,pointerId:11}));plan.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:11}));
+  plan.querySelector(`[data-id="${pc.id}"]`).scrollIntoView({block:'center'});const q=plan.createSVGPoint();q.x=pc.x;q.y=pc.y;const p=q.matrixTransform(plan.getScreenCTM());document.elementFromPoint(p.x,p.y).dispatchEvent(new PointerEvent('pointerdown',{clientX:p.x,clientY:p.y,bubbles:true,pointerId:11}));plan.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:11}));
   ok('door prompt: tapping a piece selects it and does not move the door',S.sel===pc.id&&S.dwall===d0[0]&&S.doff===d0[1]&&visible('#doorbar'),[S.sel,pc.id,d0,S.dwall,S.doff]);
   $('doorskip').click();S.items=S.items.filter(i=>i.id!==pc.id);S.sel=null;render()}
  $('movedoor').click();ok('screens: Move door asks again; Cancel keeps the door',visible('#doorbar')&&($('doorskip').click(),!visible('#doorbar')&&S.dwall==='2'));
