@@ -347,6 +347,29 @@ export async function run(){
   applyPack(null);setCatalog(SAMPLE.slice(),true);
   ok('pack: going back to the samples',COMPANY==='Sample company'&&CO_FIN.some(f=>f.k==='WPP-LIN')&&cat(K.bed)&&assetUrl('oak.jpg')==='')}
 
+ // ---- sets and estimated sizes (made-up mini catalogue, no store data) ----
+ {const H='kind,sku,name,width_cm,depth_cm,height_cm,front_clearance_cm,price,type,rooms,photo,estimated,pieces';
+  const csv=[H,'furniture,T-S3,Test 3-seater sofa,220,95,90,45,,sofa,living,,yes,','furniture,T-ARM,Test armchair,100,90,90,50,,chair,living,,yes,',
+   'furniture,T-CT,Test centre table,120,65,45,35,,table,living,,yes,','furniture,T-DT,Test dining table (6 seats),180,95,76,0,,table,dining,,yes,',
+   'furniture,T-DC,Test dining chair,50,58,100,0,,chair,dining,,yes,','furniture,T-TV,Test TV stand,200,45,55,60,1500,storage,living,,yes,',
+   'set,T-SOFASET,Test Sofa Set,,,,,7000,,living,,,T-S3*2|T-ARM*2|T-CT*1','set,T-DINSET,Test Dining Set,,,,,5000,,dining,,,T-DT*1|T-DC*6'].join('\n');
+  const r=buildCatalog(csv);ok('sets: a catalog with sets and estimated sizes is read',!r.errs.length&&r.sets.length===2&&r.out.find(c=>c.k==='T-S3').part&&!r.out.find(c=>c.k==='T-TV').part&&r.out.every(c=>c.est),r.errs);
+  ok('sets: a set naming a missing piece is refused',buildCatalog(H+'\nset,T-BAD,Bad set,,,,,1,,,,,NOPE*1').errs.some(e=>/NOPE/.test(e)));
+  CO_SETS=r.sets;setCatalog(r.out,false);freshVisit({type:'living',name:'Living room',dwall:'2',doff:60,keepCatalog:true});setTemplate('rect',[600,480]);goStep(2);renderSugg();await wait(10);
+  ok('sets: pieces sold only in a set are not listed alone',!products().some(c=>c.k==='T-S3')&&products().some(c=>c.k==='T-TV'));
+  ok('sets: the catalogue shows the set card and a size-to-confirm mark',!!$('sugg').querySelector('[data-set="T-SOFASET"]')&&/size to confirm/.test($('sugg').textContent));
+  $('sugg').querySelector('[data-set="T-SOFASET"]').click();await wait(10);
+  const g=new Set(S.items.map(i=>i.set&&i.set.g));
+  ok('sets: adding a set places all its pieces as one set',S.items.length===5&&g.size===1&&!g.has(undefined)&&!problems().length,S.items.map(i=>i.k));
+  let Q=quoteLines();ok('sets: the quote has one line at the set price, sizes to confirm',Q.priced.length===1&&Q.priced[0].cost===7000&&/sizes to confirm/.test(Q.priced[0].sub),Q.priced);
+  S.items.pop();render();Q=quoteLines();ok('sets: removing a piece keeps the set price and says what is placed',Q.priced[0].cost===7000&&/4 of 5 pieces/.test(Q.priced[0].sub),Q.priced[0].sub);
+  freshVisit({type:'dining',name:'Dining room',dwall:'2',doff:60,keepCatalog:true});setTemplate('rect',[520,420]);goStep(2);placeSet(CO_SETS[1]);
+  const T=S.items.find(i=>i.k==='T-DT'),tb=body(T),ch=S.items.filter(i=>i.k==='T-DC').map(body);
+  const touches=b=>Math.max(tb.x0-b.x1,b.x0-tb.x1,tb.y0-b.y1,b.y0-tb.y1)<=4;
+  ok('sets: the dining table stands free, away from the walls',tb.x0>=50&&tb.y0>=50&&tb.x1<=S.rw-50&&tb.y1<=S.rl-50,tb);
+  ok('sets: all six chairs sit at the table',ch.length===6&&ch.every(touches)&&!problems().length,ch);
+  CO_SETS=[];setCatalog(SAMPLE.slice(),true)}
+
  window.removeEventListener('error',onErr);
  ok('no page errors during the run',!errs.length,errs);
  freshVisit();
