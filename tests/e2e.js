@@ -250,6 +250,17 @@ export async function run(){
   $('doorskip').click();S.items=S.items.filter(i=>i.id!==pc.id);S.sel=null;render()}
  $('movedoor').click();ok('screens: Move door asks again; Cancel keeps the door',visible('#doorbar')&&($('doorskip').click(),!visible('#doorbar')&&S.dwall==='2'));
  ok('screens: Furniture shows the plan, the 3D button and the fits-here list, not the fit-check list',visible('#layoutcard')&&visible('#v3d')&&visible('#sugg')&&!visible('#issues'));
+ // ---- one workspace: the house fills the screen, the catalogue is a drawer, the total stays on top ----
+ {renderSugg();const rb=e=>$(e).getBoundingClientRect(),wide=innerWidth>=900;
+  ok('workspace: the page itself does not scroll on Furniture',document.documentElement.scrollHeight<=innerHeight+1&&document.documentElement.scrollWidth<=innerWidth+1,[document.documentElement.scrollHeight,innerHeight]);
+  ok('workspace: catalogue cards show each piece drawn from above',$('sugg').querySelectorAll('.sg .th').length>=5);
+  ok('workspace: the total and a Quote button stay on top',visible('#totpill')&&/Quote/.test($('totpill').textContent));
+  if(wide){ok('workspace: wide screen puts the catalogue beside the plan',rb('drawer').left>=rb('layoutcard').right-1&&rb('drawer').top<rb('layoutcard').bottom,[rb('drawer').left,rb('layoutcard').right]);
+   const w0=rb('layoutcard').width;$('drawhide').click();await wait(20);
+   ok('workspace: Hide gives the plan the whole width and shows a Catalogue button',!visible('#drawer')&&rb('layoutcard').width>w0+100&&visible('#drawopen'));
+   $('drawopen').click();await wait(20);ok('workspace: Catalogue brings the drawer back',visible('#drawer')&&!visible('#drawopen'))}
+  else{ok('workspace: narrow screen puts the catalogue under the plan',rb('drawer').top>=rb('layoutcard').bottom-1)}
+  const st0=S.step;$('totpill').click();await wait(10);ok('workspace: tapping the total opens the quote',S.step===3);goStep(st0);await wait(10)}
  const nAdd=$('sugg').querySelectorAll('[data-add]').length;$('sugg').querySelector('[data-add]').click();await wait(10);
  ok('screens: + adds a piece and shows Turn, Size and Remove',nAdd>0&&S.items.length===1&&visible('#rot')&&visible('#sizebtn')&&visible('#del')&&!visible('#sizebox'));
  const p0=S.items[0];S.items.push({id:S.next++,k:K.coffee,x:p0.x,y:p0.y,rot:0});S.sel=null;render();
