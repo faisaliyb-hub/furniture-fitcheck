@@ -84,13 +84,71 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 .qbig{text-align:center;margin:4px 0 14px}.qbig small{display:block;color:var(--mute);font-size:13px}.qbig b{display:block;font-size:40px;line-height:1.15}
 .qroom{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;margin-bottom:6px}.qroom small{display:block;color:var(--mute);font-size:12px}
 .steps .stp{flex:1}
-/* Wide screens (a tablet held sideways, a laptop): on Furniture the plan sits on the left and the list on the right */
-@media (min-width:1000px){
- body[data-step="2"] main{max-width:1240px;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);align-items:start;grid-auto-flow:row dense}
- body[data-step="2"] #stephead,body[data-step="2"] #setcard,body[data-step="2"] .navbar{grid-column:1/-1}
- body[data-step="2"] main section.card:not(#layoutcard):not(#setcard){grid-column:2}
- body[data-step="2"] #layoutcard{grid-column:1;grid-row:span 8;position:sticky;top:12px}
- body[data-step="2"] #plan{max-height:calc(100vh - 330px)}
+/* Furniture screen = one workspace, like a room planner: the house fills the screen, the catalogue is a drawer
+   (right side on a tablet held sideways or a laptop, a bottom sheet on a phone or a tablet held upright), the total stays on top. */
+body[data-step="2"]{height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column}
+body[data-step="2"] header{padding-block:8px}
+body[data-step="2"] main{flex:1;min-height:0;width:100%;max-width:1600px;gap:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));
+ grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto}
+body[data-step="2"] #stephead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+body[data-step="2"] #stepnav{flex:1 1 300px}body[data-step="2"] #stepttl{display:none}
+body[data-step="2"] .navbar{display:none}
+body[data-step="2"] #setcard{max-height:28vh;overflow:auto}
+.totpill{flex:0 0 auto;display:flex;align-items:center;gap:8px;border-radius:999px;padding:6px 8px 6px 14px;min-height:40px;font-weight:600;white-space:nowrap}
+.totpill>span{white-space:nowrap}.totpill small{font-weight:400;color:var(--mute)}.totpill .go{background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:4px 12px;font-size:14px}
+body[data-step="2"] #stephead{grid-row:1}body[data-step="2"] #setcard{grid-row:2}body[data-step="2"] #drawer{grid-row:4}
+body[data-step="2"] #layoutcard{grid-row:3;display:flex;flex-direction:column;min-height:0;padding:10px}
+body[data-step="2"] #plan{flex:1 1 0;min-height:140px;height:auto}
+body[data-step="2"] #layoutcard .hint{margin-top:4px}
+#drawer{display:flex;flex-direction:column;gap:10px;min-height:0;overflow:auto;overscroll-behavior:contain;border-radius:12px}
+#drawer>.card{flex:0 0 auto}
+#selpanel:empty,#selpanel:not(:has(>div:not([hidden]))){display:none}
+#selpanel{background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:12px;flex:0 0 auto}
+#selpanel>div{margin:0;padding:0;border:0}
+.sheetbtn{display:none}
+.drawopen{position:absolute;right:8px;bottom:8px;min-height:44px;font-weight:600;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.cathd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.cathd h2{margin:0}.cathd .linkbtn{min-height:32px;padding:4px 0}
+#sgq{margin-bottom:10px}
+.catbody{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;align-items:start}
+.catrail{flex-direction:column;flex-wrap:nowrap;gap:6px;margin:0;position:sticky;top:0}
+.catrail .chip{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;font-size:11.5px;padding:8px 2px;min-height:58px;border-radius:10px}
+.catrail .chip svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;touch-action:auto}
+#sugg .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+#sugg .sg{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:4px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--card);text-align:left;min-height:0;font-size:13px;line-height:1.3;color:var(--ink)}
+#sugg button.sg{cursor:pointer}#sugg button.sg:hover,#sugg .szb:hover{border-color:var(--accent)}
+#sugg .sg b{font-size:13px}#sugg .sg small{font-size:12px}
+#sugg .sg.off{opacity:.62;border-style:dashed}
+#sugg .sg .why{color:var(--warn)}
+.th{display:block;width:100%;height:auto;aspect-ratio:13/10;background:var(--room);border-radius:7px;touch-action:auto}
+#sugg .szs{margin-top:2px;gap:4px;flex-direction:column;flex-wrap:nowrap}#sugg .szb{min-height:38px;padding:4px 7px;font-size:12px;white-space:normal;width:100%}
+.sgsub{margin:14px 0 8px}
+@media (min-width:900px){
+ body[data-step="2"] main{grid-template-columns:minmax(0,1fr) clamp(330px,33vw,440px);grid-template-rows:auto auto minmax(0,1fr)}
+ body[data-step="2"] #stephead,body[data-step="2"] #setcard{grid-column:1/-1}
+ body[data-step="2"] #layoutcard{grid-column:1;grid-row:3}
+ body[data-step="2"] #drawer{grid-column:2;grid-row:3}
+ body[data-step="2"].drawshut main{grid-template-columns:minmax(0,1fr)}
+ body.drawshut #drawer{display:none}
+}
+@media (max-width:899.98px){
+ body[data-step="2"] #drawer{height:42dvh;background:var(--bg);border-top:1px solid var(--line);border-radius:14px 14px 0 0;margin-inline:-6px;padding:0 6px 4px;transition:height .22s ease}
+ body[data-step="2"].sheetbig #drawer{height:76dvh}
+ .sheetbtn{display:flex;justify-content:center;align-items:center;position:sticky;top:0;z-index:2;flex:0 0 auto;min-height:30px;padding:0;border:0;border-radius:0;background:var(--bg)}
+ .sheetbtn .grip{width:44px;height:5px;border-radius:3px;background:var(--mute);opacity:.5}
+ .drawopen,#drawhide{display:none}
+ body[data-step="2"] header{padding-block:4px}body[data-step="2"] header h1{font-size:16px}body[data-step="2"] #gear{min-height:36px;width:40px}
+ body[data-step="2"] main{gap:8px}
+ body[data-step="2"] #stephead{flex-wrap:nowrap;gap:6px}body[data-step="2"] #stepnav{flex:1 1 auto;min-width:0;flex-wrap:nowrap}
+ body[data-step="2"] .stp{min-height:34px;padding:4px 6px;font-size:12px;white-space:nowrap}
+ .totpill{min-height:34px;padding:3px 4px 3px 10px;font-size:13px;gap:6px}.totpill small,.totpill .tlab{display:none}.totpill .go{padding:3px 9px;font-size:13px}
+ body[data-step="2"] #layoutcard{padding:8px}body[data-step="2"] #layouth{margin-bottom:4px}
+ body[data-step="2"] #plantools{margin-top:6px}
+ .catbody{grid-template-columns:minmax(0,1fr)}
+ .catrail{flex-direction:row;overflow-x:auto;position:static;padding-bottom:2px}
+ .catrail .chip{flex:0 0 auto;flex-direction:row;min-height:38px;padding:6px 12px;font-size:13px}.catrail .chip svg{width:18px;height:18px}
+ #sugg .grid{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+}
+@media (max-width:899.98px) and (max-height:560px){body[data-step="2"] #drawer{height:52dvh}}
 }
 .v3dshot{position:absolute;inset:0;z-index:2;background:#e7e9ea;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px}
 .v3dshot img{max-width:100%;max-height:calc(100% - 70px);border-radius:8px;box-shadow:0 2px 16px rgba(0,0,0,.25)}
@@ -101,7 +159,7 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 <body>
 <header><h1>FitCheck</h1><button id="gear" class="iconbtn" aria-label="Settings and advanced controls" aria-pressed="false" title="Settings"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M10.3 3h3.4l.5 2.4 1.6.9 2.3-.8 1.7 2.9-1.8 1.6v1.9l1.8 1.6-1.7 2.9-2.3-.8-1.6.9-.5 2.4h-3.4l-.5-2.4-1.6-.9-2.3.8-1.7-2.9 1.8-1.6v-1.9L4.1 8.4l1.7-2.9 2.3.8 1.6-.9z"/></svg></button></header>
 <main>
-<div id="stephead"><nav id="stepnav" class="steps" aria-label="Screens"></nav><h2 id="stepttl" class="stepttl"></h2></div>
+<div id="stephead"><nav id="stepnav" class="steps" aria-label="Screens"></nav><h2 id="stepttl" class="stepttl"></h2><button id="totpill" class="totpill" hidden aria-label="Total, open the quote"></button></div>
 <div class="col">
  <section class="card adv" id="setcard" data-step="1 2 3"><h2>Settings</h2>
   <div class="row"><div><label for="unit">Units</label><select id="unit"><option value="cm">cm</option><option value="m">m</option><option value="mm">mm</option><option value="ftin">ft + in</option><option value="in">inches</option></select></div><div><label for="rep">Rep</label><input id="rep" placeholder="Your name"></div></div>
@@ -127,6 +185,36 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
   <div class="row adv"><div><label>Ceiling height</label><input id="rh" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div></div></div>
   <div class="hint adv">Width and length are the overall size of the room (worked out from the walls, or typed in quick rectangle mode).</div>
  </section>
+</div>
+<div class="col">
+ <section class="card" id="layoutcard" data-step="2"><h2 id="layouth">Layout</h2><button id="v3d" class="corner" aria-label="3D view">3D</button><button id="fit" class="corner corner2" hidden>Fit</button>
+  <div id="finbar" class="doorbar" hidden><span>Tap the wall to finish</span><button id="fincancel">Cancel</button></div>
+  <div id="doorbar" class="doorbar" hidden><span>Tap the wall where the door is</span><button id="doorskip">Skip</button></div>
+  <svg id="plan" viewBox="0 0 600 500"></svg><button id="drawopen" class="drawopen" hidden>Catalogue</button>
+  <p id="probline" class="probline" hidden></p>
+  <div class="tools" id="plantools"><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><button id="finbtn">Wall finish</button><button id="doorbtn">Door style</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
+  <div class="hint adv">Drawn to scale: each piece covers only its own footprint. Tap a piece to see the free space around it. Orange zone = clearance needed in front.</div><div id="tipmsg" class="hint" style="color:var(--warn)"></div>
+ </section>
+ <aside id="drawer" data-step="2" aria-label="Catalogue">
+  <button id="sheetbtn" class="sheetbtn" aria-expanded="false" aria-label="Make the catalogue bigger"><span class="grip"></span></button>
+  <div id="selpanel">
+  <div id="finbox" hidden><div id="finttl" style="font-weight:600;margin-bottom:6px"></div><div id="finchips" role="group" aria-label="Finishes"></div>
+   <div class="chips" id="fincov" role="group" aria-label="How much of the wall"></div>
+   <div class="row" id="finpart" hidden><div><label for="finfrom" id="finfroml">From the wall's start</label><input id="finfrom" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="finto" id="fintol">To</label><input id="finto" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
+   <div id="finres" class="finres"></div><div class="tools"><button id="findone" class="primary">Done</button><button id="finrm">Remove finish</button></div></div>
+  <div id="doorbox" hidden><div style="font-weight:600;margin-bottom:6px">Door</div><div id="doorchips" role="group" aria-label="Door styles"></div><div class="tools"><button id="doordone" class="primary">Done</button></div></div>
+  <div id="sizebox" hidden><div id="sizettl" style="font-weight:600;margin-bottom:6px"></div><div id="sizechips" class="chips" role="group" aria-label="Sizes"></div><div id="colrow" class="pal" role="group" aria-label="Colour" hidden></div>
+   <div class="row3"><div><label for="szw" id="szwl">Width</label><input id="szw" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szd" id="szdl">Depth</label><input id="szd" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szh" id="szhl">Height</label><input id="szh" type="text" inputmode="decimal" autocomplete="off"></div></div>
+   <div id="sizehint" class="hint"></div></div>
+  </div>
+ <section class="card catcard" id="catcard" data-step="2"><div class="cathd"><h2 id="sgh">Catalogue</h2><button id="drawhide" class="linkbtn">Hide</button></div>
+  <input id="sgq" type="search" placeholder="Search the catalogue" autocomplete="off" aria-label="Search the catalogue">
+  <div class="catbody"><nav class="chips catrail" id="sgcats" role="group" aria-label="Filter the catalogue"></nav><div id="sugg" class="hint">Calculating...</div></div></section>
+ <section class="card adv" data-step="2"><h2>Space</h2><div id="space"></div>
+  <div id="selbox" hidden style="margin-top:10px"><div id="selinfo" class="hint" style="font-size:14px;color:var(--ink);margin:0 0 8px"></div>
+   <div class="row"><div><label id="pxl">Gap from left wall</label><input id="px" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label id="pyl">Gap from top wall</label><input id="py" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div></div>
+ </section>
+ <section class="card adv" data-step="2"><h2>Fit check</h2><div id="issues"></div></section>
  <section class="card adv" data-step="2"><h2>Door</h2>
   <div class="row"><div><label>Wall with the door</label><select id="dwall"></select></div><div><label>Door width</label><input id="dw" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
   <div class="row"><div><label id="doffl">Door offset from corner</label><input id="doff" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label>Door height</label><input id="dh" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
@@ -144,32 +232,7 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
   <input id="impfile" type="file" accept=".csv,text/csv" hidden><input id="packfile" type="file" accept=".zip,application/zip" hidden>
   <div id="catmsg" class="hint"></div>
  </section>
-</div>
-<div class="col">
- <section class="card" id="layoutcard" data-step="2"><h2 id="layouth">Layout</h2><button id="v3d" class="corner" aria-label="3D view">3D</button><button id="fit" class="corner corner2" hidden>Fit</button>
-  <div id="finbar" class="doorbar" hidden><span>Tap the wall to finish</span><button id="fincancel">Cancel</button></div>
-  <div id="doorbar" class="doorbar" hidden><span>Tap the wall where the door is</span><button id="doorskip">Skip</button></div>
-  <svg id="plan" viewBox="0 0 600 500"></svg>
-  <p id="probline" class="probline" hidden></p>
-  <div class="tools" id="plantools"><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><button id="finbtn">Wall finish</button><button id="doorbtn">Door style</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
-  <div id="finbox" hidden><div id="finttl" style="font-weight:600;margin-bottom:6px"></div><div id="finchips" role="group" aria-label="Finishes"></div>
-   <div class="chips" id="fincov" role="group" aria-label="How much of the wall"></div>
-   <div class="row" id="finpart" hidden><div><label for="finfrom" id="finfroml">From the wall's start</label><input id="finfrom" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="finto" id="fintol">To</label><input id="finto" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
-   <div id="finres" class="finres"></div><div class="tools"><button id="findone" class="primary">Done</button><button id="finrm">Remove finish</button></div></div>
-  <div id="doorbox" hidden><div style="font-weight:600;margin-bottom:6px">Door</div><div id="doorchips" role="group" aria-label="Door styles"></div><div class="tools"><button id="doordone" class="primary">Done</button></div></div>
-  <div id="sizebox" hidden><div id="sizettl" style="font-weight:600;margin-bottom:6px"></div><div id="sizechips" class="chips" role="group" aria-label="Sizes"></div><div id="colrow" class="pal" role="group" aria-label="Colour" hidden></div>
-   <div class="row3"><div><label for="szw" id="szwl">Width</label><input id="szw" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szd" id="szdl">Depth</label><input id="szd" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szh" id="szhl">Height</label><input id="szh" type="text" inputmode="decimal" autocomplete="off"></div></div>
-   <div id="sizehint" class="hint"></div></div>
-  <div class="hint adv">Drawn to scale: each piece covers only its own footprint. Tap a piece to see the free space around it. Orange zone = clearance needed in front.</div><div id="tipmsg" class="hint" style="color:var(--warn)"></div>
- </section>
- <section class="card adv" data-step="2"><h2>Space</h2><div id="space"></div>
-  <div id="selbox" hidden style="margin-top:10px"><div id="selinfo" class="hint" style="font-size:14px;color:var(--ink);margin:0 0 8px"></div>
-   <div class="row"><div><label id="pxl">Gap from left wall</label><input id="px" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label id="pyl">Gap from top wall</label><input id="py" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div></div>
- </section>
- <section class="card" data-step="2"><h2 id="sgh">Furniture</h2>
-  <div class="sgtools"><div class="chips" id="sgcats" role="group" aria-label="Filter furniture"></div><input id="sgq" type="search" placeholder="Search furniture" autocomplete="off" aria-label="Search furniture"></div>
-  <div id="sugg" class="hint">Calculating...</div></section>
- <section class="card adv" data-step="2"><h2>Fit check</h2><div id="issues"></div></section>
+ </aside>
  <section class="card" data-step="3">
   <div class="qbig"><small>Total</small><b id="qtotal">0</b><small id="qnote"></small></div>
   <div id="qrooms"></div>
@@ -736,23 +799,35 @@ function renderSugg(){
 // and pieces that need more space are listed last (adding one shows it red). Filters and search only change what is shown.
 let suggData=null,suggCat='all',suggQ='';
 const CATS=[['all','All'],['seat','Seating'],['bed','Beds'],['table','Tables'],['storage','Storage']];
+// line icons for the catalogue rail (24 x 24)
+const CATICON={all:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+ seat:'<path d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3"/><path d="M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v4H3z"/><path d="M5 17v2M19 17v2"/>',
+ bed:'<path d="M3 18V6M3 14h18v4M21 18v-6a2 2 0 0 0-2-2h-8v4"/><circle cx="7" cy="11" r="1.6"/>',
+ table:'<path d="M3 9h18M5 9v10M19 9v10M8 9v5h8V9"/>',
+ storage:'<rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M12 3v18M10 11v2M14 11v2"/>'};
 const catOf=c=>{const t=typeOf(c);return t==='sofa'||t==='chair'?'seat':t==='bed'?'bed':t==='table'||t==='side'?'table':'storage'};
-function paintSugg(){const box=$('sugg');$('sgcats').innerHTML=CATS.map(([k,v])=>`<button class="chip${suggCat===k?' on':''}" data-cat="${k}">${v}</button>`).join('');
+// A card's picture is the piece seen from above at one shared scale (2.6 m across), so a sofa looks bigger than a chair, as in the room.
+function thumb(c){const W=Math.max(260,c.w+20,(c.d+20)*1.3),H=W/1.3,col=c.gen?(c.col||'var(--accent)'):'var(--accent)';
+ return `<svg class="th" viewBox="${-W/2} ${-H/2} ${W} ${H}" aria-hidden="true"><rect x="${-c.w/2}" y="${-c.d/2}" width="${c.w}" height="${c.d}" rx="2" fill="${col}" fill-opacity=".28" stroke="${col}" stroke-width="1.6"/><g fill="none" stroke="var(--ink)" stroke-opacity=".45" stroke-width="1.3">${detail(c,1)}</g></svg>`}
+function paintSugg(){const box=$('sugg');$('sgcats').innerHTML=CATS.map(([k,v])=>`<button class="chip${suggCat===k?' on':''}" data-cat="${k}" aria-pressed="${suggCat===k}"><svg viewBox="0 0 24 24" aria-hidden="true">${CATICON[k]}</svg>${v}</button>`).join('');
  if(!suggData)return;const {fr,free,no}=suggData;
  const show=list=>list.some(c=>(suggCat==='all'||catOf(c)===suggCat)&&(!suggQ||`${c.n} ${c.z||''} ${c.k}`.toLowerCase().includes(suggQ)));
  let h=`<div class="hint adv" style="margin:0 0 6px">Largest free area: <b>${UU(fr.w,fr.d)}</b> (clearances not included). Suggestions respect clearances, the door swing and other pieces, and show pieces suited to this room type first.</div>`;
- // One row per product. A product with several sizes gets one button per size, so the rep picks the size and can add
+ // One card per product. A product with several sizes gets one button per size, so the rep picks the size and can add
  // as many as they like. Sizes that do not fit well are still offered (dimmed): adding one shows it red on the plan.
  const fits=new Map();suggList.forEach(x=>fits.set(x.c.k,true));
  const fitsK=c=>{if(!fits.has(c.k))fits.set(c.k,c.h<=S.rh&&c.w*c.d<=free&&((c.w<=fr.w&&c.d<=fr.d)||(c.d<=fr.w&&c.w<=fr.d)));return fits.get(c.k)};   // quick: fits the largest free area
+ const price=c=>c.gen?'any colour':c.p.toLocaleString();
  const sizeBtn=(s,i)=>{const ok=s.k===(suggList[i]||{}).c?.k||fitsK(s);return `<button class="szb${ok?'':' off'}" ${s.k===(suggList[i]||{}).c?.k?`data-add="${i}"`:`data-addk="${esc(s.k)}"`} aria-label="Add ${esc(s.n)}"><b>+ ${esc(s.z||s.n)}</b><small>${UU(s.w,s.d)}${s.gen?'':` &middot; ${s.p.toLocaleString()}`}${ok?'':' &middot; tight'}</small></button>`};
- const row=(x,i)=>{const list=sizesOf(x.from||x.c);
-  if(list.length>1)return `<div class="sg sgm" data-i="${i}"><b>${esc(groupTitle(list))}</b><div class="szs">${list.map(s=>sizeBtn(s,i)).join('')}</div></div>`;
-  return `<div class="sg" data-i="${i}"><div><b>${esc(x.c.n)}</b><small>${UU(x.c.w,x.c.d)}${x.c.gen?' &middot; any colour':` &middot; ${x.c.p.toLocaleString()}`}${x.door?'':' <span class="tag adv">&middot; check door access</span>'}</small></div><button data-add="${i}" class="addbtn" aria-label="Add ${esc(x.c.n)}">+</button></div>`};
- const rows=suggList.map((x,i)=>!x.c.gen&&show(sizesOf(x.from||x.c))?row(x,i):'').join(''),genRows=suggList.map((x,i)=>x.c.gen&&show(sizesOf(x.from||x.c))?row(x,i):'').join(''),tight=no.filter(([c])=>show(sizesOf(c)));
- h+=rows||(tight.length?'':`<div class="hint">${suggQ||suggCat!=='all'?'Nothing matches.':'Nothing fits the space that is left.'}</div>`);
- if(genRows)h+=`<div class="sgsub">Generic: any colour, not in the quote</div>${genRows}`;
- if(tight.length)h+=`<div class="sgsub">Needs more space (${tight.length})</div><div class="sgtight">${tight.map(([c,r])=>{const list=sizesOf(c);return `<div class="sg${list.length>1?' sgm':''}"><div><b>${esc(list.length>1?groupTitle(list):c.n)}</b><small>${r}</small></div>${list.length>1?`<div class="szs">${list.map(s=>sizeBtn(s,-1)).join('')}</div>`:`<button data-addk="${esc(c.k)}" class="addbtn" aria-label="Add ${esc(c.n)}">+</button>`}</div>`}).join('')}</div>`;
+ const card=(x,i)=>{const list=sizesOf(x.from||x.c),c=x.c;
+  if(list.length>1)return `<div class="sg sgm" data-i="${i}">${thumb(c)}<b>${esc(groupTitle(list))}</b><div class="szs">${list.map(s=>sizeBtn(s,i)).join('')}</div></div>`;
+  return `<button class="sg" data-i="${i}" data-add="${i}" aria-label="Add ${esc(c.n)}">${thumb(c)}<b>${esc(c.n)}</b><small>${UU(c.w,c.d)}</small><small><b>${price(c)}</b>${x.door?'':' <span class="why adv">&middot; check door access</span>'}</small></button>`};
+ const rows=suggList.map((x,i)=>!x.c.gen&&show(sizesOf(x.from||x.c))?card(x,i):'').join(''),genRows=suggList.map((x,i)=>x.c.gen&&show(sizesOf(x.from||x.c))?card(x,i):'').join(''),tight=no.filter(([c])=>show(sizesOf(c)));
+ h+=rows?`<div class="grid">${rows}</div>`:(tight.length?'':`<div class="hint">${suggQ||suggCat!=='all'?'Nothing matches.':'Nothing fits the space that is left.'}</div>`);
+ if(genRows)h+=`<div class="sgsub">Generic: any colour, not in the quote</div><div class="grid">${genRows}</div>`;
+ if(tight.length)h+=`<div class="sgsub">Needs more space (${tight.length})</div><div class="sgtight grid">${tight.map(([c,r])=>{const list=sizesOf(c);
+  return list.length>1?`<div class="sg sgm off">${thumb(c)}<b>${esc(groupTitle(list))}</b><small class="why">${r}</small><div class="szs">${list.map(s=>sizeBtn(s,-1)).join('')}</div></div>`
+   :`<button class="sg off" data-addk="${esc(c.k)}" aria-label="Add ${esc(c.n)}">${thumb(c)}<b>${esc(c.n)}</b><small>${UU(c.w,c.d)} &middot; <b>${price(c)}</b></small><small class="why">${r}</small></button>`}).join('')}</div>`;
  box.className='';box.innerHTML=h}
 // The list refreshes 120 ms after a change, so the spot is worked out again on the tap (the room may have just changed).
 $('sgcats').onclick=e=>{const b=e.target.closest('[data-cat]');if(!b)return;suggCat=b.dataset.cat;paintSugg()};
@@ -789,12 +864,16 @@ function render(){
  const grand={t:0,n:0},lines=[],parts=S.rooms.map((r,i)=>{const run=()=>{const b=roomBlock(false);grand.t+=b.total;grand.n+=b.count;
    lines.push({i,name:S.name,n:b.count,t:b.total,open:S.mode==='walls'&&!S.closed});return b.html};return i===S.cur?run():withRoom(r,run)}).join('');
  // quote screen: one big total and one line per room (tap a line to open that room)
- $('qtotal').textContent=grand.t.toLocaleString();$('qnote').textContent=usingSample?'Sample prices: IKEA UK, in £':'';
+ $('qtotal').textContent=grand.t.toLocaleString();
+ const nAll=lines.reduce((a,x)=>a+x.n,0);$('totpill').innerHTML=`<span><span class="tlab">Total </span><b>${grand.t.toLocaleString()}</b><small> &middot; ${nAll} item${nAll===1?'':'s'}</small></span><span class="go">Quote</span>`;$('qnote').textContent=usingSample?'Sample prices: IKEA UK, in £':'';
  $('qrooms').innerHTML=lines.map(x=>`<button class="qroom" data-qr="${x.i}"><span>${esc(x.name||'Room')}<small>${x.open?'not measured yet':`${x.n} item${x.n===1?'':'s'}`}</small></span><b>${x.t.toLocaleString()}</b></button>`).join('');
  $('qtable').innerHTML=parts+`<table style="margin-top:8px"><tr><th>Visit total (${S.rooms.length} room${S.rooms.length>1?'s':''})</th><th class="n">${grand.t.toLocaleString()}</th></tr></table>`;
  $('showq').disabled=$('copyq').disabled=!grand.n;if(!$('quote').hidden){$('quote').hidden=true;$('showq').textContent='Show full quote'}
  if(S.sel!=null||finSel!=null)doorOpen=false;
  renderRooms();renderTypes();applyStep();renderSizebox();renderFinbox();renderDoorbox();
+ // a size, finish or door panel opens at the top of the drawer, so bring the drawer back and scroll it there
+ const pan=['sizebox','finbox','doorbox'].find(id=>!$(id).hidden)||'';
+ if(pan&&pan!==lastPanel){if(document.body.classList.contains('drawshut'))setShut(false);$('drawer').scrollTop=0}lastPanel=pan;
  save();scheduleSugg();
 }
 
@@ -1152,7 +1231,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('v3dwrap').hidde
 
 // ---- Three screens: Measure, Furniture, Quote. The settings icon shows the advanced controls on every screen. ----
 const STEPS=[['Measure','Measure the room'],['Furniture','Add furniture'],['Quote','Quote']];
-let lastSel=null,sizeOpen=false,moveDoor=false,showShapes=false;
+let lastSel=null,lastPanel='',sizeOpen=false,moveDoor=false,showShapes=false;
 // On the furniture screen a room asks once where its door is ("Move door" asks again).
 const doorAsk=()=>S.step===2&&(moveDoor||!S.doorSet)&&!(S.mode==='walls'&&!S.closed);
 function applyStep(){const st=Math.min(3,Math.max(1,S.step||1));S.step=st;document.body.dataset.step=st;
@@ -1165,7 +1244,7 @@ function applyStep(){const st=Math.min(3,Math.max(1,S.step||1));S.step=st;docume
  const blocked=st===1&&S.mode==='walls'&&!S.closed;
  // On Measure the hint line keeps its space even when empty, so the page does not jump under the finger while typing the size.
  nx.disabled=blocked;$('navmsg').textContent=blocked?'Type the room size first.':'\u00a0';$('navmsg').hidden=st!==1;$('navmsg').style.visibility=blocked?'visible':'hidden';
- $('plantools').hidden=st!==2;
+ $('plantools').hidden=st!==2;$('totpill').hidden=st!==2;$('drawopen').hidden=!(st===2&&document.body.classList.contains('drawshut'));
  document.body.classList.toggle('more',!!S.more);$('gear').setAttribute('aria-pressed',String(!!S.more))}
 function renderTypes(){$('typechips').innerHTML=Object.entries(ROOM_TYPES).map(([k,v])=>`<button class="chip${S.type===k?' on':''}" data-t="${k}">${v}</button>`).join('')}
 // The room type names the room ("Bedroom", "Bedroom 2"), unless someone typed their own name under settings.
@@ -1178,6 +1257,12 @@ const goStep=n=>{S.step=n;moveDoor=false;$('tipmsg').textContent='';render();win
 $('stepnav').onclick=e=>{const b=e.target.closest('[data-go]');if(b)goStep(+b.dataset.go)};
 $('back').onclick=()=>goStep((S.step||1)-1);
 $('next').onclick=()=>goStep((S.step||1)+1);
+// The catalogue drawer: Hide / Catalogue on a wide screen; on a narrow one the handle makes the sheet bigger or smaller.
+$('totpill').onclick=()=>goStep(3);
+const setShut=v=>{document.body.classList.toggle('drawshut',v);applyStep();setPlanBox()};
+$('drawhide').onclick=()=>setShut(true);$('drawopen').onclick=()=>setShut(false);
+$('sheetbtn').onclick=()=>{const big=!document.body.classList.contains('sheetbig');document.body.classList.toggle('sheetbig',big);
+ $('sheetbtn').setAttribute('aria-expanded',String(big));$('sheetbtn').setAttribute('aria-label',big?'Make the catalogue smaller':'Make the catalogue bigger')};
 $('gear').onclick=()=>{S.more=!S.more;renderShapes();render()};
 let keepRect=null;
 $('notrect').onclick=()=>{keepRect=S.shape==='rect'&&S.walls.length===4?[+S.walls[0].len||0,+S.walls[1].len||0]:null;showShapes=true;S.mode='walls';S.shape='sketch';S.sketch=null;S.walls=[];onShapeChange(true)};
