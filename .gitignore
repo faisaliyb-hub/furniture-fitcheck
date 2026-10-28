@@ -4,3 +4,6 @@
 
 # build output (recreate with: python3 tools/make_artifact.py)
 dist/
+
+# Store catalogues (photos, prices) and the scripts that build them: private, never on the public site
+private/

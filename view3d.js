@@ -169,7 +169,9 @@ const loader=new GLTFLoader(),GLB=new Map();
 async function fileModel(url,it){if(!GLB.has(url))GLB.set(url,loader.loadAsync(url));const src=(await GLB.get(url)).scene.clone(true);
  const b=new THREE.Box3().setFromObject(src),s=b.getSize(new THREE.Vector3());src.scale.set(it.w*M/(s.x||1),it.h*M/(s.y||1),it.d*M/(s.z||1));
  const b2=new THREE.Box3().setFromObject(src),c=b2.getCenter(new THREE.Vector3());src.position.sub(new THREE.Vector3(c.x,b2.min.y,c.z));
- src.traverse(o=>{if(o.isMesh)o.castShadow=o.receiveShadow=true});const g=new THREE.Group();g.add(src);return g}
+ // a file's materials get the same room light as our own pieces (0.45); left at three.js's default of 1 they came out
+ // about twice as bright and looked washed out, worst for models painted from a product photo, which has its light already
+ src.traverse(o=>{if(!o.isMesh)return;o.castShadow=o.receiveShadow=true;(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(m&&'envMapIntensity' in m)m.envMapIntensity=.45})});const g=new THREE.Group();g.add(src);return g}
 
 // ---------- room shell ----------
 // Footprint quad of a wall stretch: inner points on the outline, outer points pushed out by the wall thickness.

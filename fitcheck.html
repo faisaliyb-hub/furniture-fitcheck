@@ -118,7 +118,7 @@ body[data-step="2"] #layoutcard .hint{margin-top:4px}
 #sugg button.sg{cursor:pointer}#sugg button.sg:hover,#sugg .szb:hover{border-color:var(--accent)}
 #sugg .sg b{font-size:13px}#sugg .sg small{font-size:12px}
 #sugg .sg.off{opacity:.62;border-style:dashed}
-#sugg .sg .why{color:var(--warn)}
+.why{color:var(--warn)}img.th{object-fit:cover;background:#fff}#sugg .sg.set img.th{aspect-ratio:4/3}
 .th{display:block;width:100%;height:auto;aspect-ratio:13/10;background:var(--room);border-radius:7px;touch-action:auto}
 #sugg .szs{margin-top:2px;gap:4px;flex-direction:column;flex-wrap:nowrap}#sugg .szb{min-height:38px;padding:4px 7px;font-size:12px;white-space:normal;width:100%}
 .sgsub{margin:14px 0 8px}
@@ -288,7 +288,7 @@ const TYPES=['sofa','chair','table','side','bed','storage'];
 const ROOMKEYS=['living','bedroom','dining','office','kids'];
 // Furniture type decides the top-down detail drawn inside the footprint. Optional CSV column "type"; otherwise guessed from the name.
 function typeOf(c){if(c.t)return c.t;const n=c.n.toLowerCase();
- return /sofa|couch|loveseat|settee/.test(n)?'sofa':/side table|end table|bedside|nightstand/.test(n)?'side':/bed/.test(n)?'bed':/chair|stool|bench/.test(n)?'chair':/table|desk/.test(n)?'table':/ward|cabinet|unit|shelf|book|dresser|drawer|sideboard|storage/.test(n)?'storage':'box'}
+ return /sofa|couch|loveseat|settee/.test(n)?'sofa':/side table|end table|bedside|nightstand|side drawer/.test(n)?'side':/bed/.test(n)?'bed':/chair|stool|bench/.test(n)?'chair':/table|desk/.test(n)?'table':/ward|cabinet|unit|shelf|book|dresser|drawer|sideboard|storage/.test(n)?'storage':'box'}
 const $=id=>document.getElementById(id);
 const LS='fitcheck-v1',CK='fitcheck-catalog';
 // Generic pieces for what the company does not make: any colour, shown in the layout and 3D, not priced in the quote.
@@ -322,7 +322,7 @@ const sizesOf=c=>c&&c.g?CATALOG.filter(x=>x.g===c.g).sort((a,b)=>a.w*a.d-b.w*b.d
 // Pieces saved with the first sample catalog get the matching IKEA sample SKU (only while the sample catalog is in use).
 const oldKeys=rooms=>{if(usingSample)rooms.forEach(r=>(r.items||[]).forEach(i=>{if(OLD_KEYS[i.k])i.k=OLD_KEYS[i.k]}))};
 // One entry per product: the first row of a group stands for the whole product (its usual size).
-const products=()=>CATALOG.filter((c,i)=>!c.g||CATALOG.findIndex(x=>x.g===c.g)===i);
+const products=()=>CATALOG.filter((c,i)=>!c.part&&(!c.g||CATALOG.findIndex(x=>x.g===c.g)===i));
 // The piece as placed: catalog data with its own size on top.
 function spec(it){const c=cat(it.k);if(!c)return c;const o=it.size?{...c,w:it.size.w,d:it.size.d,h:it.size.h||c.h,sized:it.size.name||'Custom size'}:c;return it.col&&c.gen?{...o,col:it.col}:o}
 const colName=h=>(PALETTE.find(([c])=>c===h)||[0,h])[1];
@@ -758,13 +758,21 @@ function findSpot(c,cl,rots=[0,90,180,270],near){const W=+S.rw,L=+S.rl,ob=S.item
 // Pieces that belong together: a bedside table goes beside the head of a bed, a coffee table in front of a sofa,
 // a TV unit against the wall the sofa faces (turned towards it).
 // Local offsets (u across the partner, v towards its front) are turned with the partner's rotation.
-function pairSpot(c){const n=c.n.toLowerCase(),side=/bedside|night/.test(n),coffee=/coffee/.test(n),tv=/\btv\b|media/.test(n);if(!side&&!coffee&&!tv)return null;
+function pairSpot(c){const n0=c.n.toLowerCase();if(/dining chair/.test(n0))return chairSpot(c);
+ const n=n0,side=/bedside|night|side drawer/.test(n),coffee=/coffee|cent(er|re) table/.test(n),tv=/\btv\b|media/.test(n);if(!side&&!coffee&&!tv)return null;
  const p=S.items.map(it=>({it,s:spec(it)})).find(({s})=>side?typeOf(s)==='bed':typeOf(s)==='sofa');if(!p)return null;
  const {it,s}=p,t=it.rot*Math.PI/180,at=(u,v)=>({x:it.x+u*Math.cos(t)-v*Math.sin(t),y:it.y+u*Math.sin(t)+v*Math.cos(t)});
  if(tv)return findSpot(c,c.cl,[(it.rot+180)%360],[at(0,5000)]);   // as far along the sofa's view as the room allows
  const near=side?[-1,1].map(k=>at(k*(s.w/2+c.w/2+2),-s.d/2+c.d/2)):[at(0,s.d/2+s.cl+c.d/2+2)];
  const sp=findSpot(c,c.cl,[it.rot],near)||findSpot(c,0,[it.rot],near);
  return sp&&Math.min(...near.map(q=>Math.hypot(sp.x-q.x,sp.y-q.y)))<=40?sp:null}
+// Dining chairs go round their table: evenly along both long sides (front side first), then at the ends, each facing the table.
+function chairSpot(c){const p=S.items.map(it=>({it,s:spec(it)})).find(({s})=>/dining table/i.test(s.n));if(!p)return null;
+ const {it,s}=p,t=it.rot*Math.PI/180,at=(u,v)=>({x:it.x+u*Math.cos(t)-v*Math.sin(t),y:it.y+u*Math.sin(t)+v*Math.cos(t)}),k=Math.max(1,Math.round(s.w/62)),gap=c.d/2+s.d/2+2;
+ const slots=[];for(let j=0;j<k;j++){const u=-s.w/2+s.w*(j+.5)/k;slots.push([at(u,gap),(it.rot+180)%360],[at(u,-gap),it.rot])}
+ slots.push([at(s.w/2+c.d/2+2,0),(it.rot+270)%360],[at(-s.w/2-c.d/2-2,0),(it.rot+90)%360]);
+ for(const [q,rot] of slots){const sp=findSpot(c,0,[rot],[q]);if(sp&&Math.hypot(sp.x-q.x,sp.y-q.y)<=12)return sp}
+ return null}
 function doorOk(c){const s=[c.w,c.d,c.h].sort((a,b)=>a-b);return s[0]<=S.dw-5&&s[1]<=S.dh-5}
 // "Fits here" is the slowest thing in the app (a search per product), so it runs only on the Furniture screen and only
 // when something that changes what fits has changed: not on selecting a piece, opening Size or switching screens.
@@ -798,20 +806,23 @@ function renderSugg(){
 // Every piece can go in any room: the room's usual pieces come first, everything else follows in the same list,
 // and pieces that need more space are listed last (adding one shows it red). Filters and search only change what is shown.
 let suggData=null,suggCat='all',suggQ='';
-const CATS=[['all','All'],['seat','Seating'],['bed','Beds'],['table','Tables'],['storage','Storage']];
+const CATS=[['all','All'],['set','Sets'],['seat','Seating'],['bed','Beds'],['table','Tables'],['storage','Storage']];
 // line icons for the catalogue rail (24 x 24)
 const CATICON={all:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
  seat:'<path d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3"/><path d="M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v4H3z"/><path d="M5 17v2M19 17v2"/>',
  bed:'<path d="M3 18V6M3 14h18v4M21 18v-6a2 2 0 0 0-2-2h-8v4"/><circle cx="7" cy="11" r="1.6"/>',
  table:'<path d="M3 9h18M5 9v10M19 9v10M8 9v5h8V9"/>',
- storage:'<rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M12 3v18M10 11v2M14 11v2"/>'};
+ storage:'<rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M12 3v18M10 11v2M14 11v2"/>',
+ set:'<rect x="3" y="10" width="8" height="8" rx="1.5"/><rect x="13" y="6" width="8" height="12" rx="1.5"/><path d="M7 10V6h4"/>'};
 const catOf=c=>{const t=typeOf(c);return t==='sofa'||t==='chair'?'seat':t==='bed'?'bed':t==='table'||t==='side'?'table':'storage'};
 // A card's picture is the piece seen from above at one shared scale (2.6 m across), so a sofa looks bigger than a chair, as in the room.
-function thumb(c){const W=Math.max(260,c.w+20,(c.d+20)*1.3),H=W/1.3,col=c.gen?(c.col||'var(--accent)'):'var(--accent)';
+function thumb(c){if(c.ph&&assetUrl(c.ph))return `<img class="th" src="${esc(assetUrl(c.ph))}" alt="" loading="lazy" decoding="async">`;
+ const W=Math.max(260,c.w+20,(c.d+20)*1.3),H=W/1.3,col=c.gen?(c.col||'var(--accent)'):'var(--accent)';
  return `<svg class="th" viewBox="${-W/2} ${-H/2} ${W} ${H}" aria-hidden="true"><rect x="${-c.w/2}" y="${-c.d/2}" width="${c.w}" height="${c.d}" rx="2" fill="${col}" fill-opacity=".28" stroke="${col}" stroke-width="1.6"/><g fill="none" stroke="var(--ink)" stroke-opacity=".45" stroke-width="1.3">${detail(c,1)}</g></svg>`}
-function paintSugg(){const box=$('sugg');$('sgcats').innerHTML=CATS.map(([k,v])=>`<button class="chip${suggCat===k?' on':''}" data-cat="${k}" aria-pressed="${suggCat===k}"><svg viewBox="0 0 24 24" aria-hidden="true">${CATICON[k]}</svg>${v}</button>`).join('');
+function paintSugg(){const box=$('sugg');$('sgcats').innerHTML=CATS.filter(([k])=>k!=='set'||CO_SETS.length).map(([k,v])=>`<button class="chip${suggCat===k?' on':''}" data-cat="${k}" aria-pressed="${suggCat===k}"><svg viewBox="0 0 24 24" aria-hidden="true">${CATICON[k]}</svg>${v}</button>`).join('');
  if(!suggData)return;const {fr,free,no}=suggData;
- const show=list=>list.some(c=>(suggCat==='all'||catOf(c)===suggCat)&&(!suggQ||`${c.n} ${c.z||''} ${c.k}`.toLowerCase().includes(suggQ)));
+ if(suggCat==='set'&&!CO_SETS.length)suggCat='all';
+ const show=list=>suggCat!=='set'&&list.some(c=>(suggCat==='all'||catOf(c)===suggCat)&&(!suggQ||`${c.n} ${c.z||''} ${c.k}`.toLowerCase().includes(suggQ)));
  let h=`<div class="hint adv" style="margin:0 0 6px">Largest free area: <b>${UU(fr.w,fr.d)}</b> (clearances not included). Suggestions respect clearances, the door swing and other pieces, and show pieces suited to this room type first.</div>`;
  // One card per product. A product with several sizes gets one button per size, so the rep picks the size and can add
  // as many as they like. Sizes that do not fit well are still offered (dimmed): adding one shows it red on the plan.
@@ -821,9 +832,14 @@ function paintSugg(){const box=$('sugg');$('sgcats').innerHTML=CATS.map(([k,v])=
  const sizeBtn=(s,i)=>{const ok=s.k===(suggList[i]||{}).c?.k||fitsK(s);return `<button class="szb${ok?'':' off'}" ${s.k===(suggList[i]||{}).c?.k?`data-add="${i}"`:`data-addk="${esc(s.k)}"`} aria-label="Add ${esc(s.n)}"><b>+ ${esc(s.z||s.n)}</b><small>${UU(s.w,s.d)}${s.gen?'':` &middot; ${s.p.toLocaleString()}`}${ok?'':' &middot; tight'}</small></button>`};
  const card=(x,i)=>{const list=sizesOf(x.from||x.c),c=x.c;
   if(list.length>1)return `<div class="sg sgm" data-i="${i}">${thumb(c)}<b>${esc(groupTitle(list))}</b><div class="szs">${list.map(s=>sizeBtn(s,i)).join('')}</div></div>`;
-  return `<button class="sg" data-i="${i}" data-add="${i}" aria-label="Add ${esc(c.n)}">${thumb(c)}<b>${esc(c.n)}</b><small>${UU(c.w,c.d)}</small><small><b>${price(c)}</b>${x.door?'':' <span class="why adv">&middot; check door access</span>'}</small></button>`};
+  return `<button class="sg" data-i="${i}" data-add="${i}" aria-label="Add ${esc(c.n)}">${thumb(c)}<b>${esc(c.n)}</b><small>${UU(c.w,c.d)}${c.est?' <span class="why">&middot; size to confirm</span>':''}</small><small><b>${price(c)}</b>${x.door?'':' <span class="why adv">&middot; check door access</span>'}</small></button>`};
  const rows=suggList.map((x,i)=>!x.c.gen&&show(sizesOf(x.from||x.c))?card(x,i):'').join(''),genRows=suggList.map((x,i)=>x.c.gen&&show(sizesOf(x.from||x.c))?card(x,i):'').join(''),tight=no.filter(([c])=>show(sizesOf(c)));
- h+=rows?`<div class="grid">${rows}</div>`:(tight.length?'':`<div class="hint">${suggQ||suggCat!=='all'?'Nothing matches.':'Nothing fits the space that is left.'}</div>`);
+ // Sets come first: one card per set (photo, price, its pieces); adding one places every piece.
+ const setRows=CO_SETS.filter(st=>(suggCat==='all'||suggCat==='set')&&(!suggQ||`${st.n} ${st.k}`.toLowerCase().includes(suggQ))&&(suggCat==='set'||suggQ||!st.r||st.r.includes(S.type))).map(st=>{
+  const pcs=st.pcs.map(x=>({c:cat(x.k),q:x.q})).filter(x=>x.c),area=pcs.reduce((a,x)=>a+x.c.w*x.c.d*x.q,0),ok=area<=free,est=pcs.some(x=>x.c.est);
+  return `<button class="sg set${ok?'':' off'}" data-set="${esc(st.k)}" aria-label="Add ${esc(st.n)}">${thumb({...st,w:100,d:100})}<b>${esc(st.n)}</b><small>${pcs.map(x=>`${x.q>1?x.q+' x ':''}${esc(shortName(x.c.n))}`).join(', ')}</small><small><b>${st.p.toLocaleString()}</b>${est?' <span class="why">&middot; sizes to confirm</span>':''}${ok?'':' <span class="why">&middot; needs more space</span>'}</small></button>`}).join('');
+ if(setRows)h+=`<div class="sgsub" style="margin-top:0">Sets</div><div class="grid">${setRows}</div>${rows?'<div class="sgsub">Single pieces</div>':''}`;
+ h+=rows?`<div class="grid">${rows}</div>`:(tight.length||setRows?'':`<div class="hint">${suggQ||suggCat!=='all'?'Nothing matches.':'Nothing fits the space that is left.'}</div>`);
  if(genRows)h+=`<div class="sgsub">Generic: any colour, not in the quote</div><div class="grid">${genRows}</div>`;
  if(tight.length)h+=`<div class="sgsub">Needs more space (${tight.length})</div><div class="sgtight grid">${tight.map(([c,r])=>{const list=sizesOf(c);
   return list.length>1?`<div class="sg sgm off">${thumb(c)}<b>${esc(groupTitle(list))}</b><small class="why">${r}</small><div class="szs">${list.map(s=>sizeBtn(s,-1)).join('')}</div></div>`
@@ -832,7 +848,19 @@ function paintSugg(){const box=$('sugg');$('sgcats').innerHTML=CATS.map(([k,v])=
 // The list refreshes 120 ms after a change, so the spot is worked out again on the tap (the room may have just changed).
 $('sgcats').onclick=e=>{const b=e.target.closest('[data-cat]');if(!b)return;suggCat=b.dataset.cat;paintSugg()};
 $('sgq').oninput=e=>{suggQ=e.target.value.trim().toLowerCase();paintSugg()};
-$('sugg').onclick=e=>{const b=e.target.closest('[data-add],[data-addk]');if(!b)return;const x=b.dataset.addk?{c:cat(b.dataset.addk)}:suggList[+b.dataset.add];if(!x||!x.c)return;
+// Places a piece where it fits best (next to its partner, against a wall); with no spot it goes in the middle, shown red.
+// A dining table stands free with room for its chairs on both long sides, as near the middle of the room as it fits.
+function diningSpot(c){if(!/dining table/i.test(c.n))return null;const zone={...c,w:c.w+30,d:c.d+2*75},mid=[{x:S.rw/2,y:S.rl/2}];
+ return findSpot(zone,0,[0,90],mid)||findSpot({...c,d:c.d+2*60},0,[0,90],mid)}
+function placePiece(c,extra){const sp=pairSpot(c)||diningSpot(c)||findSpot(c,c.cl)||findSpot(c,0);
+ const it={id:S.next++,k:c.k,x:sp?sp.x:S.rw/2,y:sp?sp.y:S.rl/2,rot:sp?sp.rot:0,...extra};S.items.push(it);return it}
+// A set is placed piece by piece: the main piece first (bed, sofa, dining table), then the pieces that go with it
+// (bedside drawers, centre table, chairs), then the rest, biggest first. All its pieces share one set number.
+const setRank=c=>{const n=c.n.toLowerCase(),t=typeOf(c);return t==='bed'||t==='sofa'||/dining table/.test(n)?0:/bedside|night|side drawer|coffee|cent(er|re) table|dining chair/.test(n)?1:2};
+function placeSet(st){const g=S.next++,list=st.pcs.flatMap(x=>{const c=cat(x.k);return c?Array(x.q).fill(c):[]}).sort((a,b)=>setRank(a)-setRank(b)||b.w*b.d-a.w*a.d);
+ list.forEach(c=>placePiece(c,{set:{k:st.k,g}}));S.sel=null;ghost=null;render()}
+$('sugg').onclick=e=>{const sb=e.target.closest('[data-set]');if(sb){if(S.mode==='walls'&&!S.closed)return;const st=CO_SETS.find(x=>x.k===sb.dataset.set);if(st)placeSet(st);return}
+ const b=e.target.closest('[data-add],[data-addk]');if(!b)return;const x=b.dataset.addk?{c:cat(b.dataset.addk)}:suggList[+b.dataset.add];if(!x||!x.c)return;
  if(S.mode==='walls'&&!S.closed)return;const c=x.c,sp=pairSpot(c)||findSpot(c,c.cl)||findSpot(c,0);   // no spot: the middle of the room, shown red
  ghost=null;const it={id:S.next++,k:c.k,x:sp?sp.x:S.rw/2,y:sp?sp.y:S.rl/2,rot:sp?sp.rot:0};S.items.push(it);S.sel=it.id;render()};
 $('sugg').onmouseover=e=>{const r=e.target.closest('.sg[data-i]');const x=r&&suggList[+r.dataset.i];
@@ -898,11 +926,17 @@ function quoteLines(){const priced=[],gen=[],open=S.mode==='walls'&&!S.closed;
  (S.finishes||[]).forEach(f=>{const r=finCalc(f);if(!r||!r.q)return;const where=f.part||f.half?`${f.part?`${U(r.R.b-r.R.a)} of the wall`:'whole wall'}${f.half?', half height':''}`:'';
   if(r.c.gen)gen.push(`${wallName(f.wall)}: ${r.q} ${r.unit} of ${r.c.n.toLowerCase()} (${colName(finCol(f))})`);
   else priced.push({label:`${wallName(f.wall)}: ${r.c.n}`,sub:where,qty:`${r.q} ${r.unit}`,cost:r.cost,txt:`${wallName(f.wall)}: ${r.q} ${r.unit} ${r.c.n}${where?` (${where})`:''}`})});
+ // a set is one line at the set price, as long as any of its pieces is in the room
+ const sets=new Map();S.items.forEach(it=>{if(!it.set)return;const k=it.set.k+'|'+it.set.g;if(!sets.has(k))sets.set(k,{k:it.set.k,list:[]});sets.get(k).list.push(spec(it))});
+ sets.forEach(({k,list})=>{const st=CO_SETS.find(x=>x.k===k);if(!st)return;const want=st.pcs.reduce((a,x)=>a+x.q,0),est=list.some(c=>c&&c.est);
+  const names=[...list.reduce((m,c)=>m.set(c.n,(m.get(c.n)||0)+1),new Map())].map(([n,q])=>`${q>1?q+' x ':''}${shortName(n)}`).join(', ');
+  const sub=`${names}${list.length<want?` (${list.length} of ${want} pieces placed)`:''}${est?', sizes to confirm':''}`;
+  priced.push({label:st.n,sub,qty:'1 set',cost:st.p,txt:`1 x ${st.n} (${sub})`})});
  groupItems().forEach(({c,q})=>{if(c.gen)gen.push(`${q} x ${c.n.toLowerCase()} (${colName(c.col)})`);
-  else priced.push({label:c.n,sub:c.sized?`${c.sized}, ${UUU(c.w,c.d,c.h)}, price to confirm`:'',qty:String(q),cost:c.p*q,txt:`${q} x ${c.n}${c.sized?` (${c.sized}, ${UUU(c.w,c.d,c.h)}, price to confirm)`:''}`})});
+  else priced.push({label:c.n,sub:c.sized?`${c.sized}, ${UUU(c.w,c.d,c.h)}, price to confirm`:c.est?`${UUU(c.w,c.d,c.h)}, size to confirm`:'',qty:String(q),cost:c.p*q,txt:`${q} x ${c.n}${c.sized?` (${c.sized}, ${UUU(c.w,c.d,c.h)}, price to confirm)`:''}`})});
  return{priced,gen,total:priced.reduce((a,x)=>a+x.cost,0)}}
-// Pieces of the current room grouped by product and size: [{c (spec), q}].
-function groupItems(){const m=new Map();S.items.forEach(it=>{const key=it.k+'|'+sizeKey(it);if(!m.has(key))m.set(key,{c:spec(it),q:0});m.get(key).q++});return[...m.values()]}
+// Pieces of the current room grouped by product and size: [{c (spec), q}]. Pieces of a set are priced with their set.
+function groupItems(){const m=new Map();S.items.forEach(it=>{if(it.set)return;const key=it.k+'|'+sizeKey(it);if(!m.has(key))m.set(key,{c:spec(it),q:0});m.get(key).q++});return[...m.values()]}
 function buildQuote(){stash();let body='',grand=0;
  const lines=S.rooms.map(r=>`<tr><td>${esc(r.name)}</td><td>${ROOM_TYPES[r.type]||''}</td><td>${r.closed===false?'not measured':UU(r.rw,r.rl)}</td><td>${UU(r.dw,r.dh)}</td></tr>`).join('');
  S.rooms.forEach((r,i)=>{const run=()=>{const b=roomBlock(true);body+=b.html;grand+=b.total};i===S.cur?run():withRoom(r,run)});
@@ -952,14 +986,22 @@ function buildCatalog(text,files){
  const head=rows[0].map(h=>h.trim().toLowerCase()),col=n=>head.indexOf(n);
  const need=['sku','name','width_cm','depth_cm','height_cm'].filter(n=>col(n)<0);
  if(need.length)return{errs:[`Missing column(s): ${need.join(', ')}.`]};
- const seen=new Set(),out=[],fin=[],doors=[],isUrl=x=>/^https?:\/\//i.test(x);
+ const seen=new Set(),out=[],fin=[],doors=[],sets=[],isUrl=x=>/^https?:\/\//i.test(x);
  rows.slice(1).forEach((r,i)=>{const n=i+2,g=c=>col(c)<0?'':(r[col(c)]||'').trim();
   const sku=g('sku'),name=g('name'),num=c=>g(c).replace(',','.')===''?NaN:Number(g(c).replace(',','.'));
   if(!sku||!name){errs.push(`Row ${n}: sku and name are required.`);return}
   if(seen.has(sku)){errs.push(`Row ${n}: duplicate sku "${sku}".`);return}
   seen.add(sku);
   const kind=(g('kind')||'furniture').toLowerCase();
-  if(!['furniture','panel','wallpaper','door'].includes(kind)){errs.push(`Row ${n} (${sku}): kind must be furniture, panel, wallpaper or door.`);return}
+  if(!['furniture','panel','wallpaper','door','set'].includes(kind)){errs.push(`Row ${n} (${sku}): kind must be furniture, panel, wallpaper, door or set.`);return}
+  const photo=g('photo'),est=/^(y|yes|true|1|estimated?)$/i.test(g('estimated'));
+  if(photo&&!/\.(jpe?g|png|webp)(\?\S*)?$/i.test(photo))errs.push(`Row ${n} (${sku}): photo must be a .jpg, .png or .webp image.`);
+  if(photo&&!isUrl(photo)&&!(files&&files.includes(photo)))errs.push(`Row ${n} (${sku}): photo "${photo}" is not in the pack${files?'':' (import a pack with it, or use a web link)'}.`);
+  // A set is sold as one: it has a price and a list of pieces (pieces = sku*count|sku*count), each a furniture row of its own.
+  if(kind==='set'){let p=num('price');if(isNaN(p))p=0;const pcs=g('pieces').split('|').map(x=>x.trim()).filter(Boolean).map(x=>{const [k,q]=x.split('*');return{k:k.trim(),q:Math.max(1,Math.round(+q||1))}});
+   if(!pcs.length)errs.push(`Row ${n} (${sku}): a set needs pieces, e.g. SOFA3*2|ARM*2.`);
+   const rm=g('rooms').toLowerCase().split('|').map(x=>x.trim()).filter(Boolean);
+   sets.push({k:sku,n:name,p,pcs,ph:photo||undefined,r:rm.length?rm:undefined,row:n});return}
   const w=num('width_cm'),d=num('depth_cm'),h=num('height_cm'),hMax=kind==='wallpaper'?5000:1000;
   for(const [lab,v,req] of [['width_cm',w,1],['depth_cm',d,kind==='furniture'],['height_cm',h,1]])
    if((req||!isNaN(v))&&!(v>0&&v<=(lab==='height_cm'?hMax:1000)))errs.push(`Row ${n} (${sku}): ${lab} must be a number between 0 and ${lab==='height_cm'?hMax:1000} cm.`);
@@ -980,8 +1022,11 @@ function buildCatalog(text,files){
   if(ty&&!TYPES.includes(ty))errs.push(`Row ${n} (${sku}): type must be one of ${TYPES.join(', ')} (or empty).`);
   if(isNaN(cl))cl=50;else if(cl<0||cl>300)errs.push(`Row ${n} (${sku}): front_clearance_cm must be 0-300.`);
   const grp=g('group'),sz=g('size'),f2=g('finish');
-  out.push({k:sku,n:name,w,d,h,cl,p,t:ty||undefined,r:rm.length?rm:undefined,g:grp||undefined,z:sz||undefined,f:f2||undefined,m:mdl||undefined,tx:tex||undefined,col:color||undefined})});
- return{errs,out,fin,doors}}
+  out.push({k:sku,n:name,w,d,h,cl,p,t:ty||undefined,r:rm.length?rm:undefined,g:grp||undefined,z:sz||undefined,f:f2||undefined,m:mdl||undefined,tx:tex||undefined,col:color||undefined,ph:photo||undefined,est:est||undefined})});
+ // every piece of a set must be a furniture row; a piece with no price of its own is sold only in its set
+ sets.forEach(st=>st.pcs.forEach(pc=>{const c=out.find(x=>x.k===pc.k);if(!c){errs.push(`Row ${st.row} (${st.k}): piece "${pc.k}" is not a furniture row in the catalog.`);return}if(!c.p)c.part=true}));
+ sets.forEach(st=>delete st.row);
+ return{errs,out,fin,doors,sets}}
 // ---- Company pack: a .zip with one catalog .csv, optional company.json {"name": "..."}, and the photos and 3D files it names.
 // Kept on this device (IndexedDB), so it is still there next time; reps on other devices import the same zip.
 let PACK_URL={};
@@ -999,9 +1044,9 @@ async function readPack(file){const {unzipSync}=await import('https://cdn.jsdeli
  return{csv,company:company||file.name.replace(/\.zip$/i,''),files}}
 // Puts a pack's photos and 3D files in place and its finishes and doors in use; null goes back to the samples.
 function applyPack(p){Object.values(PACK_URL).forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});PACK_URL={};
- if(!p){COMPANY='Sample company';CO_FIN=SAMPLE_FIN.slice();CO_DOORS=SAMPLE_DOORS.slice();return null}
+ if(!p){COMPANY='Sample company';CO_FIN=SAMPLE_FIN.slice();CO_DOORS=SAMPLE_DOORS.slice();CO_SETS=[];return null}
  for(const [n,b] of Object.entries(p.files||{}))PACK_URL[n]=URL.createObjectURL(b);
- const r=buildCatalog(p.csv,Object.keys(p.files||{}));if(!r.errs.length){COMPANY=p.company||'Company';CO_FIN=r.fin;CO_DOORS=r.doors}return r}
+ const r=buildCatalog(p.csv,Object.keys(p.files||{}));if(!r.errs.length){COMPANY=p.company||'Company';CO_FIN=r.fin;CO_DOORS=r.doors;CO_SETS=r.sets}return r}
 function setCatalog(list,sample,fromPack){
  list=list.filter(c=>!c.gen);CATALOG=[...list,...GEN_FURN];usingSample=sample;
  try{sample||fromPack?localStorage.removeItem(CK):localStorage.setItem(CK,JSON.stringify(list))}catch(e){}
@@ -1009,9 +1054,9 @@ function setCatalog(list,sample,fromPack){
  renderCat();render();return gone}
 $('imp').onclick=()=>$('impfile').click();
 $('impfile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
- f.text().then(t=>{const {errs,out}=buildCatalog(t),m=$('catmsg');
+ f.text().then(t=>{const {errs,out,sets}=buildCatalog(t),m=$('catmsg');
   if(errs.length){m.style.color='var(--err)';m.innerHTML=`Import rejected, nothing changed:<br>${errs.slice(0,8).map(esc).join('<br>')}${errs.length>8?`<br>...and ${errs.length-8} more`:''}`;return}
-  const dropped=setCatalog(out,false);m.style.color='var(--ok)';
+  CO_SETS=sets;const dropped=setCatalog(out,false);m.style.color='var(--ok)';
   m.textContent=`Imported ${out.length} products.${dropped?` ${dropped} placed item(s) were removed because their SKU is not in the new catalog.`:''}`})};
 $('imppack').onclick=()=>$('packfile').click();
 $('packfile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importPack(f)};
@@ -1020,7 +1065,7 @@ async function importPack(f){const m=$('catmsg');m.style.color='';m.textContent=
  try{const p=await readPack(f);if(!p.csv)throw new Error('there is no catalog .csv file in the zip');const r=buildCatalog(p.csv,Object.keys(p.files));
   if(r.errs.length){m.style.color='var(--err)';m.innerHTML=`Pack not imported, nothing changed:<br>${r.errs.slice(0,8).map(esc).join('<br>')}${r.errs.length>8?`<br>...and ${r.errs.length-8} more`:''}`;return}
   await packSave(p);applyPack(p);const gone=setCatalog(r.out,false,true);m.style.color='var(--ok)';
-  m.textContent=`Imported ${COMPANY}: ${r.out.length} furniture, ${r.fin.length} wall finishes, ${r.doors.length} doors, ${Object.keys(p.files).length} files.${gone?` ${gone} placed item(s) were removed (not in this catalog).`:''}`}
+  m.textContent=`Imported ${COMPANY}: ${r.out.length} furniture${r.sets.length?` (${r.sets.length} sets)`:''}, ${r.fin.length} wall finishes, ${r.doors.length} doors, ${Object.keys(p.files).length} files.${gone?` ${gone} placed item(s) were removed (not in this catalog).`:''}`}
  catch(err){m.style.color='var(--err)';m.textContent=`The pack could not be read (${err.message}).`}}
 $('sample').onclick=()=>{packSave(null).catch(()=>{});applyPack(null);const d=setCatalog(SAMPLE.slice(),true);$('catmsg').style.color='';$('catmsg').textContent=`Sample catalog restored.${d?` ${d} placed item(s) removed.`:''}`};
 $('tpl').onclick=()=>{const q=x=>x==null||x===''?'':/[,"]/.test(String(x))?'"'+String(x).replace(/"/g,'""')+'"':String(x);
@@ -1167,7 +1212,7 @@ $('moderect').onclick=()=>{if(S.mode!=='rect')toRect()};
 // ---- Size panel for the selected piece (furniture step) ----
 function renderSizebox(){const it=S.step===2&&sizeOpen&&S.items.find(i=>i.id===S.sel),box=$('sizebox');box.hidden=!it;if(!it)return;
  const base=cat(it.k),c=spec(it),list=sizesOf(base),many=list.length>1;
- $('sizettl').textContent=`Size: ${base.n}`;
+ $('sizettl').innerHTML=`Size: ${esc(base.n)}${base.est&&!it.size?' <small class="why" style="color:var(--warn);font-weight:400">(estimated, size to confirm with the company)</small>':''}${it.set?`<small style="display:block;color:var(--mute);font-weight:400">Part of ${esc((CO_SETS.find(x=>x.k===it.set.k)||{n:'a set'}).n)}</small>`:''}`;
  $('sizechips').innerHTML=(many?list.map(x=>`<button class="chip${!it.size&&x.k===it.k?' on':''}" data-sz="k:${esc(x.k)}">${esc(x.z||x.n)}<small>${UU(x.w,x.d)} &middot; ${x.p.toLocaleString()}</small></button>`).join('')
    :`<button class="chip${!it.size?' on':''}" data-sz="cat">Catalog size<small>${UU(base.w,base.d)}</small></button>`)+
   `<button class="chip${it.size?' on':''}" data-sz="custom">Custom<small>type below</small></button>`;
@@ -1207,7 +1252,7 @@ function roomModel(){
   obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
   items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:assetUrl(c.m),tex:assetUrl(c.tx),color:c.gen||c.col&&!c.f?c.col||'':''}})}}
 // Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
-const V3D='2026-10-27h';
+const V3D='2026-10-28a';
 let view3d=null,v3dTimer=0;
 async function open3d(){
  if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
@@ -1352,7 +1397,7 @@ const GEN_DOOR={k:'GEN-DOOR',n:'Plain door',style:'flat',w:90,h:205,p:0,col:'#f1
 const DOOR_STYLES=['flat','panel','fluted','glass','geometric'];
 // Colours offered for generic pieces, paint and the plain door (plus "any colour").
 const PALETTE=[['#f2efe9','White'],['#d9cfc1','Beige'],['#b9b0a4','Greige'],['#8d9092','Grey'],['#4a4c4f','Charcoal'],['#262524','Black'],['#c39a6b','Oak'],['#6a4930','Walnut'],['#7d8b7e','Sage'],['#3f5b7f','Navy'],['#8e3b35','Terracotta'],['#d6b44a','Mustard']];
-let CO_FIN=SAMPLE_FIN.slice(),CO_DOORS=SAMPLE_DOORS.slice(),COMPANY='Sample company';
+let CO_FIN=SAMPLE_FIN.slice(),CO_DOORS=SAMPLE_DOORS.slice(),CO_SETS=[],COMPANY='Sample company';
 const allFin=()=>[...CO_FIN,...GEN_FIN];
 const finCat=k=>allFin().find(f=>f.k===k);
 const finCol=f=>f.col||(finCat(f.k)||{}).col;   // an instance colour (generic paint) wins

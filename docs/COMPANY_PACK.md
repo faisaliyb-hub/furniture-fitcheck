@@ -29,7 +29,7 @@ Excel or Google Sheets as **CSV UTF-8**. Sizes are in centimetres. Empty cells a
 
 | Column | For | What to put |
 |---|---|---|
-| `kind` | all | `furniture` (the default when empty), `panel`, `wallpaper` or `door` |
+| `kind` | all | `furniture` (the default when empty), `panel`, `wallpaper`, `door` or `set` |
 | `sku` | all | Your product code. Each row needs its own |
 | `name` | all | The name reps and clients see |
 | `width_cm`, `height_cm` | all | Furniture: outer size. Panel: one panel. Wallpaper: roll width and roll length (e.g. 53 and 1005). Door: the door leaf |
@@ -45,6 +45,15 @@ Excel or Google Sheets as **CSV UTF-8**. Sizes are in centimetres. Empty cells a
 | `color` | all | A colour like `#b98a5e`, used on the plan and until the photo loads |
 | `style` | door | `flat`, `panel`, `fluted`, `glass` or `geometric`: the shape drawn when there is no photo |
 | `repeat_cm` | wallpaper | Pattern repeat. It adds waste to the roll count (0 or empty for plain paper) |
+| `photo` | furniture, set | A product photo in the zip (or a web link), shown on the product's card in the catalogue |
+| `estimated` | furniture | `yes` when the size is not measured yet. The card, the size panel and the quote then say "size to confirm" |
+| `pieces` | set | What the set is made of: `sku*count` separated by `\|`, e.g. `SOFA3*2\|ARM*2\|CT*1`. Each piece is its own furniture row |
+
+**Sets** (e.g. a sofa set 3+3+1+1 with a centre table, or a dining table with 6 chairs) are sold as one: give the `set` row
+its `name`, `price`, `photo`, `rooms` and `pieces`, and no sizes. Give each piece a furniture row with its real size; a piece
+with no `price` is sold only in its set and is not listed on its own. Adding a set places every piece in the room (the bed,
+sofa or dining table first, then its bedside drawers, centre table or chairs round the table), and the quote shows one line at
+the set price.
 
 When something is wrong, nothing is imported and the app lists the rows to fix (for example "Row 7 (DF-WP-TREL):
 texture "trellis.png" is not in the pack").
