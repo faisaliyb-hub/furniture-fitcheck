@@ -1252,7 +1252,7 @@ function roomModel(){
   obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
   items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:assetUrl(c.m),tex:assetUrl(c.tx),color:c.gen||c.col&&!c.f?c.col||'':''}})}}
 // Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
-const V3D='2026-10-27h';
+const V3D='2026-10-28a';
 let view3d=null,v3dTimer=0;
 async function open3d(){
  if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
