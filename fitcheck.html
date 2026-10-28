@@ -1511,10 +1511,10 @@ if(!Array.isArray(S.rooms)||!S.rooms.length){S.rooms=[];S.cur=0;stash()}
 const DEFAULT_PACK='packs/baffi-noval.zip';
 // The built-in pack's 3D files sit next to it on the site (packs/baffi-models/), so each one downloads only when a piece
 // that uses it is shown in 3D; the zip itself stays small (catalogue and photos).
-const DEFAULT_MODELS='packs/baffi-models/';
+const DEFAULT_MODELS='packs/baffi-models/',MODELS_V='2026-10-28c';   // bump MODELS_V when the model files change, so browsers fetch the new ones
 async function defaultPack(){const b=await (await fetch(DEFAULT_PACK)).blob(),p=await readPack(new File([b],'baffi-noval.zip'));
  const rows=p.csv.split(/\r?\n/),head=(rows[0]||'').split(','),mi=head.indexOf('model');
- p.remote=Object.fromEntries(rows.slice(1).map(r=>r.split(',')[mi]).filter(m=>m&&/\.glb$/i.test(m)&&!p.files[m]).map(m=>[m,DEFAULT_MODELS+m]));return p}
+ p.remote=Object.fromEntries(rows.slice(1).map(r=>r.split(',')[mi]).filter(m=>m&&/\.glb$/i.test(m)&&!p.files[m]).map(m=>[m,DEFAULT_MODELS+m+'?v='+MODELS_V]));return p}
 (async()=>{let hasPack=false,samples=false;try{hasPack=localStorage.getItem('fitcheck-haspack')==='1';samples=localStorage.getItem('fitcheck-samples')==='1'}catch(e){}
  try{const p=hasPack?await packLoad():samples?null:await defaultPack(),r=p&&applyPack(p);if(r&&!r.errs.length){CATALOG=[...r.out,...GEN_FURN];usingSample=false}}catch(e){}
  S.cur=Math.min(S.cur||0,S.rooms.length-1);oldKeys(S.rooms);S.rooms.forEach(r=>r.items=(r.items||[]).filter(i=>cat(i.k)));loadRoom(S.cur);
