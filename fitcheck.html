@@ -228,7 +228,7 @@ body[data-step="2"] #layoutcard .hint{margin-top:4px}
  <section class="card adv" data-step="2"><h2 id="cathead">Catalog</h2>
   <input id="catq" placeholder="Search name or SKU" style="margin-bottom:8px">
   <div class="cat" id="cat" style="max-height:320px;overflow:auto"></div>
-  <div class="tools"><button id="imppack" class="primary">Import company pack (.zip)</button><button id="samplepack">Try sample company pack</button><a class="btnlike" href="samples/sample-company-pack.zip" download>Download sample pack</a><button id="imp">Import CSV</button><button id="tpl">Copy template</button><button id="sample">Use sample</button></div>
+  <div class="tools"><button id="defpack" class="primary">Use built-in catalogue (Baffi)</button><button id="imppack">Import company pack (.zip)</button><button id="samplepack">Try sample company pack</button><a class="btnlike" href="samples/sample-company-pack.zip" download>Download sample pack</a><button id="imp">Import CSV</button><button id="tpl">Copy template</button><button id="sample">Use sample</button></div>
   <input id="impfile" type="file" accept=".csv,text/csv" hidden><input id="packfile" type="file" accept=".zip,application/zip" hidden>
   <div id="catmsg" class="hint"></div>
  </section>
@@ -1067,7 +1067,10 @@ async function importPack(f){const m=$('catmsg');m.style.color='';m.textContent=
   await packSave(p);applyPack(p);const gone=setCatalog(r.out,false,true);m.style.color='var(--ok)';
   m.textContent=`Imported ${COMPANY}: ${r.out.length} furniture${r.sets.length?` (${r.sets.length} sets)`:''}, ${r.fin.length} wall finishes, ${r.doors.length} doors, ${Object.keys(p.files).length} files.${gone?` ${gone} placed item(s) were removed (not in this catalog).`:''}`}
  catch(err){m.style.color='var(--err)';m.textContent=`The pack could not be read (${err.message}).`}}
-$('sample').onclick=()=>{packSave(null).catch(()=>{});applyPack(null);const d=setCatalog(SAMPLE.slice(),true);$('catmsg').style.color='';$('catmsg').textContent=`Sample catalog restored.${d?` ${d} placed item(s) removed.`:''}`};
+$('defpack').onclick=async()=>{try{localStorage.removeItem('fitcheck-samples')}catch(e){};packSave(null).catch(()=>{});const m=$('catmsg');m.style.color='';m.textContent='Loading the built-in catalogue...';
+ try{const p=await defaultPack(),r=applyPack(p);const gone=setCatalog(r.out,false,true);m.style.color='var(--ok)';m.textContent=`${COMPANY}: ${r.out.length} furniture (${r.sets.length} sets).${gone?` ${gone} placed item(s) were removed (not in this catalog).`:''}`}
+ catch(err){m.style.color='var(--err)';m.textContent=`The built-in catalogue could not be loaded (${err.message}).`}};
+$('sample').onclick=()=>{try{localStorage.setItem('fitcheck-samples','1')}catch(e){};packSave(null).catch(()=>{});applyPack(null);const d=setCatalog(SAMPLE.slice(),true);$('catmsg').style.color='';$('catmsg').textContent=`Sample catalog restored.${d?` ${d} placed item(s) removed.`:''}`};
 $('tpl').onclick=()=>{const q=x=>x==null||x===''?'':/[,"]/.test(String(x))?'"'+String(x).replace(/"/g,'""')+'"':String(x);
  const H='kind,sku,name,width_cm,depth_cm,height_cm,front_clearance_cm,price,type,rooms,group,size,finish,model,texture,color,style,repeat_cm';
  const rows=[...SAMPLE.map(c=>['furniture',c.k,c.n,c.w,c.d,c.h,c.cl,c.p,typeOf(c),(c.r||[]).join('|'),c.g,c.z,c.f,c.m,'','','','']),
@@ -1502,8 +1505,12 @@ $('plan').addEventListener('pointermove',e=>{if(ptrs.has(e.pointerId))ptrs.set(e
 $('plan').addEventListener('pointerup',()=>{drag=null});
 if(!Array.isArray(S.rooms)||!S.rooms.length){S.rooms=[];S.cur=0;stash()}
 // Start: a company pack saved on this device is loaded first, so the saved visit's pieces are found in its catalog.
-(async()=>{let hasPack=false;try{hasPack=localStorage.getItem('fitcheck-haspack')==='1'}catch(e){}
- if(hasPack)try{const p=await packLoad(),r=p&&applyPack(p);if(r&&!r.errs.length){CATALOG=[...r.out,...GEN_FURN];usingSample=false}}catch(e){}
+// The built-in company catalogue (Baffi Home Furniture, shown with their permission, 2026-10-28) loads by itself,
+// unless this device imported its own pack or chose the samples (settings icon on Furniture).
+const DEFAULT_PACK='packs/baffi-noval.zip';
+async function defaultPack(){const b=await (await fetch(DEFAULT_PACK)).blob();return readPack(new File([b],'baffi-noval.zip'))}
+(async()=>{let hasPack=false,samples=false;try{hasPack=localStorage.getItem('fitcheck-haspack')==='1';samples=localStorage.getItem('fitcheck-samples')==='1'}catch(e){}
+ try{const p=hasPack?await packLoad():samples?null:await defaultPack(),r=p&&applyPack(p);if(r&&!r.errs.length){CATALOG=[...r.out,...GEN_FURN];usingSample=false}}catch(e){}
  S.cur=Math.min(S.cur||0,S.rooms.length-1);oldKeys(S.rooms);S.rooms.forEach(r=>r.items=(r.items||[]).filter(i=>cat(i.k)));loadRoom(S.cur);
  load();renderCat();render()})();
 </script>

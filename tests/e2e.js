@@ -9,9 +9,10 @@ export async function run(){
  const errs=[];const onErr=e=>errs.push(e.message);window.addEventListener('error',onErr);
  const near=(a,b,t)=>Math.abs(a-b)<=t;
  const K=OLD_KEYS;   // role -> IKEA sample SKU, e.g. K.bed is the MALM Standard Double frame
+ // checks run on the samples, whatever this device has loaded (the built-in Baffi catalogue, a company pack)
  function freshVisit(over={}){S.rooms=[];S.cur=0;
   Object.assign(S,{client:'',rep:'',name:'Room 1',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,unit:'cm',more:false,step:1,showCl:false,doorSet:true,finishes:[],doorK:'',doorCol:''},over);
-  if(!over.keepCatalog)setCatalog(SAMPLE.slice(),true);fixRoom();stash();load();renderCat();render()}
+  if(!over.keepCatalog){applyPack(null);setCatalog(SAMPLE.slice(),true)}fixRoom();stash();load();renderCat();render()}
  function setTemplate(shape,lens){S.mode='walls';S.shape=shape;S.walls=wallsFor(shapeDef(shape));
   if(shape==='rect'){S.walls[0].len=S.walls[2].len=lens[0];S.walls[1].len=S.walls[3].len=lens[1]}else lens.forEach((l,i)=>S.walls[i].len=l);S.items=[];S.obs=[];onShapeChange(true)}
  function setSketch(d0,turns,curves,lens,depths){S.mode='walls';S.shape='sketch';S.sketch={d0,turns,curves:curves||turns.map(()=>null),preview:{pts:[[0,0],[100,0],[100,70],[0,70]],labels:null}};
