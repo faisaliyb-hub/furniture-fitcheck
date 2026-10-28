@@ -8,6 +8,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
 import {RGBELoader} from 'three/addons/loaders/RGBELoader.js';
 
 // three.js 0.160 scenes have no environmentRotation / backgroundRotation / environmentIntensity (added in later versions);
@@ -165,7 +166,8 @@ function baseModel(it){const n=it.name.toLowerCase(),w=it.w*M,d=it.d*M,h=it.h*M,
   default:return cabinet(w,d,h,F)}}
 
 // A real 3D file for the product (catalog column "model"): scaled to the catalog width, height and depth. glTF's front is +z, like ours.
-const loader=new GLTFLoader(),GLB=new Map();
+// Company models may be Draco-compressed (the Baffi pack is, to keep the whole catalogue small); the decoder comes from the same CDN.
+const loader=new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/')),GLB=new Map();
 async function fileModel(url,it){if(!GLB.has(url))GLB.set(url,loader.loadAsync(url));const src=(await GLB.get(url)).scene.clone(true);
  const b=new THREE.Box3().setFromObject(src),s=b.getSize(new THREE.Vector3());src.scale.set(it.w*M/(s.x||1),it.h*M/(s.y||1),it.d*M/(s.z||1));
  const b2=new THREE.Box3().setFromObject(src),c=b2.getCenter(new THREE.Vector3());src.position.sub(new THREE.Vector3(c.x,b2.min.y,c.z));

@@ -1043,10 +1043,11 @@ async function readPack(file){const {unzipSync}=await import('https://cdn.jsdeli
   else if(PACK_MIME[ext])files[name]=new Blob([data],{type:PACK_MIME[ext]})}
  return{csv,company:company||file.name.replace(/\.zip$/i,''),files}}
 // Puts a pack's photos and 3D files in place and its finishes and doors in use; null goes back to the samples.
-function applyPack(p){Object.values(PACK_URL).forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});PACK_URL={};
+function applyPack(p){Object.values(PACK_URL).forEach(u=>{if(u.startsWith('blob:'))try{URL.revokeObjectURL(u)}catch(e){}});PACK_URL={};
  if(!p){COMPANY='Sample company';CO_FIN=SAMPLE_FIN.slice();CO_DOORS=SAMPLE_DOORS.slice();CO_SETS=[];return null}
  for(const [n,b] of Object.entries(p.files||{}))PACK_URL[n]=URL.createObjectURL(b);
- const r=buildCatalog(p.csv,Object.keys(p.files||{}));if(!r.errs.length){COMPANY=p.company||'Company';CO_FIN=r.fin;CO_DOORS=r.doors;CO_SETS=r.sets}return r}
+ const remote=p.remote||{};Object.assign(PACK_URL,remote);   // files the pack links to on the site instead of carrying
+ const r=buildCatalog(p.csv,[...Object.keys(p.files||{}),...Object.keys(remote)]);if(!r.errs.length){COMPANY=p.company||'Company';CO_FIN=r.fin;CO_DOORS=r.doors;CO_SETS=r.sets}return r}
 function setCatalog(list,sample,fromPack){
  list=list.filter(c=>!c.gen);CATALOG=[...list,...GEN_FURN];usingSample=sample;
  try{sample||fromPack?localStorage.removeItem(CK):localStorage.setItem(CK,JSON.stringify(list))}catch(e){}
@@ -1255,7 +1256,7 @@ function roomModel(){
   obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
   items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:assetUrl(c.m),tex:assetUrl(c.tx),color:c.gen||c.col&&!c.f?c.col||'':''}})}}
 // Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
-const V3D='2026-10-28a';
+const V3D='2026-10-28b';
 let view3d=null,v3dTimer=0;
 async function open3d(){
  if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
@@ -1508,7 +1509,12 @@ if(!Array.isArray(S.rooms)||!S.rooms.length){S.rooms=[];S.cur=0;stash()}
 // The built-in company catalogue (Baffi Home Furniture, shown with their permission, 2026-10-28) loads by itself,
 // unless this device imported its own pack or chose the samples (settings icon on Furniture).
 const DEFAULT_PACK='packs/baffi-noval.zip';
-async function defaultPack(){const b=await (await fetch(DEFAULT_PACK)).blob();return readPack(new File([b],'baffi-noval.zip'))}
+// The built-in pack's 3D files sit next to it on the site (packs/baffi-models/), so each one downloads only when a piece
+// that uses it is shown in 3D; the zip itself stays small (catalogue and photos).
+const DEFAULT_MODELS='packs/baffi-models/',MODELS_V='2026-10-28g';   // bump MODELS_V when the model files change, so browsers fetch the new ones
+async function defaultPack(){const b=await (await fetch(DEFAULT_PACK)).blob(),p=await readPack(new File([b],'baffi-noval.zip'));
+ const rows=p.csv.split(/\r?\n/),head=(rows[0]||'').split(','),mi=head.indexOf('model');
+ p.remote=Object.fromEntries(rows.slice(1).map(r=>r.split(',')[mi]).filter(m=>m&&/\.glb$/i.test(m)&&!p.files[m]).map(m=>[m,DEFAULT_MODELS+m+'?v='+MODELS_V]));return p}
 (async()=>{let hasPack=false,samples=false;try{hasPack=localStorage.getItem('fitcheck-haspack')==='1';samples=localStorage.getItem('fitcheck-samples')==='1'}catch(e){}
  try{const p=hasPack?await packLoad():samples?null:await defaultPack(),r=p&&applyPack(p);if(r&&!r.errs.length){CATALOG=[...r.out,...GEN_FURN];usingSample=false}}catch(e){}
  S.cur=Math.min(S.cur||0,S.rooms.length-1);oldKeys(S.rooms);S.rooms.forEach(r=>r.items=(r.items||[]).filter(i=>cat(i.k)));loadRoom(S.cur);
