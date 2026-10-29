@@ -75,10 +75,19 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 .v3d .v3dbar{flex-wrap:nowrap}.v3d .v3dbar b{flex:1;min-width:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v3d .v3dbar button{min-height:38px;padding:6px 10px;white-space:nowrap}
 .v3d #v3dcanvas{flex:1;min-height:0;position:relative;touch-action:none}
 .v3d #v3dcanvas canvas{display:block;touch-action:none}
+.sg{position:relative}.sgview{position:absolute;top:12px;right:12px;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.92);color:#1f1d1a;border:1px solid var(--line);font-size:12px;font-weight:600;cursor:pointer;line-height:1.5}.sgview:hover{border-color:var(--accent)}
+.pvbody{flex:1;min-height:0;position:relative;background:#fff}.pvimgbox{position:absolute;inset:0;overflow:auto;display:flex;background:#fff;touch-action:pan-x pan-y pinch-zoom}
+.pvimgbox img{margin:auto;max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in}.pvimgbox img.zoom{max-width:none;max-height:none;width:200%;cursor:zoom-out}
+.pvnav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;padding:0;font-size:22px;line-height:1;background:rgba(255,255,255,.9);color:#1f1d1a;border:1px solid rgba(0,0,0,.15);z-index:1}.pvprev{left:10px}.pvnext{right:10px}
+.pvcount{position:absolute;top:10px;left:50%;transform:translateX(-50%);padding:2px 10px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;z-index:1}
+.pvstrip{display:flex;gap:6px;overflow-x:auto;padding:8px 12px;background:var(--card);border-top:1px solid var(--line)}.pvstrip button{flex:none;padding:0;width:64px;height:44px;border-radius:6px;overflow:hidden;border:2px solid transparent;min-height:0}.pvstrip button.on{border-color:var(--accent)}.pvstrip img{width:100%;height:100%;object-fit:cover;display:block}
+.pvfoot{display:flex;gap:10px;align-items:center;padding:10px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));background:var(--card);border-top:1px solid var(--line)}
+.pvinfo{flex:1;min-width:0;display:flex;flex-direction:column;font-size:13px;color:var(--mute)}.pvinfo b{color:var(--ink);font-size:15px}
 .v3d .v3dnote{position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));margin:0;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.88);color:#1f1d1a;font-size:13px;pointer-events:none}
 .sizehead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.sizehead h2{margin:0}.unitmini{display:flex;align-items:center;gap:6px;margin:0;font-size:13px}.unitmini select{width:auto;min-height:36px;padding:4px 8px}
 .iconbtn{width:44px;padding:0;display:grid;place-items:center}.iconbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 #layoutcard{position:relative}#layouth{padding-right:120px}.corner{position:absolute;top:8px;right:8px;min-height:36px;padding:4px 12px;font-weight:600}.corner2{right:64px}
+.pickbtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}#pickdel:not(:disabled){background:var(--err);border-color:var(--err);color:#fff}
 .doorbar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:600}.doorbar button{min-height:34px;padding:4px 12px}
 .probline{margin:8px 0 0;color:var(--err);font-size:14px}
 .qbig{text-align:center;margin:4px 0 14px}.qbig small{display:block;color:var(--mute);font-size:13px}.qbig b{display:block;font-size:40px;line-height:1.15}
@@ -190,10 +199,11 @@ body[data-step="2"] #layoutcard .hint{margin-top:4px}
 <div class="col">
  <section class="card" id="layoutcard" data-step="2"><h2 id="layouth">Layout</h2><button id="v3d" class="corner" aria-label="3D view">3D</button><button id="fit" class="corner corner2" hidden>Fit</button>
   <div id="finbar" class="doorbar" hidden><span>Tap the wall to finish</span><button id="fincancel">Cancel</button></div>
+  <div id="pickbar" class="doorbar" hidden><span id="pickmsg">Tap pieces to select them</span><span class="pickbtns"><button id="pickall">All</button><button id="pickdel" disabled>Remove</button><button id="pickdone">Done</button></span></div>
   <div id="doorbar" class="doorbar" hidden><span>Tap the wall where the door is</span><button id="doorskip">Skip</button></div>
   <svg id="plan" viewBox="0 0 600 500"></svg><button id="drawopen" class="drawopen" hidden>Catalogue</button>
   <p id="probline" class="probline" hidden></p>
-  <div class="tools" id="plantools"><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><button id="finbtn">Wall finish</button><button id="doorbtn">Door style</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
+  <div class="tools" id="plantools"><button id="selbtn">Select</button><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><button id="finbtn">Wall finish</button><button id="doorbtn">Door style</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
   <div class="hint adv">Drawn to scale: each piece covers only its own footprint. Tap a piece to see the free space around it. Orange zone = clearance needed in front.</div><div id="tipmsg" class="hint" style="color:var(--warn)"></div>
  </section>
  <aside id="drawer" data-step="2" aria-label="Catalogue">
@@ -247,6 +257,10 @@ body[data-step="2"] #layoutcard .hint{margin-top:4px}
 </div>
 <div class="navbar"><button id="back">Back</button><button id="next" class="primary">Next</button><p id="navmsg" class="hint"></p></div>
 </main>
+<div id="pview" class="v3d pview" hidden role="dialog" aria-modal="true" aria-labelledby="pvttl"><div class="v3dbar"><b id="pvttl">View</b><button id="pvx" class="primary">Close</button></div>
+ <div class="pvbody"><div id="pvimgbox" class="pvimgbox"><img id="pvimg" alt="The store's photo"></div><span id="pvcount" class="pvcount" hidden></span><button id="pvprev" class="pvnav pvprev" aria-label="Previous photo" hidden>&lsaquo;</button><button id="pvnext" class="pvnav pvnext" aria-label="Next photo" hidden>&rsaquo;</button></div>
+ <div id="pvstrip" class="pvstrip" hidden></div>
+ <div class="pvfoot"><div id="pvinfo" class="pvinfo"></div><button id="pvadd" class="primary">Add to room</button></div></div>
 <div id="v3dwrap" class="v3d" hidden role="dialog" aria-modal="true" aria-labelledby="v3dttl"><div class="v3dbar"><b id="v3dttl">3D view</b><button id="v3dshoot">Photo</button><button id="v3dov">Overview</button><button id="v3deye">Door view</button><button id="v3dx" class="primary">Close</button></div><div id="v3dcanvas"><p class="v3dnote" id="v3dmsg"></p>
  <div id="v3dshot" class="v3dshot" hidden><img id="v3dimg" alt="Photo of the room"><div class="tools"><button id="shotshare" class="primary" hidden>Share photo</button><a id="shotsave" class="btnlike" download="room.jpg" href="#">Save photo</a><button id="shotclose">Back to 3D</button></div></div></div></div>
 <div id="ask" class="askov" hidden role="dialog" aria-modal="true" aria-labelledby="askmsg"><div class="card" style="max-width:380px"><p id="askmsg" style="margin:0 0 12px"></p><div class="tools" style="margin:0"><button id="askyes" class="primary">Continue</button><button id="askno">Cancel</button></div></div></div>
@@ -338,7 +352,8 @@ function fixRoom(){S.finishes=S.finishes||[];S.cuts=S.cuts||[];S.obs=S.obs||[];S
  recomputeShape()}
 const clone=o=>JSON.parse(JSON.stringify(o));
 function stash(){const o={};RF.forEach(k=>o[k]=S[k]);o.closed=S.mode==='walls'?!!S.closed:true;S.rooms[S.cur]=clone(o)}
-function loadRoom(i){S.cur=i;Object.assign(S,normRoom(clone(S.rooms[i])));fixRoom();S.sel=null}
+let pick=null;   // Select mode: the set of ticked piece ids in the open room; null when off
+function loadRoom(i){S.cur=i;Object.assign(S,normRoom(clone(S.rooms[i])));fixRoom();S.sel=null;pick=null}
 function withRoom(r,fn){const keep={};RF.forEach(k=>keep[k]=S[k]);const sel=S.sel;Object.assign(S,normRoom(clone(r)));fixRoom();S.sel=null;try{return fn()}finally{Object.assign(S,keep);recomputeShape();S.sel=sel}}
 // A piece suits the room if it lists no rooms, lists this room type, or the room type is "other".
 const suits=c=>!c.r||!c.r.length||S.type==='other'||c.r.includes(S.type);
@@ -679,9 +694,10 @@ function drawPlan(sel,print){
  h+=`<g stroke="var(--mute)" stroke-width="${sw}"><line x1="0" y1="${L+24}" x2="${sb}" y2="${L+24}"/><line x1="0" y1="${L+20}" x2="0" y2="${L+28}"/><line x1="${sb}" y1="${L+20}" x2="${sb}" y2="${L+28}"/></g><text x="${sb+8}" y="${L+24+fs*.35}" font-size="${fs}" fill="var(--mute)">${sbl} scale</text>`;
  const halo=`paint-order="stroke" stroke="var(--room)" stroke-width="${u*3}" stroke-linejoin="round"`;
  const bad=new Set(problems().flatMap(p=>p[2]));
- S.items.forEach(it=>{const c=spec(it),b=body(it),f=front(it),bw=b.x1-b.x0,bh=b.y1-b.y0,on=it.id===sel,s2=on?sw*1.6:sw,col=bad.has(it.id)?'var(--err)':c.gen?(c.col||'var(--accent)'):'var(--accent)';
-  if(S.showCl||on)h+=`<rect x="${f.x0}" y="${f.y0}" width="${f.x1-f.x0}" height="${f.y1-f.y0}" fill="var(--warn)" fill-opacity=".08" stroke="var(--warn)" stroke-dasharray="${u*5} ${u*4}" stroke-width="${sw*.7}"/>`;
+ S.items.forEach(it=>{const c=spec(it),b=body(it),f=front(it),bw=b.x1-b.x0,bh=b.y1-b.y0,pk=!!(pick&&pick.has(it.id)),on=it.id===sel||pk,s2=on?sw*1.6:sw,col=bad.has(it.id)?'var(--err)':c.gen?(c.col||'var(--accent)'):'var(--accent)';
+  if(S.showCl||it.id===sel)h+=`<rect x="${f.x0}" y="${f.y0}" width="${f.x1-f.x0}" height="${f.y1-f.y0}" fill="var(--warn)" fill-opacity=".08" stroke="var(--warn)" stroke-dasharray="${u*5} ${u*4}" stroke-width="${sw*.7}"/>`;
   h+=`<g data-id="${it.id}" style="cursor:grab"><rect x="${b.x0+s2/2}" y="${b.y0+s2/2}" width="${bw-s2}" height="${bh-s2}" fill="${col}" fill-opacity="${on?.5:.28}" stroke="${col}" stroke-width="${s2}"/>`;
+  if(pk){const r=Math.min(fs*.9,bw/4,bh/4),cx=b.x0+r*1.4,cy=b.y0+r*1.4;h+=`<g pointer-events="none"><circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--accent)"/><path d="M${cx-r*.45} ${cy}l${r*.32} ${r*.32} ${r*.6}-${r*.62}" fill="none" stroke="#fff" stroke-width="${r*.22}" stroke-linecap="round" stroke-linejoin="round"/></g>`}
   h+=`<g transform="translate(${it.x} ${it.y}) rotate(${it.rot})" fill="none" stroke="var(--ink)" stroke-opacity=".4" stroke-width="${u*1.1}" pointer-events="none">${detail(c,u)}</g>`;
   const e=sw*2.2,fx={0:[b.x0+e,b.y1-e,b.x1-e,b.y1-e],90:[b.x0+e,b.y0+e,b.x0+e,b.y1-e],180:[b.x0+e,b.y0+e,b.x1-e,b.y0+e],270:[b.x1-e,b.y0+e,b.x1-e,b.y1-e]}[it.rot];
   h+=`<line x1="${fx[0]}" y1="${fx[1]}" x2="${fx[2]}" y2="${fx[3]}" stroke="var(--ink)" stroke-opacity=".55" stroke-width="${u*2.5}"/>`;
@@ -832,19 +848,19 @@ function paintSugg(){const box=$('sugg');$('sgcats').innerHTML=CATS.filter(([k])
  const price=c=>c.gen?'any colour':c.p.toLocaleString();
  const sizeBtn=(s,i)=>{const ok=s.k===(suggList[i]||{}).c?.k||fitsK(s);return `<button class="szb${ok?'':' off'}" ${s.k===(suggList[i]||{}).c?.k?`data-add="${i}"`:`data-addk="${esc(s.k)}"`} aria-label="Add ${esc(s.n)}"><b>+ ${esc(s.z||s.n)}</b><small>${UU(s.w,s.d)}${s.gen?'':` &middot; ${s.p.toLocaleString()}`}${ok?'':' &middot; tight'}</small></button>`};
  const card=(x,i)=>{const list=sizesOf(x.from||x.c),c=x.c;
-  if(list.length>1)return `<div class="sg sgm" data-i="${i}">${thumb(c)}<b>${esc(groupTitle(list))}</b><div class="szs">${list.map(s=>sizeBtn(s,i)).join('')}</div></div>`;
-  return `<button class="sg" data-i="${i}" data-add="${i}" aria-label="Add ${esc(c.n)}">${thumb(c)}<b>${esc(c.n)}</b><small>${UU(c.w,c.d)}${c.est?' <span class="why">&middot; size to confirm</span>':''}</small><small><b>${price(c)}</b>${x.door?'':' <span class="why adv">&middot; check door access</span>'}</small></button>`};
+  if(list.length>1)return `<div class="sg sgm" data-i="${i}">${thumb(c)}${viewBtn(c)}<b>${esc(groupTitle(list))}</b><div class="szs">${list.map(s=>sizeBtn(s,i)).join('')}</div></div>`;
+  return `<button class="sg" data-i="${i}" data-add="${i}" aria-label="Add ${esc(c.n)}">${thumb(c)}${viewBtn(c)}<b>${esc(c.n)}</b><small>${UU(c.w,c.d)}${c.est?' <span class="why">&middot; size to confirm</span>':''}</small><small><b>${price(c)}</b>${x.door?'':' <span class="why adv">&middot; check door access</span>'}</small></button>`};
  const rows=suggList.map((x,i)=>!x.c.gen&&show(sizesOf(x.from||x.c))?card(x,i):'').join(''),genRows=suggList.map((x,i)=>x.c.gen&&show(sizesOf(x.from||x.c))?card(x,i):'').join(''),tight=no.filter(([c])=>show(sizesOf(c)));
  // Sets come first: one card per set (photo, price, its pieces); adding one places every piece.
  const setRows=CO_SETS.filter(st=>(suggCat==='all'||suggCat==='set')&&(!suggQ||`${st.n} ${st.k}`.toLowerCase().includes(suggQ))&&(suggCat==='set'||suggQ||!st.r||st.r.includes(S.type))).map(st=>{
   const pcs=st.pcs.map(x=>({c:cat(x.k),q:x.q})).filter(x=>x.c),area=pcs.reduce((a,x)=>a+x.c.w*x.c.d*x.q,0),ok=area<=free,est=pcs.some(x=>x.c.est);
-  return `<button class="sg set${ok?'':' off'}" data-set="${esc(st.k)}" aria-label="Add ${esc(st.n)}">${thumb({...st,w:100,d:100})}<b>${esc(st.n)}</b><small>${pcs.map(x=>`${x.q>1?x.q+' x ':''}${esc(shortName(x.c.n))}`).join(', ')}</small><small><b>${st.p.toLocaleString()}</b>${est?' <span class="why">&middot; sizes to confirm</span>':''}${ok?'':' <span class="why">&middot; needs more space</span>'}</small></button>`}).join('');
+  return `<button class="sg set${ok?'':' off'}" data-set="${esc(st.k)}" aria-label="Add ${esc(st.n)}">${thumb({...st,w:100,d:100})}${viewBtn(st,1)}<b>${esc(st.n)}</b><small>${pcs.map(x=>`${x.q>1?x.q+' x ':''}${esc(shortName(x.c.n))}`).join(', ')}</small><small><b>${st.p.toLocaleString()}</b>${est?' <span class="why">&middot; sizes to confirm</span>':''}${ok?'':' <span class="why">&middot; needs more space</span>'}</small></button>`}).join('');
  if(setRows)h+=`<div class="sgsub" style="margin-top:0">Sets</div><div class="grid">${setRows}</div>${rows?'<div class="sgsub">Single pieces</div>':''}`;
  h+=rows?`<div class="grid">${rows}</div>`:(tight.length||setRows?'':`<div class="hint">${suggQ||suggCat!=='all'?'Nothing matches.':'Nothing fits the space that is left.'}</div>`);
  if(genRows)h+=`<div class="sgsub">Generic: any colour, not in the quote</div><div class="grid">${genRows}</div>`;
  if(tight.length)h+=`<div class="sgsub">Needs more space (${tight.length})</div><div class="sgtight grid">${tight.map(([c,r])=>{const list=sizesOf(c);
-  return list.length>1?`<div class="sg sgm off">${thumb(c)}<b>${esc(groupTitle(list))}</b><small class="why">${r}</small><div class="szs">${list.map(s=>sizeBtn(s,-1)).join('')}</div></div>`
-   :`<button class="sg off" data-addk="${esc(c.k)}" aria-label="Add ${esc(c.n)}">${thumb(c)}<b>${esc(c.n)}</b><small>${UU(c.w,c.d)} &middot; <b>${price(c)}</b></small><small class="why">${r}</small></button>`}).join('')}</div>`;
+  return list.length>1?`<div class="sg sgm off">${thumb(c)}${viewBtn(c)}<b>${esc(groupTitle(list))}</b><small class="why">${r}</small><div class="szs">${list.map(s=>sizeBtn(s,-1)).join('')}</div></div>`
+   :`<button class="sg off" data-addk="${esc(c.k)}" aria-label="Add ${esc(c.n)}">${thumb(c)}${viewBtn(c)}<b>${esc(c.n)}</b><small>${UU(c.w,c.d)} &middot; <b>${price(c)}</b></small><small class="why">${r}</small></button>`}).join('')}</div>`;
  box.className='';box.innerHTML=h}
 // The list refreshes 120 ms after a change, so the spot is worked out again on the tap (the room may have just changed).
 $('sgcats').onclick=e=>{const b=e.target.closest('[data-cat]');if(!b)return;suggCat=b.dataset.cat;paintSugg()};
@@ -860,7 +876,8 @@ function placePiece(c,extra){const sp=pairSpot(c)||diningSpot(c)||findSpot(c,c.c
 const setRank=c=>{const n=c.n.toLowerCase(),t=typeOf(c);return t==='bed'||t==='sofa'||/dining table/.test(n)?0:/bedside|night|side drawer|coffee|cent(er|re) table|dining chair/.test(n)?1:2};
 function placeSet(st){const g=S.next++,list=st.pcs.flatMap(x=>{const c=cat(x.k);return c?Array(x.q).fill(c):[]}).sort((a,b)=>setRank(a)-setRank(b)||b.w*b.d-a.w*a.d);
  list.forEach(c=>placePiece(c,{set:{k:st.k,g}}));S.sel=null;ghost=null;render()}
-$('sugg').onclick=e=>{const sb=e.target.closest('[data-set]');if(sb){if(S.mode==='walls'&&!S.closed)return;const st=CO_SETS.find(x=>x.k===sb.dataset.set);if(st)placeSet(st);return}
+$('sugg').onclick=e=>{const vb=e.target.closest('[data-view],[data-vset]');if(vb){openView(vb.dataset.vset?{set:vb.dataset.vset}:{k:vb.dataset.view});return}
+ const sb=e.target.closest('[data-set]');if(sb){if(S.mode==='walls'&&!S.closed)return;const st=CO_SETS.find(x=>x.k===sb.dataset.set);if(st)placeSet(st);return}
  const b=e.target.closest('[data-add],[data-addk]');if(!b)return;const x=b.dataset.addk?{c:cat(b.dataset.addk)}:suggList[+b.dataset.add];if(!x||!x.c)return;
  if(S.mode==='walls'&&!S.closed)return;const c=x.c,sp=pairSpot(c)||findSpot(c,c.cl)||findSpot(c,0);   // no spot: the middle of the room, shown red
  ghost=null;const it={id:S.next++,k:c.k,x:sp?sp.x:S.rw/2,y:sp?sp.y:S.rl/2,rot:sp?sp.rot:0};S.items.push(it);S.sel=it.id;render()};
@@ -869,6 +886,40 @@ $('sugg').onmouseover=e=>{const r=e.target.closest('.sg[data-i]');const x=r&&sug
  if(JSON.stringify(g)!==JSON.stringify(ghost)){ghost=g;$('plan').innerHTML=drawPlan(S.sel)}};
 $('sugg').onmouseleave=()=>{if(ghost){ghost=null;$('plan').innerHTML=drawPlan(S.sel)}};
 
+// ---- View: the store's own photos of a piece or set, large (the real product, not our model) ----
+// The built-in Baffi pack has every original photo of each product on the site (packs/baffi-photos/<photo name>/NN.jpg,
+// listed in index.json), downloaded only when viewed; any other pack shows its own one photo.
+// The card's small "View" sits inside the card's add button, so the card's click handler checks it first.
+const viewBtn=(c,set)=>c.ph&&assetUrl(c.ph)?`<span class="sgview" role="button" tabindex="0" ${set?`data-vset="${esc(c.k)}"`:`data-view="${esc(c.k)}"`} aria-label="View photos of ${esc(c.n)}">View</span>`:'';
+$('sugg').addEventListener('keydown',e=>{const v=e.target.closest('.sgview');if(v&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();v.click()}});
+const DEFAULT_PHOTOS='packs/baffi-photos/';let photoIndex=null;
+async function originals(ph){if(usingSample||COMPANY!=='Baffi Home Furniture'||!ph)return[];
+ try{photoIndex=photoIndex||await (await fetch(DEFAULT_PHOTOS+'index.json?v='+MODELS_V)).json()}catch(e){photoIndex=null;return[]}
+ const slug=ph.replace(/\.(jpe?g|png|webp)$/i,''),n=photoIndex[slug]||0;return Array.from({length:n},(_,i)=>`${DEFAULT_PHOTOS}${slug}/${String(i).padStart(2,'0')}.jpg`)}
+let pvw=null;   // {st, c, pics, i}
+async function openView(o){const st=o.set&&CO_SETS.find(x=>x.k===o.set),c=st?null:cat(o.k);if(!st&&!c)return;const it=st||c;
+ pvw={st,c,pics:[assetUrl(it.ph)],i:0};$('pvttl').textContent=it.n;
+ const pcs=st?st.pcs.map(x=>({c:cat(x.k),q:x.q})).filter(x=>x.c):[];
+ $('pvinfo').innerHTML=`<span>${st?pcs.map(x=>`${x.q>1?x.q+' x ':''}${esc(shortName(x.c.n))}`).join(', '):`${UUU(c.w,c.d,c.h)} (W x D x H)`}${(st?pcs.some(x=>x.c.est):c.est)?' <span class="why">&middot; size to confirm</span>':''}</span><b>${c&&c.gen?'any colour':it.p.toLocaleString()}</b>`;
+ $('pview').hidden=false;pvShow();
+ const all=await originals(it.ph);if(pvw&&pvw.c===c&&pvw.st===st&&all.length){pvw.pics=all;pvShow()}}
+function pvShow(){if(!pvw)return;const {pics,i}=pvw,n=pics.length,img=$('pvimg');img.classList.remove('zoom');img.src=pics[i];
+ $('pvprev').hidden=$('pvnext').hidden=$('pvcount').hidden=$('pvstrip').hidden=n<2;$('pvcount').textContent=`${i+1} / ${n}`;
+ $('pvstrip').innerHTML=n<2?'':pics.map((u,j)=>`<button data-pi="${j}" class="${j===i?'on':''}" aria-label="Photo ${j+1}"><img src="${esc(u)}" alt="" loading="lazy" decoding="async"></button>`).join('');
+ const on=$('pvstrip').querySelector('.on');on&&on.scrollIntoView({block:'nearest',inline:'nearest'})}
+const pvGo=d=>{if(pvw&&pvw.pics.length>1){pvw.i=(pvw.i+d+pvw.pics.length)%pvw.pics.length;pvShow()}};
+function closeView(){pvw=null;$('pview').hidden=true;$('pvimg').removeAttribute('src')}
+$('pvx').onclick=closeView;$('pvprev').onclick=()=>pvGo(-1);$('pvnext').onclick=()=>pvGo(1);
+$('pvstrip').onclick=e=>{const b=e.target.closest('[data-pi]');if(b&&pvw){pvw.i=+b.dataset.pi;pvShow()}};
+$('pvimg').onclick=e=>{e.currentTarget.classList.toggle('zoom')};   // tap: full size, scroll to look around; tap again: whole photo
+// swipe left or right (not while zoomed in) for the next photo
+{let x0=null;$('pvimgbox').addEventListener('touchstart',e=>{x0=e.touches.length===1&&!$('pvimg').classList.contains('zoom')?e.touches[0].clientX:null},{passive:true});
+ $('pvimgbox').addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>50)pvGo(dx<0?1:-1)})}
+$('pvadd').onclick=()=>{if(!pvw)return;const {st,c}=pvw;closeView();
+ if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
+ if(st)placeSet(st);else{const it=placePiece(c);S.sel=it.id;ghost=null;render()}};
+document.addEventListener('keydown',e=>{if(!pvw)return;if(e.key==='Escape')closeView();else if(e.key==='ArrowLeft')pvGo(-1);else if(e.key==='ArrowRight')pvGo(1)});
+
 function render(){
  const W=+S.rw||1,L=+S.rl||1,m=40,plan=$('plan');
  setPlanBox();
@@ -876,7 +927,10 @@ function render(){
  $('issues').innerHTML=check().map(([t,m])=>`<div class="issue ${t}">${m}</div>`).join('');
  // piece tools show when a piece is selected; otherwise only "Move door"
  if(S.sel!==lastSel){sizeOpen=false;lastSel=S.sel}
- const has=S.items.some(i=>i.id===S.sel);['rot','sizebtn','del','wall'].forEach(id=>$(id).hidden=!has);$('movedoor').hidden=has||doorAsk();
+ const has=S.items.some(i=>i.id===S.sel);if(pick){pick.forEach(id=>{if(!S.items.some(i=>i.id===id))pick.delete(id)});if(!S.items.length||S.step!==2)pick=null}
+ $('pickbar').hidden=!pick;$('plantools').hidden=!!pick;if(pick){const n=pick.size;$('pickmsg').textContent=n?`${n} selected`:'Tap pieces to select them';$('pickdel').disabled=!n;$('pickdel').textContent=n?`Remove ${n}`:'Remove';$('pickall').textContent=n===S.items.length?'None':'All'}
+ $('selbtn').hidden=S.items.length<2||S.step!==2;
+ ['rot','sizebtn','del','wall'].forEach(id=>$(id).hidden=!has);$('movedoor').hidden=has||doorAsk();
  $('sizebtn').setAttribute('aria-expanded',String(has&&sizeOpen));$('sizebtn').classList.toggle('on',has&&sizeOpen);
  const pr=problems();$('probline').hidden=!pr.length;$('probline').textContent=pr.length?pr[0][1]+(pr.length>1?` (+${pr.length-1} more)`:''):'';
  if(S.sel!=null)finSel=null;if(S.step!==2)finPick=false;$('finbar').hidden=!finPick;$('finbtn').hidden=$('doorbtn').hidden=has||finPick||(S.mode==='walls'&&!S.closed);
@@ -1321,7 +1375,7 @@ function applyStep(){const st=Math.min(3,Math.max(1,S.step||1));S.step=st;docume
  const blocked=st===1&&S.mode==='walls'&&!S.closed;
  // On Measure the hint line keeps its space even when empty, so the page does not jump under the finger while typing the size.
  nx.disabled=blocked;$('navmsg').textContent=blocked?'Type the room size first.':'\u00a0';$('navmsg').hidden=st!==1;$('navmsg').style.visibility=blocked?'visible':'hidden';
- $('plantools').hidden=st!==2;$('totpill').hidden=st!==2;$('drawopen').hidden=!(st===2&&document.body.classList.contains('drawshut'));
+ $('plantools').hidden=st!==2||!!pick;$('totpill').hidden=st!==2;$('drawopen').hidden=!(st===2&&document.body.classList.contains('drawshut'));
  document.body.classList.toggle('more',!!S.more);$('gear').setAttribute('aria-pressed',String(!!S.more))}
 function renderTypes(){$('typechips').innerHTML=Object.entries(ROOM_TYPES).map(([k,v])=>`<button class="chip${S.type===k?' on':''}" data-t="${k}">${v}</button>`).join('')}
 // The room type names the room ("Bedroom", "Bedroom 2"), unless someone typed their own name under settings.
@@ -1365,6 +1419,13 @@ $('unit2').onchange=e=>$('unit').onchange(e);
 $('unit').onchange=e=>{S.unit=e.target.value;load();renderCat();render()};
 $('rot').onclick=()=>{const it=S.items.find(i=>i.id===S.sel);if(it){it.rot=(it.rot+90)%360;render()}};
 $('del').onclick=()=>{S.items=S.items.filter(i=>i.id!==S.sel);S.sel=null;render()};
+// Select: tick several pieces (or All) and remove them in one go (pick: see loadRoom).
+$('selbtn').onclick=()=>{pick=new Set(S.sel!=null&&S.items.some(i=>i.id===S.sel)?[S.sel]:[]);S.sel=null;sizeOpen=false;render()};
+$('pickall').onclick=()=>{if(!pick)return;pick=pick.size===S.items.length?new Set():new Set(S.items.map(i=>i.id));render()};
+$('pickdone').onclick=()=>{pick=null;render()};
+$('pickdel').onclick=async()=>{if(!pick||!pick.size)return;const n=pick.size;
+ if(n>1&&!await ask(`Remove ${n} pieces from ${S.name||'this room'}?`,`Remove ${n}`))return;
+ S.items=S.items.filter(i=>!pick.has(i.id));pick=null;S.sel=null;render()};
 $('showq').onclick=()=>{const q=$('quote');if(q.hidden){buildQuote();q.hidden=false;$('showq').textContent='Hide full quote'}else{q.hidden=true;$('showq').textContent='Show full quote'}};
 function quoteText(){stash();const who=[S.client&&`for ${S.client}`,S.rep&&`by ${S.rep}`].filter(Boolean).join(' ');
  const L=[`Quote${who?' '+who:''}, ${new Date().toLocaleDateString()}`,''];let grand=0;
@@ -1508,6 +1569,8 @@ $('plan').addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,{x:e.clientX,y
   pinch={d0:Math.hypot(a.x-b.x,a.y-b.y)||1,z0:pv.z,P:pt({clientX:mx,clientY:my})};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}return}
  if(ptrs.size>2||pinch)return;
  if(finPick&&S.step===2){finPick=false;openFinish(nearestWall(pt(e)));return}   // picking the wall for a finish
+ if(pick){const g=e.target.closest('[data-id]'),it=g&&S.items.find(i=>i.id==g.dataset.id);   // Select: a tap ticks or unticks a piece; nothing moves
+  if(it){pick.has(it.id)?pick.delete(it.id):pick.add(it.id);render()}else if(pv.z>1.01){pan={sx:e.clientX,sy:e.clientY,x0:pv.x,y0:pv.y};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}}return}
  const g=e.target.closest('[data-id]'),og=!g&&e.target.closest('[data-ob]');
  if(doorAsk()&&!g&&!og){S.doorSet=true;moveDoor=false;placeDoorAt(pt(e));return}   // a tap on a piece still selects it
  if(og){const o=S.obs.find(x=>x.id==og.dataset.ob);if(o){const p=pt(e);drag={ob:o,dx:p.x-o.x,dy:p.y-o.y};S.sel=null;try{$('plan').setPointerCapture(e.pointerId)}catch(_){}render()}return}
