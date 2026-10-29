@@ -14,7 +14,8 @@ connected to IKEA. Each device keeps its own visits in the browser; nothing is s
   "Add to Home Screen" to keep it like an app.
 - Three screens: **Measure** (room type and size), **Furniture** (plan, what fits, 3D) and **Quote**. The settings icon
   (top right) shows the advanced controls.
-- **View before adding:** each catalogue card has a small **View**: the store's photo full screen, and the piece's 3D model turning on its own, with its size, price and **Add to room**.
+- **Select:** on the room plan, **Select** then tap pieces (or **All**) and **Remove** them in one go.
+- **View before adding:** each catalogue card has a small **View**: the store's own photos of that product full screen (swipe through them, tap to zoom), with its size, price and **Add to room**.
 - **Draw it freely:** on Measure, **Draw this room** or **Draw the whole house** opens a drawing board. Draw with a finger
   (lift it and carry on): wobbly lines are straightened, curves become clean arcs, and the grid (one square = 50 cm) gives
   rough sizes. Tap a wall to type its real length; the plan stretches to it, and a wall shared by two rooms is measured

@@ -422,16 +422,30 @@ export async function run(){
   ok('view: set and piece cards with a photo have a View button',!!vs&&!!vp);
   vs.click();await wait(10);
   ok('view: View opens the photo and does not add the set',!$('pview').hidden&&$('pvimg').src===PX&&!S.items.length&&$('pvttl').textContent==='View Sofa Set');
-  ok('view: it lists the pieces, sizes to confirm and the set price',/1 x|View sofa/.test($('pvinfo').textContent)&&/7,000|7000/.test($('pvinfo').textContent)&&$('pvpcs').querySelectorAll('[data-pk]').length===2);
-  $('pv3').click();for(let i=0;i<80&&!$('pvcv').querySelector('canvas');i++)await wait(50);
-  ok('view: the 3D tab shows the main piece first',!!$('pvcv').querySelector('canvas')&&$('pvpcs').querySelector('.on').dataset.pk==='V-S3');
-  $('pvpcs').querySelector('[data-pk="V-ARM"]').click();for(let i=0;i<80&&$('pvcv').querySelectorAll('canvas').length!==1;i++)await wait(50);await wait(200);
-  ok('view: picking another piece swaps the model (one 3D view at a time)',$('pvcv').querySelectorAll('canvas').length===1);
+  ok('view: it lists the pieces, sizes to confirm and the set price',/View sofa/.test($('pvinfo').textContent)&&/7,000|7000/.test($('pvinfo').textContent));
+  ok('view: View shows the photo only (no 3D in it)',!$('pview').querySelector('canvas')&&!$('pv3'));
   $('pvadd').click();await wait(10);
-  ok('view: Add to room places the whole set and closes the view',$('pview').hidden&&S.items.length===3&&!$('pvcv').querySelector('canvas'));
+  ok('view: Add to room places the whole set and closes the view',$('pview').hidden&&S.items.length===3);
   vp.isConnected||renderSugg();await wait(10);$('sugg').querySelector('[data-view="V-TV"]').click();await wait(10);
   ok('view: a single piece shows its size and price',/200 x 45 x 55|200 × 45 × 55/.test($('pvinfo').textContent)&&/1,500|1500/.test($('pvinfo').textContent),$('pvinfo').textContent);
   document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));ok('view: Escape closes it',$('pview').hidden&&S.items.length===3);
+  freshVisit()}
+ // ---- Select: tick several pieces and remove them together ----
+ {freshVisit({type:'living',name:'Living room',dwall:'2',doff:60,keepCatalog:true});setTemplate('rect',[600,480]);goStep(2);
+  ok('select: no Select in an empty room',$('selbtn').hidden);
+  CATALOG.filter(c=>!c.gen&&c.w<150).slice(0,4).forEach(c=>placePiece(c));S.sel=null;render();
+  ok('select: Select shows once the room has two pieces',!$('selbtn').hidden&&S.items.length===4);
+  const tap=id=>{const x=$('plan').querySelector(`[data-id="${id}"]`),r=x.getBoundingClientRect();x.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:r.x+r.width/2,clientY:r.y+r.height/2,pointerId:9}));$('plan').dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:9}))};
+  $('selbtn').click();const ids=S.items.map(i=>i.id),before=S.items.map(i=>i.x+','+i.y).join();
+  ok('select: Select mode swaps the tools for its bar',!$('pickbar').hidden&&$('plantools').hidden&&$('pickdel').disabled);
+  tap(ids[0]);tap(ids[2]);
+  ok('select: tapping pieces ticks them, and nothing moves',pick.size===2&&$('pickmsg').textContent==='2 selected'&&$('pickdel').textContent==='Remove 2'&&S.items.map(i=>i.x+','+i.y).join()===before);
+  tap(ids[2]);ok('select: tapping a ticked piece unticks it',pick.size===1&&pick.has(ids[0]));
+  $('pickall').click();ok('select: All ticks every piece',pick.size===4&&$('pickall').textContent==='None');
+  $('pickall').click();ok('select: None clears the ticks',pick.size===0);
+  tap(ids[1]);tap(ids[3]);$('pickdel').click();await wait(10);$('askyes').click();await wait(10);
+  ok('select: Remove takes away the ticked pieces only, after asking',S.items.length===2&&S.items.every(i=>i.id===ids[0]||i.id===ids[2])&&!pick&&!$('plantools').hidden&&$('pickbar').hidden);
+  $('selbtn').click();$('pickdone').click();ok('select: Done leaves without removing',S.items.length===2&&!pick);
   freshVisit()}
 
  window.removeEventListener('error',onErr);
