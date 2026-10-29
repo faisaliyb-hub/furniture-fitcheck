@@ -421,6 +421,14 @@ function rectInRoom(r){if(!S.span)return !(r.x0<-.5||r.y0<-.5||r.x1>S.rw+.5||r.y
  if(r.y0<-.5||r.y1>S.rl+.5||r.x0<-.5||r.x1>S.rw+.5)return false;
  const y0=Math.max(0,Math.floor(r.y0+.5)),y1=Math.min(S.span.length-1,Math.ceil(r.y1-.5)-1),ok=i=>S.span[i].some(([a,b])=>a<=r.x0+.5&&b>=r.x1-.5);
  for(let i=y0;i<=y1;i+=2)if(!ok(i))return false;return y1<y0||ok(y1)}
+// A piece never stays outside the room (dragged off the plan, a typed position, the room made smaller, a turn or a
+// bigger size by a wall): it moves to the nearest place inside, first straight back in, then searching round where it
+// was (in an L-shaped or drawn room the nearest place may be round a corner). A piece bigger than the room stays put (red).
+function keepIn(it){if(S.mode==='walls'&&!S.closed)return;if(rectInRoom(body(it)))return;const b=body(it),w=b.x1-b.x0,d=b.y1-b.y0;
+ if(w<=S.rw)it.x=Math.round(Math.min(Math.max(it.x,w/2),S.rw-w/2));if(d<=S.rl)it.y=Math.round(Math.min(Math.max(it.y,d/2),S.rl-d/2));
+ if(rectInRoom(body(it)))return;const x0=it.x,y0=it.y;
+ for(let r=5;r<=Math.max(S.rw,S.rl);r+=5)for(let k=0;k<16;k++){const a=k*Math.PI/8;it.x=Math.round(x0+r*Math.cos(a));it.y=Math.round(y0+r*Math.sin(a));if(rectInRoom(body(it)))return}
+ it.x=x0;it.y=y0}
 // Distance from a point to the outline along a ray (Infinity if none).
 function rayDist(ox,oy,dx,dy){let best=Infinity;const P=S.poly;if(!P)return best;
  for(let k=0,j=P.length-1;k<P.length;j=k++){const a=P[j],b=P[k],ex=b.x-a.x,ey=b.y-a.y,den=dx*ey-dy*ex;if(Math.abs(den)<1e-9)continue;
@@ -922,6 +930,7 @@ document.addEventListener('keydown',e=>{if(!pvw)return;if(e.key==='Escape')close
 
 function render(){
  const W=+S.rw||1,L=+S.rl||1,m=40,plan=$('plan');
+ S.items.forEach(keepIn);
  setPlanBox();
  plan.innerHTML=drawPlan(S.sel);
  $('issues').innerHTML=check().map(([t,m])=>`<div class="issue ${t}">${m}</div>`).join('');
