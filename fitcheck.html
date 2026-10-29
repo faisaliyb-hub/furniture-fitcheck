@@ -75,6 +75,14 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 .v3d .v3dbar{flex-wrap:nowrap}.v3d .v3dbar b{flex:1;min-width:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v3d .v3dbar button{min-height:38px;padding:6px 10px;white-space:nowrap}
 .v3d #v3dcanvas{flex:1;min-height:0;position:relative;touch-action:none}
 .v3d #v3dcanvas canvas{display:block;touch-action:none}
+.sg{position:relative}.sgview{position:absolute;top:12px;right:12px;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.92);color:#1f1d1a;border:1px solid var(--line);font-size:12px;font-weight:600;cursor:pointer;line-height:1.5}.sgview:hover{border-color:var(--accent)}
+.pview .pvtabs{display:flex;gap:4px}.pview .pvtabs .chip.on{border-color:var(--accent);background:var(--accent);color:#fff}
+.pvpcs{padding:8px 12px 0;background:#eceeef;margin:0}.pvpcs .chip.on{border-color:var(--accent);background:var(--accent);color:#fff}
+.pvbody{flex:1;min-height:0;position:relative;background:#eceeef}.pvimgbox{position:absolute;inset:0;overflow:auto;display:flex;background:#fff}
+.pvimgbox img{margin:auto;max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in}.pvimgbox img.zoom{max-width:none;max-height:none;width:200%;cursor:zoom-out}
+#pvcv{position:absolute;inset:0;touch-action:none;background:#e9e7e3}#pvcv canvas{display:block;touch-action:none}
+.pvfoot{display:flex;gap:10px;align-items:center;padding:10px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));background:var(--card);border-top:1px solid var(--line)}
+.pvinfo{flex:1;min-width:0;display:flex;flex-direction:column;font-size:13px;color:var(--mute)}.pvinfo b{color:var(--ink);font-size:15px}
 .v3d .v3dnote{position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));margin:0;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.88);color:#1f1d1a;font-size:13px;pointer-events:none}
 .sizehead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.sizehead h2{margin:0}.unitmini{display:flex;align-items:center;gap:6px;margin:0;font-size:13px}.unitmini select{width:auto;min-height:36px;padding:4px 8px}
 .iconbtn{width:44px;padding:0;display:grid;place-items:center}.iconbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
@@ -247,6 +255,10 @@ body[data-step="2"] #layoutcard .hint{margin-top:4px}
 </div>
 <div class="navbar"><button id="back">Back</button><button id="next" class="primary">Next</button><p id="navmsg" class="hint"></p></div>
 </main>
+<div id="pview" class="v3d pview" hidden role="dialog" aria-modal="true" aria-labelledby="pvttl"><div class="v3dbar"><b id="pvttl">View</b><span class="pvtabs"><button id="pvph" class="chip">Photo</button><button id="pv3" class="chip">3D</button></span><button id="pvx" class="primary">Close</button></div>
+ <div id="pvpcs" class="chips pvpcs" hidden></div>
+ <div class="pvbody"><div id="pvimgbox" class="pvimgbox"><img id="pvimg" alt="The store's photo"></div><div id="pvcv" hidden></div><p class="v3dnote" id="pvmsg" hidden></p></div>
+ <div class="pvfoot"><div id="pvinfo" class="pvinfo"></div><button id="pvadd" class="primary">Add to room</button></div></div>
 <div id="v3dwrap" class="v3d" hidden role="dialog" aria-modal="true" aria-labelledby="v3dttl"><div class="v3dbar"><b id="v3dttl">3D view</b><button id="v3dshoot">Photo</button><button id="v3dov">Overview</button><button id="v3deye">Door view</button><button id="v3dx" class="primary">Close</button></div><div id="v3dcanvas"><p class="v3dnote" id="v3dmsg"></p>
  <div id="v3dshot" class="v3dshot" hidden><img id="v3dimg" alt="Photo of the room"><div class="tools"><button id="shotshare" class="primary" hidden>Share photo</button><a id="shotsave" class="btnlike" download="room.jpg" href="#">Save photo</a><button id="shotclose">Back to 3D</button></div></div></div></div>
 <div id="ask" class="askov" hidden role="dialog" aria-modal="true" aria-labelledby="askmsg"><div class="card" style="max-width:380px"><p id="askmsg" style="margin:0 0 12px"></p><div class="tools" style="margin:0"><button id="askyes" class="primary">Continue</button><button id="askno">Cancel</button></div></div></div>
@@ -832,19 +844,19 @@ function paintSugg(){const box=$('sugg');$('sgcats').innerHTML=CATS.filter(([k])
  const price=c=>c.gen?'any colour':c.p.toLocaleString();
  const sizeBtn=(s,i)=>{const ok=s.k===(suggList[i]||{}).c?.k||fitsK(s);return `<button class="szb${ok?'':' off'}" ${s.k===(suggList[i]||{}).c?.k?`data-add="${i}"`:`data-addk="${esc(s.k)}"`} aria-label="Add ${esc(s.n)}"><b>+ ${esc(s.z||s.n)}</b><small>${UU(s.w,s.d)}${s.gen?'':` &middot; ${s.p.toLocaleString()}`}${ok?'':' &middot; tight'}</small></button>`};
  const card=(x,i)=>{const list=sizesOf(x.from||x.c),c=x.c;
-  if(list.length>1)return `<div class="sg sgm" data-i="${i}">${thumb(c)}<b>${esc(groupTitle(list))}</b><div class="szs">${list.map(s=>sizeBtn(s,i)).join('')}</div></div>`;
-  return `<button class="sg" data-i="${i}" data-add="${i}" aria-label="Add ${esc(c.n)}">${thumb(c)}<b>${esc(c.n)}</b><small>${UU(c.w,c.d)}${c.est?' <span class="why">&middot; size to confirm</span>':''}</small><small><b>${price(c)}</b>${x.door?'':' <span class="why adv">&middot; check door access</span>'}</small></button>`};
+  if(list.length>1)return `<div class="sg sgm" data-i="${i}">${thumb(c)}${viewBtn(c)}<b>${esc(groupTitle(list))}</b><div class="szs">${list.map(s=>sizeBtn(s,i)).join('')}</div></div>`;
+  return `<button class="sg" data-i="${i}" data-add="${i}" aria-label="Add ${esc(c.n)}">${thumb(c)}${viewBtn(c)}<b>${esc(c.n)}</b><small>${UU(c.w,c.d)}${c.est?' <span class="why">&middot; size to confirm</span>':''}</small><small><b>${price(c)}</b>${x.door?'':' <span class="why adv">&middot; check door access</span>'}</small></button>`};
  const rows=suggList.map((x,i)=>!x.c.gen&&show(sizesOf(x.from||x.c))?card(x,i):'').join(''),genRows=suggList.map((x,i)=>x.c.gen&&show(sizesOf(x.from||x.c))?card(x,i):'').join(''),tight=no.filter(([c])=>show(sizesOf(c)));
  // Sets come first: one card per set (photo, price, its pieces); adding one places every piece.
  const setRows=CO_SETS.filter(st=>(suggCat==='all'||suggCat==='set')&&(!suggQ||`${st.n} ${st.k}`.toLowerCase().includes(suggQ))&&(suggCat==='set'||suggQ||!st.r||st.r.includes(S.type))).map(st=>{
   const pcs=st.pcs.map(x=>({c:cat(x.k),q:x.q})).filter(x=>x.c),area=pcs.reduce((a,x)=>a+x.c.w*x.c.d*x.q,0),ok=area<=free,est=pcs.some(x=>x.c.est);
-  return `<button class="sg set${ok?'':' off'}" data-set="${esc(st.k)}" aria-label="Add ${esc(st.n)}">${thumb({...st,w:100,d:100})}<b>${esc(st.n)}</b><small>${pcs.map(x=>`${x.q>1?x.q+' x ':''}${esc(shortName(x.c.n))}`).join(', ')}</small><small><b>${st.p.toLocaleString()}</b>${est?' <span class="why">&middot; sizes to confirm</span>':''}${ok?'':' <span class="why">&middot; needs more space</span>'}</small></button>`}).join('');
+  return `<button class="sg set${ok?'':' off'}" data-set="${esc(st.k)}" aria-label="Add ${esc(st.n)}">${thumb({...st,w:100,d:100})}${viewBtn(st,1)}<b>${esc(st.n)}</b><small>${pcs.map(x=>`${x.q>1?x.q+' x ':''}${esc(shortName(x.c.n))}`).join(', ')}</small><small><b>${st.p.toLocaleString()}</b>${est?' <span class="why">&middot; sizes to confirm</span>':''}${ok?'':' <span class="why">&middot; needs more space</span>'}</small></button>`}).join('');
  if(setRows)h+=`<div class="sgsub" style="margin-top:0">Sets</div><div class="grid">${setRows}</div>${rows?'<div class="sgsub">Single pieces</div>':''}`;
  h+=rows?`<div class="grid">${rows}</div>`:(tight.length||setRows?'':`<div class="hint">${suggQ||suggCat!=='all'?'Nothing matches.':'Nothing fits the space that is left.'}</div>`);
  if(genRows)h+=`<div class="sgsub">Generic: any colour, not in the quote</div><div class="grid">${genRows}</div>`;
  if(tight.length)h+=`<div class="sgsub">Needs more space (${tight.length})</div><div class="sgtight grid">${tight.map(([c,r])=>{const list=sizesOf(c);
-  return list.length>1?`<div class="sg sgm off">${thumb(c)}<b>${esc(groupTitle(list))}</b><small class="why">${r}</small><div class="szs">${list.map(s=>sizeBtn(s,-1)).join('')}</div></div>`
-   :`<button class="sg off" data-addk="${esc(c.k)}" aria-label="Add ${esc(c.n)}">${thumb(c)}<b>${esc(c.n)}</b><small>${UU(c.w,c.d)} &middot; <b>${price(c)}</b></small><small class="why">${r}</small></button>`}).join('')}</div>`;
+  return list.length>1?`<div class="sg sgm off">${thumb(c)}${viewBtn(c)}<b>${esc(groupTitle(list))}</b><small class="why">${r}</small><div class="szs">${list.map(s=>sizeBtn(s,-1)).join('')}</div></div>`
+   :`<button class="sg off" data-addk="${esc(c.k)}" aria-label="Add ${esc(c.n)}">${thumb(c)}${viewBtn(c)}<b>${esc(c.n)}</b><small>${UU(c.w,c.d)} &middot; <b>${price(c)}</b></small><small class="why">${r}</small></button>`}).join('')}</div>`;
  box.className='';box.innerHTML=h}
 // The list refreshes 120 ms after a change, so the spot is worked out again on the tap (the room may have just changed).
 $('sgcats').onclick=e=>{const b=e.target.closest('[data-cat]');if(!b)return;suggCat=b.dataset.cat;paintSugg()};
@@ -860,7 +872,8 @@ function placePiece(c,extra){const sp=pairSpot(c)||diningSpot(c)||findSpot(c,c.c
 const setRank=c=>{const n=c.n.toLowerCase(),t=typeOf(c);return t==='bed'||t==='sofa'||/dining table/.test(n)?0:/bedside|night|side drawer|coffee|cent(er|re) table|dining chair/.test(n)?1:2};
 function placeSet(st){const g=S.next++,list=st.pcs.flatMap(x=>{const c=cat(x.k);return c?Array(x.q).fill(c):[]}).sort((a,b)=>setRank(a)-setRank(b)||b.w*b.d-a.w*a.d);
  list.forEach(c=>placePiece(c,{set:{k:st.k,g}}));S.sel=null;ghost=null;render()}
-$('sugg').onclick=e=>{const sb=e.target.closest('[data-set]');if(sb){if(S.mode==='walls'&&!S.closed)return;const st=CO_SETS.find(x=>x.k===sb.dataset.set);if(st)placeSet(st);return}
+$('sugg').onclick=e=>{const vb=e.target.closest('[data-view],[data-vset]');if(vb){openView(vb.dataset.vset?{set:vb.dataset.vset}:{k:vb.dataset.view});return}
+ const sb=e.target.closest('[data-set]');if(sb){if(S.mode==='walls'&&!S.closed)return;const st=CO_SETS.find(x=>x.k===sb.dataset.set);if(st)placeSet(st);return}
  const b=e.target.closest('[data-add],[data-addk]');if(!b)return;const x=b.dataset.addk?{c:cat(b.dataset.addk)}:suggList[+b.dataset.add];if(!x||!x.c)return;
  if(S.mode==='walls'&&!S.closed)return;const c=x.c,sp=pairSpot(c)||findSpot(c,c.cl)||findSpot(c,0);   // no spot: the middle of the room, shown red
  ghost=null;const it={id:S.next++,k:c.k,x:sp?sp.x:S.rw/2,y:sp?sp.y:S.rl/2,rot:sp?sp.rot:0};S.items.push(it);S.sel=it.id;render()};
@@ -868,6 +881,41 @@ $('sugg').onmouseover=e=>{const r=e.target.closest('.sg[data-i]');const x=r&&sug
  const g=x?{k:x.c.k,x:x.spot.x,y:x.spot.y,rot:x.spot.rot}:null;
  if(JSON.stringify(g)!==JSON.stringify(ghost)){ghost=g;$('plan').innerHTML=drawPlan(S.sel)}};
 $('sugg').onmouseleave=()=>{if(ghost){ghost=null;$('plan').innerHTML=drawPlan(S.sel)}};
+
+// ---- View: the store's own photo of a piece or set, large, and its 3D model on its own (turns until touched) ----
+// The card's small "View" sits inside the card's add button, so the card's click handler checks it first.
+const viewBtn=(c,set)=>c.ph&&assetUrl(c.ph)||(!set&&c.m)?`<span class="sgview" role="button" tabindex="0" ${set?`data-vset="${esc(c.k)}"`:`data-view="${esc(c.k)}"`} aria-label="View ${esc(c.n)}">View</span>`:'';
+$('sugg').addEventListener('keydown',e=>{const v=e.target.closest('.sgview');if(v&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();v.click()}});
+let pvw=null;   // {set, c, pcs, k (piece shown in 3D), tab, viewer}
+function openView(o){const st=o.set&&CO_SETS.find(x=>x.k===o.set),c=st?null:cat(o.k);if(!st&&!c)return;
+ const pcs=st?st.pcs.map(x=>({c:cat(x.k),q:x.q})).filter(x=>x.c).sort((a,b)=>setRank(a.c)-setRank(b.c)||b.c.w*b.c.d-a.c.w*a.c.d):[{c,q:1}];
+ const ph=assetUrl((st||c).ph);pvw={st,c,pcs,k:pcs[0].c.k,tab:ph?'photo':'3d',viewer:null};
+ $('pvttl').textContent=(st||c).n;$('pvimg').src=ph||'';$('pvimg').classList.remove('zoom');$('pvph').hidden=!ph;$('pv3').hidden=!pcs.some(x=>x.c.m)&&!!ph;
+ const p=st?st.p:c.p;
+ $('pvinfo').innerHTML=`<span>${st?pcs.map(x=>`${x.q>1?x.q+' x ':''}${esc(shortName(x.c.n))}`).join(', '):`${UUU(c.w,c.d,c.h)} (W x D x H)`}${(st?pcs.some(x=>x.c.est):c.est)?' <span class="why">&middot; size to confirm</span>':''}</span><b>${c&&c.gen?'any colour':p.toLocaleString()}</b>`;
+ $('pvpcs').innerHTML=st?pcs.map(x=>`<button class="chip" data-pk="${esc(x.c.k)}">${esc(shortName(x.c.n))}</button>`).join(''):'';
+ $('pview').hidden=false;pvTab(pvw.tab)}
+async function pvTab(t){if(!pvw)return;pvw.tab=t;$('pvph').classList.toggle('on',t==='photo');$('pv3').classList.toggle('on',t==='3d');
+ $('pvimgbox').hidden=t!=='photo';$('pvcv').hidden=$('pvpcs').hidden=t!=='3d';if(pvw.st)$('pvpcs').hidden=t!=='3d';
+ [...$('pvpcs').children].forEach(b=>b.classList.toggle('on',b.dataset.pk===pvw.k));
+ const msg=$('pvmsg');if(t!=='3d'){pvStop();msg.hidden=true;return}
+ if(pvw.viewer&&pvw.viewer.k===pvw.k)return;pvStop();
+ const c=cat(pvw.k),k=pvw.k;msg.hidden=false;msg.textContent='Loading the 3D model...';
+ try{const mod=await import('./view3d.js?v='+V3D);if(!pvw||pvw.tab!=='3d'||pvw.k!==k)return;
+  const v=await mod.showPiece($('pvcv'),{w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:assetUrl(c.m),tex:assetUrl(c.tx),color:c.gen||c.col&&!c.f?c.col||'':''});
+  if(!pvw||pvw.tab!=='3d'||pvw.k!==k){v.close();return}v.k=k;pvw.viewer=v;
+  msg.textContent=[...v.notes,c.m?'Made from the store photo. Drag to turn, pinch to zoom.':'No 3D model of this piece yet: a stand-in at its real size is shown.'].join(' ');
+  setTimeout(()=>{if(pvw&&pvw.viewer===v&&!v.notes.length&&c.m)msg.hidden=true},4000)}
+ catch(e){msg.textContent=`The 3D view could not start (${e.message}).`}}
+function pvStop(){if(pvw&&pvw.viewer){pvw.viewer.close();pvw.viewer=null}}
+function closeView(){pvStop();pvw=null;$('pview').hidden=true}
+$('pvph').onclick=()=>pvTab('photo');$('pv3').onclick=()=>pvTab('3d');$('pvx').onclick=closeView;
+$('pvpcs').onclick=e=>{const b=e.target.closest('[data-pk]');if(b&&pvw){pvw.k=b.dataset.pk;pvTab('3d')}};
+$('pvimg').onclick=e=>{e.currentTarget.classList.toggle('zoom')};   // tap: full size, scroll to look around; tap again: whole photo
+$('pvadd').onclick=()=>{if(!pvw)return;const {st,c}=pvw;closeView();
+ if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
+ if(st)placeSet(st);else{const it=placePiece(c);S.sel=it.id;ghost=null;render()}};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&pvw)closeView()});
 
 function render(){
  const W=+S.rw||1,L=+S.rl||1,m=40,plan=$('plan');
@@ -1284,7 +1332,7 @@ function roomModel(){
   obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
   items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:assetUrl(c.m),tex:assetUrl(c.tx),color:c.gen||c.col&&!c.f?c.col||'':''}})}}
 // Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
-const V3D='2026-10-28b';
+const V3D='2026-10-29c';
 let view3d=null,v3dTimer=0;
 async function open3d(){
  if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}

@@ -412,6 +412,27 @@ export async function run(){
   ok('board: Draw the whole house opens the board in house mode',!!document.querySelector('.dp')&&document.querySelector('.dp [data-m=house]').classList.contains('on'));
   document.querySelector('.dp [data-a=cancel]').click();ok('board: Cancel closes it and keeps the room',!document.querySelector('.dp')&&S.closed);
   freshVisit()}
+ // ---- View: the store photo large, and the piece's 3D model on its own ----
+ {const H='kind,sku,name,width_cm,depth_cm,height_cm,front_clearance_cm,price,type,rooms,estimated,pieces',PX='data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+  const r=buildCatalog([H,'furniture,V-S3,View sofa,220,90,90,60,,sofa,living,,','furniture,V-ARM,View armchair,80,80,95,60,,chair,living,,','furniture,V-TV,View TV stand,200,45,55,60,1500,storage,living,,',
+   'set,V-SET,View Sofa Set,,,,,7000,,living,,V-S3*1|V-ARM*2'].join('\n'));
+  r.sets[0].ph=PX;r.out.find(c=>c.k==='V-TV').ph=PX;
+  CO_SETS=r.sets;setCatalog(r.out,false);freshVisit({type:'living',name:'Living room',dwall:'2',doff:60,keepCatalog:true});setTemplate('rect',[600,480]);goStep(2);renderSugg();await wait(10);
+  const vs=$('sugg').querySelector('[data-vset="V-SET"]'),vp=$('sugg').querySelector('[data-view="V-TV"]');
+  ok('view: set and piece cards with a photo have a View button',!!vs&&!!vp);
+  vs.click();await wait(10);
+  ok('view: View opens the photo and does not add the set',!$('pview').hidden&&$('pvimg').src===PX&&!S.items.length&&$('pvttl').textContent==='View Sofa Set');
+  ok('view: it lists the pieces, sizes to confirm and the set price',/1 x|View sofa/.test($('pvinfo').textContent)&&/7,000|7000/.test($('pvinfo').textContent)&&$('pvpcs').querySelectorAll('[data-pk]').length===2);
+  $('pv3').click();for(let i=0;i<80&&!$('pvcv').querySelector('canvas');i++)await wait(50);
+  ok('view: the 3D tab shows the main piece first',!!$('pvcv').querySelector('canvas')&&$('pvpcs').querySelector('.on').dataset.pk==='V-S3');
+  $('pvpcs').querySelector('[data-pk="V-ARM"]').click();for(let i=0;i<80&&$('pvcv').querySelectorAll('canvas').length!==1;i++)await wait(50);await wait(200);
+  ok('view: picking another piece swaps the model (one 3D view at a time)',$('pvcv').querySelectorAll('canvas').length===1);
+  $('pvadd').click();await wait(10);
+  ok('view: Add to room places the whole set and closes the view',$('pview').hidden&&S.items.length===3&&!$('pvcv').querySelector('canvas'));
+  vp.isConnected||renderSugg();await wait(10);$('sugg').querySelector('[data-view="V-TV"]').click();await wait(10);
+  ok('view: a single piece shows its size and price',/200 x 45 x 55|200 × 45 × 55/.test($('pvinfo').textContent)&&/1,500|1500/.test($('pvinfo').textContent),$('pvinfo').textContent);
+  document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));ok('view: Escape closes it',$('pview').hidden&&S.items.length===3);
+  freshVisit()}
 
  window.removeEventListener('error',onErr);
  ok('no page errors during the run',!errs.length,errs);

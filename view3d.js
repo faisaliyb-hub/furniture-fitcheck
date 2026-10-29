@@ -321,3 +321,34 @@ export async function open(container,R){
    hidden.forEach(o=>o.visible=true);shooting=false;dirty=true;loop()}}
  return{scene,camera,renderer,controls,pieces,walls:room.walls,notes,setView,render,photo,
   close(){cancelAnimationFrame(raf);ro.disconnect();controls.dispose();scene.traverse(o=>{if(o.isMesh)o.geometry.dispose()});renderer.dispose();renderer.domElement.remove()}}}
+
+// ---------- one piece on its own (the catalogue's View) ----------
+// it = {w, d, h, name, type, finish, model, tex, color}; the piece stands on a plain floor, seen from the front left,
+// and turns slowly until it is touched.
+export async function showPiece(container,it){
+ const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+ renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.9;
+ container.appendChild(renderer.domElement);
+ await photoTextures();const hdr=await hdrLight();
+ const scene=new THREE.Scene();if(hdr)scene.environment=hdr;else{const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(new RoomEnvironment(renderer),.04).texture;pm.dispose()}
+ scene.background=new THREE.Color('#e9e7e3');scene.fog=new THREE.Fog('#e9e7e3',1,1);   // the floor fades into the background: no horizon line
+ const notes=[];let g=null;
+ if(it.model)try{g=await fileModel(it.model,it)}catch(e){notes.push('The 3D file could not be loaded, a stand-in model is shown.')}
+ if(!g)g=modelFor(it);scene.add(g);
+ const size=Math.max(it.w,it.d,it.h)*M;
+ const floor=new THREE.Mesh(new THREE.CircleGeometry(size*3,64),new THREE.MeshStandardMaterial({color:'#e9e7e3',roughness:.95}));
+ floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+ scene.add(new THREE.HemisphereLight('#ffffff','#cdbfae',.5));
+ const sun=new THREE.DirectionalLight('#fff1dc',2.4);sun.position.set(size*1.2,size*2.4,size*1.6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+ Object.assign(sun.shadow.camera,{left:-size*1.5,right:size*1.5,top:size*1.5,bottom:-size*1.5,near:.1,far:size*8});sun.shadow.bias=-.0003;sun.shadow.normalBias=.015;scene.add(sun);
+ const camera=new THREE.PerspectiveCamera(35,1,.02,100),controls=new OrbitControls(camera,renderer.domElement);
+ controls.enableDamping=true;controls.maxPolarAngle=Math.PI*.49;controls.minDistance=size*.4;controls.maxDistance=size*6;controls.screenSpacePanning=true;
+ controls.autoRotate=true;controls.autoRotateSpeed=1.2;controls.addEventListener('start',()=>{controls.autoRotate=false});
+ const tgt=new THREE.Vector3(0,it.h*M*.45,0);
+ const resize=()=>{const w=container.clientWidth||1,h=container.clientHeight||1;renderer.setSize(w,h,false);renderer.domElement.style.width='100%';renderer.domElement.style.height='100%';camera.aspect=w/h;camera.updateProjectionMatrix()};
+ const ro=new ResizeObserver(resize);ro.observe(container);resize();
+ // far enough back for the whole piece to fit the screen's narrower side
+ const fov=camera.fov*Math.PI/180,fit=Math.max(it.h*M/(2*Math.tan(fov/2)),Math.hypot(it.w,it.d)*M/(2*Math.tan(fov/2)*Math.min(1,camera.aspect)))*1.25;
+ camera.position.set(-fit*.5,tgt.y+fit*.35,fit*.8);scene.fog.near=fit*1.6;scene.fog.far=fit*3.4;controls.maxDistance=fit*1.4;controls.target.copy(tgt);controls.update();
+ let raf=0;const loop=()=>{raf=requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)};loop();
+ return{notes,close(){cancelAnimationFrame(raf);ro.disconnect();controls.dispose();scene.traverse(o=>{if(o.isMesh)o.geometry.dispose()});renderer.dispose();renderer.domElement.remove()}}}
