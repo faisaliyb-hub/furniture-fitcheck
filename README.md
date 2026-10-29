@@ -14,6 +14,10 @@ connected to IKEA. Each device keeps its own visits in the browser; nothing is s
   "Add to Home Screen" to keep it like an app.
 - Three screens: **Measure** (room type and size), **Furniture** (plan, what fits, 3D) and **Quote**. The settings icon
   (top right) shows the advanced controls.
+- **Draw it freely:** on Measure, **Draw this room** or **Draw the whole house** opens a drawing board. Draw with a finger
+  (lift it and carry on): wobbly lines are straightened, curves become clean arcs, and the grid (one square = 50 cm) gives
+  rough sizes. Tap a wall to type its real length; the plan stretches to it, and a wall shared by two rooms is measured
+  once. In whole-house mode every enclosed area becomes a room of the visit.
 - **Built-in catalogue:** the app opens with **Baffi Home Furniture**'s Noval-and-more test catalogue (`packs/baffi-noval.zip`: 16 sets and 10 pieces with Baffi's photos and naira prices, sizes estimated and marked "size to confirm", and 3D models of the Noval sofa, armchair and centre table made in Blender from their photos). Shown with Baffi's permission (2026-10-28). Settings icon on Furniture: **Use sample** switches to the IKEA samples, **Use built-in catalogue (Baffi)** switches back.
 - Load a company's own products with **settings icon → Import company pack (.zip)** (Furniture screen): its catalog,
   material photos and 3D files for its furniture, wall panels, wallpaper and doors. How to make one: `docs/COMPANY_PACK.md`;
@@ -27,6 +31,7 @@ connected to IKEA. Each device keeps its own visits in the browser; nothing is s
 | File | What it is |
 |---|---|
 | `fitcheck.html` | The app (HTML, CSS and JavaScript in one file) |
+| `drawplan.js` | The drawing board (free drawing of one room or a whole house), loaded when it opens |
 | `index.html` | Redirects the site's home address to the app |
 | `catalog-template.csv` | Catalog format to send to the furniture house |
 | `view3d.js` | The 3D view, loaded when the 3D view button is pressed (uses three.js from a CDN) |

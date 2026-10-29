@@ -10,7 +10,7 @@ export async function run(){
  const near=(a,b,t)=>Math.abs(a-b)<=t;
  const K=OLD_KEYS;   // role -> IKEA sample SKU, e.g. K.bed is the MALM Standard Double frame
  // checks run on the samples, whatever this device has loaded (the built-in Baffi catalogue, a company pack)
- function freshVisit(over={}){S.rooms=[];S.cur=0;
+ function freshVisit(over={}){S.rooms=[];S.cur=0;S.house=null;S.plan=null;S.hk=null;showShapes=false;
   Object.assign(S,{client:'',rep:'',name:'Room 1',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,unit:'cm',more:false,step:1,showCl:false,doorSet:true,finishes:[],doorK:'',doorCol:''},over);
   if(!over.keepCatalog){applyPack(null);setCatalog(SAMPLE.slice(),true)}fixRoom();stash();load();renderCat();render()}
  function setTemplate(shape,lens){S.mode='walls';S.shape=shape;S.walls=wallsFor(shapeDef(shape));
@@ -238,7 +238,7 @@ export async function run(){
  typeIn($('tw1'),'380');ok('size: correcting the number accepts the room',S.closed&&!$('tw1').classList.contains('bad')&&!$('next').disabled);
  typeIn($('tw0'),'450');
  $('typechips').querySelector('[data-t=bedroom]').click();ok('screens: the room type names the room',S.name==='Bedroom',S.name);
- $('notrect').click();ok('screens: "Not a rectangle? Draw it" opens the drawing pad and the shape pictures',S.shape==='sketch'&&!!$('pad')&&visible('#shapes'));
+ $('notrect').click();ok('screens: "Not a rectangle? Draw it" offers the drawing board and the shape pictures',S.shape==='sketch'&&!!$('redraw')&&visible('#shapes'));
  $('shapes').querySelector('[data-shape=rect]').click();typeIn($('tw0'),'450');typeIn($('tw1'),'380');
  $('next').click();await wait(20);
  ok('screens: Furniture asks once where the door is',S.step===2&&visible('#doorbar')&&document.body.classList.contains('doormode')&&!visible('#movedoor'));
@@ -370,6 +370,48 @@ export async function run(){
   ok('sets: the dining table stands free, away from the walls',tb.x0>=50&&tb.y0>=50&&tb.x1<=S.rw-50&&tb.y1<=S.rl-50,tb);
   ok('sets: all six chairs sit at the table',ch.length===6&&ch.every(touches)&&!problems().length,ch);
   CO_SETS=[];setCatalog(SAMPLE.slice(),true)}
+
+ // ---- drawing board: free drawing with straightened walls, a whole house or one room at a time ----
+ {const D=await import(new URL('../drawplan.js?v='+DPV,import.meta.url).href);drawMod=drawMod||D;
+  let sd=5;const rr=()=>{sd=(sd*16807)%2147483647;return sd/2147483647-.5};
+  const mk=pts=>{const P=[];for(let i=0;i+1<pts.length;i++){const a=pts[i],b=pts[i+1],n=Math.max(10,Math.round(Math.hypot(b[0]-a[0],b[1]-a[1])/10));
+   for(let k=0;k<n;k++){const t=k/n;P.push([a[0]+(b[0]-a[0])*t+rr()*8,a[1]+(b[1]-a[1])*t+rr()*8])}}P.push(pts[pts.length-1]);return P};
+  const wl=r=>r.walls.map(w=>w.len+w.turn+(w.curve?'~'+w.curve.side:'')).join(',');
+  const loose=p=>{const t=D.tidy(p),deg={};t.e.forEach(e=>{deg[e.a]=(deg[e.a]||0)+1;deg[e.b]=(deg[e.b]||0)+1});return Object.values(deg).filter(v=>v<2).length};
+  let p=D.newPlan();D.addStroke(p,mk([[0,0],[1200,0],[1200,800],[0,800],[0,0]]),40);
+  ok('board: a wobbly outline comes out straight, at its drawn size',D.rooms(p).length===1&&wl(D.rooms(p)[0])==='1200R,800R,1200R,800R',D.rooms(p).map(wl));
+  [[[500,-10],[500,830]],[[1210,400],[490,400]],[[-10,450],[500,450]]].forEach(s=>D.addStroke(p,mk(s),40));
+  let R2=D.rooms(p);
+  ok('board: inside walls drawn across the house make 4 rooms, with no loose ends',R2.length===4&&!loose(p)&&near(R2.reduce((a,r)=>a+r.area,0),1200*800,1),R2.map(wl));
+  ok('board: an inside wall that ends on a wall stays straight',R2.every(r=>r.walls.every(w=>/R$|L$/.test(w.turn))&&r.walls.length===4),R2.map(wl));
+  const top=p.e.findIndex(e=>e&&p.v[e.a].y===0&&p.v[e.b].y===0&&Math.min(p.v[e.a].x,p.v[e.b].x)===0);
+  D.setLength(p,top,520);R2=D.rooms(p);
+  ok('board: typing a wall length moves the walls beyond it, so shared walls stay joined',R2.length===4&&R2.filter(r=>r.walls[0].len===520).length===2&&!loose(p)&&near(Math.max(...p.v.filter(Boolean).map(v=>v.x)),1220,.5),R2.map(wl));
+  let q=D.newPlan();[[[0,0],[500,0],[500,250],[300,250]],[[300,250],[300,400],[0,400],[0,0]]].forEach(s=>D.addStroke(q,mk(s),30));
+  ok('board: a room drawn in two strokes joins up (L-shape)',D.rooms(q).length===1&&wl(D.rooms(q)[0])==='500R,250R,200L,150R,300R,400R',D.rooms(q).map(wl));
+  q=D.newPlan();D.addStroke(q,mk([[0,0],[200,-80],[400,-100],[600,-80],[800,0],[800,400],[0,400],[0,0]]),30);
+  ok('board: a curved wall becomes a curve',D.rooms(q).length===1&&D.rooms(q)[0].walls.filter(w=>w.curve&&w.curve.side==='out').length===1,D.rooms(q).map(wl));
+  q=D.newPlan();D.addStroke(q,mk([[0,0],[500,0],[500,250],[350,400],[0,400],[0,0]]),30);
+  ok('board: a cut corner becomes a 45-degree wall',D.rooms(q).length===1&&D.rooms(q)[0].walls.filter(w=>w.turn==='R45').length===2,D.rooms(q).map(wl));
+  ok('board: a fully round room is refused with a reason',D.readStroke(mk(Array.from({length:41},(_,i)=>[300+200*Math.cos(i*Math.PI/20),300+200*Math.sin(i*Math.PI/20)]))).err==='round');
+  // into the app: the house becomes the visit's rooms; redrawing keeps names and furniture
+  freshVisit();goStep(1);
+  boardDone({mode:'house',plan:D.tidy(p),rooms:D.rooms(D.tidy(p))});
+  ok('board: Make rooms turns every enclosed area into a measured room',S.rooms.length===4&&S.rooms.every(r=>r.closed&&r.mode==='walls'&&r.shape==='sketch'&&r.hk)&&!!S.house&&S.cur===0,S.rooms.map(r=>[r.name,r.closed,r.rw,r.rl]));
+  ok('board: the first room reuses the empty room the visit started with',S.rooms[0].name==='Room 1');
+  ok('board: the room list shows every room on the Room card',$('rooms2').querySelectorAll('[data-r]').length===4&&!$('rooms2').hidden);
+  $('typechips').querySelector('[data-t=bedroom]').click();S.items.push({id:S.next++,k:K.bed,x:S.rw/2,y:110,rot:0});render();stash();
+  const p2=JSON.parse(JSON.stringify(S.house));D.addStroke(p2,mk([[870,-10],[870,410]]),40);
+  boardDone({mode:'house',plan:D.tidy(p2),rooms:D.rooms(D.tidy(p2))});
+  const bed=S.rooms.find(r=>r.name==='Bedroom');
+  ok('board: drawing one more wall adds a room and keeps the others (names, furniture)',S.rooms.length===5&&!!bed&&bed.items.length===1,S.rooms.map(r=>r.name));
+  freshVisit();goStep(1);const qq=D.newPlan();D.addStroke(qq,mk([[0,0],[500,0],[500,250],[300,250],[300,400],[0,400],[0,0]]),30);
+  boardDone({mode:'room',plan:D.tidy(qq),rooms:D.rooms(D.tidy(qq))});
+  ok('board: This room uses the drawing for the open room only',S.rooms.length===1&&S.shape==='sketch'&&S.closed&&S.walls.length===6&&near(S.rw,500,1)&&near(S.rl,400,1)&&!!S.plan,[S.walls.map(w=>w.len),S.rw,S.rl]);
+  $('drawhouse').click();for(let i=0;i<40&&!document.querySelector('.dp');i++)await wait(50);await wait(100);
+  ok('board: Draw the whole house opens the board in house mode',!!document.querySelector('.dp')&&document.querySelector('.dp [data-m=house]').classList.contains('on'));
+  document.querySelector('.dp [data-a=cancel]').click();ok('board: Cancel closes it and keeps the room',!document.querySelector('.dp')&&S.closed);
+  freshVisit()}
 
  window.removeEventListener('error',onErr);
  ok('no page errors during the run',!errs.length,errs);

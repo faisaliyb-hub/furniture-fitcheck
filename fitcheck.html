@@ -168,10 +168,11 @@ body[data-step="2"] #layoutcard .hint{margin-top:4px}
   <div class="tools" style="margin-top:0"><button id="addroom">+ Add room</button><button id="delroom">Delete room</button></div>
   <div class="hint">Settings are on, so the advanced controls show on every screen. Tap the settings icon again to hide them.</div>
  </section>
- <section class="card" data-step="1"><h2>Room</h2><div id="typechips" class="chips typechips"></div></section>
+ <section class="card" data-step="1"><h2>Room</h2><div id="rooms2" class="chips" hidden style="margin-bottom:10px"></div><div id="typechips" class="chips typechips"></div></section>
  <section class="card" data-step="1"><div class="sizehead"><h2 id="roomh">Size</h2><label class="unitmini">in <select id="unit2" aria-label="Unit"><option value="cm">cm</option><option value="m">m</option><option value="mm">mm</option><option value="ftin">ft + in</option><option value="in">inches</option></select></label></div>
   <div class="tools adv" style="margin:0 0 10px"><button id="modewalls" class="chip">Wall by wall</button><button id="moderect" class="chip">Quick rectangle</button></div>
   <div id="wallsbox">
+   <div class="tools drawbtns" style="margin:0 0 10px"><button id="drawroom">Draw this room</button><button id="drawhouse">Draw the whole house</button></div>
    <div id="shapes" class="shapes" role="group" aria-label="Room shape"></div>
    <div id="shapebox"></div>
    <button id="notrect" class="linkbtn">Not a rectangle? Draw it</button>
@@ -330,8 +331,8 @@ const sizeKey=it=>(it.size?`${it.size.w}x${it.size.d}x${it.size.h||''}`:'')+(it.
 
 // A visit has several rooms. The active room's fields live on S; the others are stored in S.rooms.
 const ROOM_TYPES={living:'Living room',bedroom:'Bedroom',dining:'Dining room',office:'Home office',kids:"Kids' room",other:'Other'};
-const RF=['name','type','rw','rl','dwall','dw','doff','dh','items','cuts','obs','rh','mode','walls','shape','sketch','doorSet','finishes','doorK','doorCol'];
-const normRoom=r=>{r.doorSet=!!r.doorSet;r.doorK=r.doorK||'';r.doorCol=r.doorCol||'';r.finishes=(r.finishes||[]).map(f=>f.k==='PT-WHT'?{...f,k:'GEN-PAINT',col:'#f3f1ec'}:f.k==='PT-SAGE'?{...f,k:'GEN-PAINT',col:'#9fb197'}:f);r.mode=r.mode||'rect';r.walls=r.walls||[];r.shape=r.shape||(r.mode==='walls'&&r.walls.length?'free':'rect');r.sketch=r.sketch||null;r.cuts=r.cuts||[];r.obs=r.obs||[];r.rh=r.rh||260;return r};
+const RF=['name','type','rw','rl','dwall','dw','doff','dh','items','cuts','obs','rh','mode','walls','shape','sketch','doorSet','finishes','doorK','doorCol','plan','hk'];
+const normRoom=r=>{r.doorSet=!!r.doorSet;r.doorK=r.doorK||'';r.doorCol=r.doorCol||'';r.finishes=(r.finishes||[]).map(f=>f.k==='PT-WHT'?{...f,k:'GEN-PAINT',col:'#f3f1ec'}:f.k==='PT-SAGE'?{...f,k:'GEN-PAINT',col:'#9fb197'}:f);r.mode=r.mode||'rect';r.walls=r.walls||[];r.shape=r.shape||(r.mode==='walls'&&r.walls.length?'free':'rect');r.sketch=r.sketch||null;r.plan=r.plan||null;r.hk=r.hk||null;r.cuts=r.cuts||[];r.obs=r.obs||[];r.rh=r.rh||260;return r};
 function fixRoom(){S.finishes=S.finishes||[];S.cuts=S.cuts||[];S.obs=S.obs||[];S.rh=S.rh||260;S.mode=S.mode||'rect';S.walls=S.walls||[];S.shape=S.shape||'rect';
  const def=shapeDef(S.shape);if(S.mode==='walls'&&def&&S.walls.length!==def.turns.length)S.walls=wallsFor(def);
  recomputeShape()}
@@ -945,7 +946,9 @@ function buildQuote(){stash();let body='',grand=0;
   <h2 style="text-align:right">Total: ${grand.toLocaleString()}</h2>
   <p style="font-size:12px;color:var(--mute)">Indicative only, based on measurements entered on the visit. Verify on site before ordering. ${esc(priceNote())}</p>`}
 function renderRooms(){
- $('rooms').innerHTML=S.rooms.map((r,i)=>`<button class="chip${i===S.cur?' on':''}" data-r="${i}">${esc(r.name||'Room')}<small>${ROOM_TYPES[r.type]||''} &middot; ${r.closed===false?'measuring...':UU(r.rw,r.rl)}</small></button>`).join('');
+ $('rooms').innerHTML=$('rooms2').innerHTML=S.rooms.map((r0,i)=>{const r=i===S.cur?S:r0;   // the room open now: its live values (S.rooms has them from the last save)
+  return `<button class="chip${i===S.cur?' on':''}" data-r="${i}">${esc(r.name||'Room')}<small>${ROOM_TYPES[r.type]||''} &middot; ${(i===S.cur?S.mode==='walls'&&!S.closed:r.closed===false)?'measuring...':UU(r.rw,r.rl)}</small></button>`}).join('');
+ $('rooms2').hidden=S.rooms.length<2||S.more;   // a drawn house has several rooms: pick the one to measure and furnish
  $('delroom').disabled=S.rooms.length<2;
  $('roomh').textContent='Size';
  $('layouth').textContent=S.name||'This room'}
@@ -1137,10 +1140,10 @@ function renderShapes(){const keys=Object.keys(SHAPES).filter(k=>true),showFree=
  $('shapes').innerHTML=`<button class="shape${S.shape==='sketch'?' on':''}" data-shape="sketch" aria-pressed="${S.shape==='sketch'}"><svg viewBox="0 0 56 39" aria-hidden="true"><path d="M5 6c12-3 25-2 44 0M49 6c2 9 1 18 0 28M49 34c-14 1-29 2-44 0M5 34c-1-9-2-18 0-28" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/></svg><span>Draw it</span></button>`+keys.map(k=>`<button class="shape${S.shape===k?' on':''}" data-shape="${k}" aria-pressed="${S.shape===k}" aria-label="${SHAPES[k].name}" title="${SHAPES[k].name}">${shapeSvg(k)}</button>`).join('')+
   (showFree?`<button class="shape${S.shape==='free'?' on':''}" data-shape="free" aria-pressed="${S.shape==='free'}"><svg viewBox="0 0 56 39" aria-hidden="true"><path d="M3 3h30v12h20v21H20V24H3z" fill="var(--room)" stroke="var(--ink)" stroke-width="2" stroke-dasharray="4 3"/></svg><span>Other shape</span></button>`:'')}
 function renderShapeInputs(){const free=S.shape==='free';$('freebox').hidden=!free;if(free){$('shapebox').innerHTML='';return}
- if(S.shape==='sketch'&&!S.sketch){padStrokes=[];padPts=null;$('shapebox').innerHTML=`<svg id="pad" class="pad" viewBox="0 0 300 210" aria-label="Drawing area"><defs><pattern id="padgrid" width="15" height="15" patternUnits="userSpaceOnUse"><path d="M15 0H0V15" fill="none" stroke="var(--line)" stroke-width="1"/></pattern></defs><rect width="300" height="210" fill="url(#padgrid)"/><text id="padhint" x="150" y="108" text-anchor="middle" font-size="13" fill="var(--mute)">Draw the room's outline here with your finger</text><polyline id="padline" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points=""/><circle id="padstart" r="7" fill="var(--accent)" stroke="var(--room)" stroke-width="2" style="display:none"/></svg><p id="padmsg" class="hint" style="margin:4px 0 6px">Draw around the room. You can lift your finger and carry on. It finishes when you get back to the green start dot, or tap Done.</p><div class="padtools"><span><button id="padundo" disabled>Undo</button> <button id="padclear" disabled>Clear</button></span><button id="paddone" class="primary" disabled>Done</button></div>`;return}
+ if(S.shape==='sketch'&&!S.sketch){$('shapebox').innerHTML=`<p class="hint" style="margin:0 0 8px">Draw the room on the drawing board: straight lines are straightened and curves smoothed, and the grid gives rough sizes.</p><div class="padtools"><span></span><button id="redraw" class="primary">Open drawing board</button></div>`;return}
  const f=S.shape==='rect'?[[0,'Length'],[1,'Width']]:S.walls.flatMap((w,i)=>w.curve?[[i,`Wall ${i+1}: end to end`],[i+'c',`Wall ${i+1}: curve depth`]]:[[i,'Wall '+(i+1)]]);
  $('shapebox').innerHTML=`<div class="shapebig">${shapeSvg(S.shape,true)}</div>${S.shape==='sketch'?'<div class="padtools"><span class="hint" style="margin:0">Straightened from your drawing.</span><button id="redraw">Draw again</button></div>':''}<div class="tw">${f.map(([i,l])=>`<div><label for="tw${i}">${l}</label><input id="tw${i}" data-tw="${i}" ${lenAttrs()} placeholder="${esc(unitHint())}" value="${twVal(i)}"></div>`).join('')}</div>`}
-$('shapes').onclick=e=>{const b=e.target.closest('[data-shape]');if(!b)return;const k=b.dataset.shape;if(k===S.shape)return;
+$('shapes').onclick=e=>{const b=e.target.closest('[data-shape]');if(!b)return;const k=b.dataset.shape;if(k==='sketch'){openBoard();return}if(k===S.shape)return;
  const old=S.walls.map(w=>+w.len||0),was=S.shape;S.shape=k;S.mode='walls';
  const def=shapeDef(k);S.walls=k==='free'?S.walls:def?wallsFor(def):[];
  onShapeChange(true)};
@@ -1177,7 +1180,7 @@ $('shapebox').addEventListener('pointerdown',e=>{if(!e.target.closest('#pad'))re
 $('shapebox').addEventListener('pointermove',e=>{if(!padPts)return;const p=padPt(e),l=padPts[padPts.length-1];if(Math.hypot(p[0]-l[0],p[1]-l[1])<2)return;padPts.push(p);padDraw()});
 $('shapebox').addEventListener('pointerup',()=>{if(!padPts)return;if(padPts.length>1)padStrokes.push(padPts);padPts=null;padDraw();if(padClosed())padFinish()});
 $('shapebox').addEventListener('click',e=>{const id=e.target.id;
- if(id==='redraw'){S.sketch=null;S.walls=[];padStrokes=[];onShapeChange(true)}
+ if(id==='redraw')openBoard()
  else if(id==='padundo'){padStrokes.pop();padDraw()}
  else if(id==='padclear'){padStrokes=[];padDraw()}
  else if(id==='paddone')padFinish()});
@@ -1235,6 +1238,31 @@ $('sizechips').onclick=e=>{const b=e.target.closest('[data-sz]'),it=b&&S.items.f
  el.oninput=()=>{const it=S.items.find(i=>i.id===S.sel);if(!it)return;const v=el.value,cm=parseLen(v),bad=v.trim()!==''&&!(cm>=5&&cm<=1000);el.classList.toggle('bad',bad);if(bad||v.trim()==='')return;
   const c=spec(it);it.size={w:c.w,d:c.d,h:c.h,name:'Custom size'};it.size['wdh'[ix]]=Math.round(cm*10)/10;render()};
  el.addEventListener('change',()=>{const it=S.items.find(i=>i.id===S.sel);if(it){el.value=U(spec(it)['wdh'[ix]],true);el.classList.remove('bad')}})});
+
+// ---- Drawing board (drawplan.js, loaded the first time it opens): draw this room, or the whole house ----
+// A room drawn on its own keeps its drawing (S.plan). The whole house is one drawing for the visit (S.house); each enclosed
+// area becomes a room, matched to the room it made last time by where that room's middle (hk) was, so redrawing keeps names,
+// types and furniture. Rooms that came from the house and are no longer drawn are removed when nothing is placed in them.
+const DPV='2026-10-29h';let drawMod=null;   // version of drawplan.js: change it whenever drawplan.js changes
+const blankRoom=name=>({name,type:'other',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260});
+async function openBoard(mode){
+ try{drawMod=drawMod||await import('./drawplan.js?v='+DPV)}catch(e){await ask('The drawing board could not load. Check the connection and try again.','OK');return}
+ stash();mode=mode||(S.hk&&S.house?'house':'room');
+ drawMod.open(document.body,{mode,plan:mode==='house'?S.house:S.plan,U:v=>U(v),parseLen,onDone:boardDone,onCancel:render})}
+function boardDone(r){
+ const set=(o,x)=>Object.assign(o,{mode:'walls',shape:'sketch',sketch:x.sketch,walls:x.walls,doorSet:false});
+ if(r.mode==='room'){set(S,r.rooms[0]);S.plan=r.plan;S.hk=null;showShapes=true;onShapeChange(true);return}
+ stash();const used=new Set(),made=[];
+ r.rooms.forEach(x=>{let i=S.rooms.findIndex((rm,j)=>!used.has(j)&&rm.hk&&drawMod.inside(x.poly,rm.hk));
+  if(i<0)i=S.rooms.findIndex((rm,j)=>!used.has(j)&&!rm.hk&&!(rm.items||[]).length&&rm.closed===false);   // an empty room not measured yet
+  if(i<0){S.rooms.push(blankRoom(`Room ${S.rooms.length+1}`));i=S.rooms.length-1}
+  used.add(i);set(S.rooms[i],x);S.rooms[i].hk=x.hk;S.rooms[i].plan=null;made.push(S.rooms[i])});
+ S.rooms=S.rooms.filter((rm,j)=>used.has(j)||!rm.hk||(rm.items||[]).length);
+ const at=made.map(rm=>S.rooms.indexOf(rm));   // positions now: stash() replaces each room with a copy
+ S.house=r.plan;showShapes=true;at.forEach(i=>{loadRoom(i);stash()});   // works out each room's outline and size now
+ loadRoom(at[0]);load();renderCat();render()}
+$('drawroom').onclick=()=>openBoard('room');
+$('drawhouse').onclick=()=>openBoard('house');
 
 // ---- 3D view (view3d.js, loaded the first time it opens) ----
 // Everything the 3D view needs, in cm and plan coordinates (x right, y down): the outline, doors and windows on its edges,
@@ -1357,7 +1385,7 @@ $('shareq').onclick=async()=>{try{await navigator.share({title:'Quote',text:quot
 // While typing on a phone the bottom bar steps aside (it would sit on top of the keyboard and the boxes).
 if(matchMedia('(pointer:coarse)').matches){document.addEventListener('focusin',e=>{if(e.target.matches('input:not([type=checkbox]),textarea'))document.body.classList.add('typing')});
  document.addEventListener('focusout',()=>document.body.classList.remove('typing'))}
-$('rooms').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;stash();loadRoom(+b.dataset.r);load();renderCat();render()};
+$('rooms').onclick=$('rooms2').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;stash();loadRoom(+b.dataset.r);load();renderCat();render()};
 $('addroom').onclick=()=>{stash();S.rooms.push({name:`Room ${S.rooms.length+1}`,type:'other',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260});loadRoom(S.rooms.length-1);load();renderCat();render();if(S.more){$('rname').focus();$('rname').select()}};
 $('delroom').onclick=async()=>{if(S.rooms.length<2||!await ask(`Delete "${S.name}" and its layout?`,'Delete room'))return;S.rooms.splice(S.cur,1);loadRoom(Math.min(S.cur,S.rooms.length-1));load();renderCat();render()};
 $('wall').onclick=()=>{const i=S.items.findIndex(x=>x.id===S.sel);if(i<0)return;const it=S.items[i],c=spec(it);
@@ -1367,7 +1395,7 @@ $('wall').onclick=()=>{const i=S.items.findIndex(x=>x.id===S.sel);if(i<0)return;
 $('showcl').onchange=e=>{S.showCl=e.target.checked;render()};
 $('px').oninput=e=>{const it=S.items.find(i=>i.id===S.sel),cm=parseLen(e.target.value);e.target.classList.toggle('bad',e.target.value.trim()!==''&&!isFinite(cm));if(it&&isFinite(cm)){it.x=cm+dims(it).w/2;render()}};
 $('py').oninput=e=>{const it=S.items.find(i=>i.id===S.sel),cm=parseLen(e.target.value);e.target.classList.toggle('bad',e.target.value.trim()!==''&&!isFinite(cm));if(it&&isFinite(cm)){it.y=cm+dims(it).d/2;render()}};
-$('reset').onclick=async()=>{if(await ask('Start a new visit? All rooms and layouts are cleared.','Start new visit')){S.rooms=[];S.cur=0;Object.assign(S,{name:'Living room',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,client:'',rep:'',doorSet:false,step:1,finishes:[]});showShapes=false;fixRoom();stash();load();renderCat();render();window.scrollTo(0,0)}};
+$('reset').onclick=async()=>{if(await ask('Start a new visit? All rooms and layouts are cleared.','Start new visit')){S.rooms=[];S.cur=0;S.house=null;Object.assign(S,{name:'Living room',type:'living',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260,sel:null,client:'',rep:'',doorSet:false,step:1,finishes:[]});showShapes=false;fixRoom();stash();load();renderCat();render();window.scrollTo(0,0)}};
 
 // drag with wall snapping
 let drag=null;
@@ -1511,7 +1539,7 @@ if(!Array.isArray(S.rooms)||!S.rooms.length){S.rooms=[];S.cur=0;stash()}
 const DEFAULT_PACK='packs/baffi-noval.zip';
 // The built-in pack's 3D files sit next to it on the site (packs/baffi-models/), so each one downloads only when a piece
 // that uses it is shown in 3D; the zip itself stays small (catalogue and photos).
-const DEFAULT_MODELS='packs/baffi-models/',MODELS_V='2026-10-28g';   // bump MODELS_V when the model files change, so browsers fetch the new ones
+const DEFAULT_MODELS='packs/baffi-models/',MODELS_V='2026-10-28h';   // bump MODELS_V when the model files change, so browsers fetch the new ones
 async function defaultPack(){const b=await (await fetch(DEFAULT_PACK)).blob(),p=await readPack(new File([b],'baffi-noval.zip'));
  const rows=p.csv.split(/\r?\n/),head=(rows[0]||'').split(','),mi=head.indexOf('model');
  p.remote=Object.fromEntries(rows.slice(1).map(r=>r.split(',')[mi]).filter(m=>m&&/\.glb$/i.test(m)&&!p.files[m]).map(m=>[m,DEFAULT_MODELS+m+'?v='+MODELS_V]));return p}
