@@ -51,7 +51,7 @@ export async function run(){
 
  // ---- containment, gaps, door ----
  setTemplate('L-br',[450,230,200,150,250,380]);
- S.items=[{id:1,k:K.sofa3,x:350,y:300,rot:0}];render();ok('L: piece in missing corner flagged',issues().some(m=>m.includes('sticks out')),issues());
+ S.items=[{id:1,k:K.sofa3,x:350,y:300,rot:0}];render();ok('L: piece put in the missing corner moves back inside',rectInRoom(body(S.items[0]))&&!issues().some(m=>m.includes('sticks out')),issues());
  S.items=[{id:2,k:K.coffee,x:100,y:100,rot:0}];const g=gaps(S.items[0]);ok('L: gaps to outline',fmt(g.gl)===55&&fmt(g.gr)===305&&fmt(g.gd)===252.5,g);   // LACK 90 x 55 centred at (100, 100)
  S.items=[];render();placeDoorAt({x:350,y:228});ok('door: tap on inner wall 3',S.dwall==='2'&&near(doorRect().y1,230,.5),[S.dwall,doorRect()]);
 
@@ -61,7 +61,7 @@ export async function run(){
  setSketch(0,['L45','R45','R45','L45','R','R','R','R'],null,[100,75,100,75,100,300,400,300]);ok('bay 75 cm sides: closes',S.closed);
  setSketch(0,['R','R','R','R'],[{side:'out'},null,null,null],[400,300,400,300],[60]);ok('curve out: area ~136269',S.closed&&near(usage().room,136269,150),usage().room);
  sv=suggValid();ok('curve out: suggestions valid',!sv.bad.length,sv.bad);
- S.items=[{id:5,k:K.tv,x:200,y:20,rot:0}];render();ok('curve out: piece in bulge flagged',issues().some(m=>m.includes('sticks out')),issues());S.items=[];
+ S.items=[{id:5,k:K.tv,x:200,y:-60,rot:0}];render();ok('curve out: piece past the bulge moves back inside',rectInRoom(body(S.items[0]))&&!issues().some(m=>m.includes('sticks out')),issues());S.items=[];
  setSketch(0,['R','R','R','R'],[{side:'in'},null,null,null],[400,300,400,300],[60]);ok('curve in: area ~103731',S.closed&&near(usage().room,103731,150),usage().room);
  placeDoorAt({x:S.wallGeo[0].mid.x,y:S.wallGeo[0].mid.y});ok('door: tap on curve goes to a straight wall',!S.wallGeo[+S.dwall].curve);
  setSketch(0,['R135','R135','R'],[{side:'out'},{side:'out'},{side:'out'}],[300,424.26,300],[20,20,20]);ok('all-curved room closes (for the door test)',S.closed,S.mismatch);
@@ -408,6 +408,9 @@ export async function run(){
   freshVisit();goStep(1);const qq=D.newPlan();D.addStroke(qq,mk([[0,0],[500,0],[500,250],[300,250],[300,400],[0,400],[0,0]]),30);
   boardDone({mode:'room',plan:D.tidy(qq),rooms:D.rooms(D.tidy(qq))});
   ok('board: This room uses the drawing for the open room only',S.rooms.length===1&&S.shape==='sketch'&&S.closed&&S.walls.length===6&&near(S.rw,500,1)&&near(S.rl,400,1)&&!!S.plan,[S.walls.map(w=>w.len),S.rw,S.rl]);
+  {goStep(2);const c=CATALOG.find(c=>!c.gen&&c.w<=80&&c.d<=80),it={id:S.next++,k:c.k,x:430,y:340,rot:0};S.items.push(it);render();
+   ok('keep in: a piece put in the missing corner of an L-shaped room moves back inside',rectInRoom(body(it))&&(it.x<=300-c.w/2+1||it.y<=250-c.d/2+1),[it.x,it.y]);
+   S.items=[];render();goStep(1)}
   $('drawhouse').click();for(let i=0;i<40&&!document.querySelector('.dp');i++)await wait(50);await wait(100);
   {const m=S.mode;S.mode='rect';render();ok('board: the Draw buttons also show in Quick rectangle mode',!!$('drawroom').offsetParent&&!!$('drawhouse').offsetParent);S.mode=m;render()}
   ok('board: Draw the whole house opens the board in house mode',!!document.querySelector('.dp')&&document.querySelector('.dp [data-m=house]').classList.contains('on'));
@@ -431,6 +434,21 @@ export async function run(){
   ok('view: a single piece shows its size and price',/200 x 45 x 55|200 × 45 × 55/.test($('pvinfo').textContent)&&/1,500|1500/.test($('pvinfo').textContent),$('pvinfo').textContent);
   document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));ok('view: Escape closes it',$('pview').hidden&&S.items.length===3);
   freshVisit()}
+ // ---- Keep in: no piece is left outside the room ----
+ {freshVisit({type:'living',name:'Living room',dwall:'2',doff:60,keepCatalog:true});setTemplate('rect',[400,300]);goStep(2);
+  const c=CATALOG.find(c=>!c.gen&&c.w>=150&&c.w<=250&&c.d<=100),it=placePiece(c);S.sel=it.id;render();
+  const g=()=>$('plan').querySelector(`[data-id="${it.id}"]`),b=g().getBoundingClientRect(),pr=$('plan').getBoundingClientRect();
+  g().dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:b.x+b.width/2,clientY:b.y+b.height/2,pointerId:8}));
+  $('plan').dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:pr.right+400,clientY:pr.bottom+400,pointerId:8}));
+  $('plan').dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:8}));
+  ok('keep in: dragging a piece off the plan stops it at the walls',rectInRoom(body(it))&&near(body(it).x1,400,1)&&near(body(it).y1,300,1),[it.x,it.y]);
+  it.rot=0;it.x=200;it.y=c.d/2;render();$('rot').click();ok('keep in: turning a piece against a wall keeps it inside',rectInRoom(body(it)),body(it));
+  it.rot=0;it.x=400-c.w/2;it.y=150;render();S.walls[0].len=S.walls[2].len=300;onShapeChange(false);render();ok('keep in: making the room smaller pulls the piece in',rectInRoom(body(it)),body(it));
+  S.sel=it.id;render();$('px').value='280';$('px').dispatchEvent(new Event('input'));ok('keep in: a typed position past the wall stops at the wall',rectInRoom(body(it))&&near(body(it).x1,300,1),body(it));
+  S.walls[0].len=S.walls[2].len=S.walls[1].len=S.walls[3].len=120;onShapeChange(false);render();
+  ok('keep in: a piece too big for the room stays put and is flagged',!rectInRoom(body(it))&&issues().some(m=>m.includes('sticks out')),issues());
+  freshVisit()}
+
  // ---- Select: tick several pieces and remove them together ----
  {freshVisit({type:'living',name:'Living room',dwall:'2',doff:60,keepCatalog:true});setTemplate('rect',[600,480]);goStep(2);
   ok('select: no Select in an empty room',$('selbtn').hidden);
