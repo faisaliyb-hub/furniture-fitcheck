@@ -409,6 +409,7 @@ export async function run(){
   boardDone({mode:'room',plan:D.tidy(qq),rooms:D.rooms(D.tidy(qq))});
   ok('board: This room uses the drawing for the open room only',S.rooms.length===1&&S.shape==='sketch'&&S.closed&&S.walls.length===6&&near(S.rw,500,1)&&near(S.rl,400,1)&&!!S.plan,[S.walls.map(w=>w.len),S.rw,S.rl]);
   $('drawhouse').click();for(let i=0;i<40&&!document.querySelector('.dp');i++)await wait(50);await wait(100);
+  {const m=S.mode;S.mode='rect';render();ok('board: the Draw buttons also show in Quick rectangle mode',!!$('drawroom').offsetParent&&!!$('drawhouse').offsetParent);S.mode=m;render()}
   ok('board: Draw the whole house opens the board in house mode',!!document.querySelector('.dp')&&document.querySelector('.dp [data-m=house]').classList.contains('on'));
   document.querySelector('.dp [data-a=cancel]').click();ok('board: Cancel closes it and keeps the room',!document.querySelector('.dp')&&S.closed);
   freshVisit()}
