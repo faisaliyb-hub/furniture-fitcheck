@@ -163,6 +163,14 @@ body[data-step="2"] #layoutcard .hint{margin-top:4px}
 .v3dshot{position:absolute;inset:0;z-index:2;background:#e7e9ea;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px}
 .v3dshot img{max-width:100%;max-height:calc(100% - 70px);border-radius:8px;box-shadow:0 2px 16px rgba(0,0,0,.25)}
 .btnlike{display:inline-flex;align-items:center;font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:9px 12px;min-height:40px;text-decoration:none}
+.m3d{background:var(--bg)}.m3dbody{flex:1;overflow:auto;padding:12px max(12px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+#m3dprog progress{width:100%;accent-color:var(--accent)}.m3res{font-size:14px;margin:6px 0}.m3res button{min-height:32px;padding:4px 10px;margin-left:6px}.m3un{margin:10px 0;padding:8px 10px;border:1px solid var(--line);border-radius:10px}
+.m3row{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}.m3row small{display:block;color:var(--mute);font-size:12px}.m3st{display:block;font-size:13px;margin-top:2px}
+.m3btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex:0 0 auto}.m3btns button,.m3btns select{min-height:36px;padding:6px 10px;width:auto}.m3btns select{min-width:0;max-width:min(320px,100%);flex:1 1 160px}.m3row>div:first-child{min-width:0}
+@media (max-width:560px){.m3row{flex-direction:column;align-items:stretch}.m3btns{justify-content:flex-start}}
+.m3chk{position:absolute;inset:0;z-index:2;background:var(--bg);display:flex;flex-direction:column}.m3pair{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px}
+.m3pair>div{position:relative;min-height:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;display:grid;place-items:center}.m3pair img{width:100%;height:100%;object-fit:contain}.m3pair .hint{padding:12px;color:#7a746a}
+@media (max-aspect-ratio:1/1){.m3pair{grid-template-columns:1fr;grid-template-rows:1fr 1fr}}.m3foot{padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--card)}
 .askov{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.45);z-index:50;padding:16px}
 </style>
 </head>
@@ -241,7 +249,7 @@ body[data-step="2"] #layoutcard .hint{margin-top:4px}
  <section class="card adv" data-step="2"><h2 id="cathead">Catalog</h2>
   <input id="catq" placeholder="Search name or SKU" style="margin-bottom:8px">
   <div class="cat" id="cat" style="max-height:320px;overflow:auto"></div>
-  <div class="tools"><button id="defpack" class="primary">Use built-in catalogue (Baffi)</button><button id="imppack">Import company pack (.zip)</button><button id="samplepack">Try sample company pack</button><a class="btnlike" href="samples/sample-company-pack.zip" download>Download sample pack</a><button id="imp">Import CSV</button><button id="tpl">Copy template</button><button id="sample">Use sample</button></div>
+  <div class="tools"><button id="defpack" class="primary">Use built-in catalogue (Baffi)</button><button id="imppack">Import company pack (.zip)</button><button id="samplepack">Try sample company pack</button><a class="btnlike" href="samples/sample-company-pack.zip" download>Download sample pack</a><button id="m3d">3D models</button><button id="imp">Import CSV</button><button id="tpl">Copy template</button><button id="sample">Use sample</button></div>
   <input id="impfile" type="file" accept=".csv,text/csv" hidden><input id="packfile" type="file" accept=".zip,application/zip" hidden>
   <div id="catmsg" class="hint"></div>
  </section>
@@ -263,6 +271,16 @@ body[data-step="2"] #layoutcard .hint{margin-top:4px}
  <div class="pvbody"><div id="pvimgbox" class="pvimgbox"><img id="pvimg" alt="The store's photo"></div><span id="pvcount" class="pvcount" hidden></span><button id="pvprev" class="pvnav pvprev" aria-label="Previous photo" hidden>&lsaquo;</button><button id="pvnext" class="pvnav pvnext" aria-label="Next photo" hidden>&rsaquo;</button></div>
  <div id="pvstrip" class="pvstrip" hidden></div>
  <div class="pvfoot"><div id="pvinfo" class="pvinfo"></div><button id="pvadd" class="primary">Add to room</button></div></div>
+<div id="m3dwrap" class="v3d m3d" hidden role="dialog" aria-modal="true" aria-labelledby="m3dttl"><div class="v3dbar"><b id="m3dttl">3D models</b><button id="m3dadd">Add many files</button><button id="m3dx" class="primary">Close</button></div>
+ <div id="m3dbody" class="m3dbody"><p class="hint" style="margin-top:0">Add the company's own 3D files (.glb, .gltf, .obj, .fbx or .usdz, or a .zip of them). Each one is stood up, sized to the product and made light enough for an iPad. Then check it against the store's photo: until then it shows as approximate. For many at once, name each file after its SKU (for example BH-1023.glb). Very large files go faster on a computer.</p>
+  <div id="m3dprog" hidden><progress id="m3dbar" max="1" value="0"></progress><div id="m3dstep" class="hint"></div></div>
+  <div id="m3dres"></div>
+  <input id="m3dq" placeholder="Search name or SKU" style="margin:8px 0">
+  <div id="m3dlist"></div></div>
+ <input id="m3dfile" type="file" multiple hidden accept=".glb,.gltf,.obj,.fbx,.usdz,.zip,.bin,.mtl,.jpg,.jpeg,.png,.webp">
+ <div id="m3chk" class="m3chk" hidden><div class="v3dbar"><b id="m3cttl">Check</b><button id="m3back" class="primary">Back</button></div>
+  <div class="m3pair"><div id="m3cph"></div><div id="m3c3d"></div></div>
+  <div class="m3foot"><p id="m3cmsg" class="hint" style="margin:0 0 8px"></p><div class="tools" style="margin:0"><button id="m3ok" class="primary">Matches the photo</button><button id="m3no">Doesn't match</button><button id="m3turn">Turn</button><button id="m3up">Stand up</button></div></div></div></div>
 <div id="v3dwrap" class="v3d" hidden role="dialog" aria-modal="true" aria-labelledby="v3dttl"><div class="v3dbar"><b id="v3dttl">3D view</b><button id="v3dshoot">Photo</button><button id="v3dov">Overview</button><button id="v3deye">Door view</button><button id="v3dx" class="primary">Close</button></div><div id="v3dcanvas"><p class="v3dnote" id="v3dmsg"></p>
  <div id="v3dshot" class="v3dshot" hidden><img id="v3dimg" alt="Photo of the room"><div class="tools"><button id="shotshare" class="primary" hidden>Share photo</button><a id="shotsave" class="btnlike" download="room.jpg" href="#">Save photo</a><button id="shotclose">Back to 3D</button></div></div></div></div>
 <div id="asklen" class="askov" hidden role="dialog" aria-modal="true" aria-labelledby="asklenmsg"><div class="card" style="max-width:380px"><label id="asklenmsg" for="asklenin" style="display:block;margin:0 0 8px"></label><input id="asklenin" class="len" type="text" inputmode="decimal" autocomplete="off" style="margin:0 0 12px"><div class="tools" style="margin:0"><button id="asklenok" class="primary">OK</button><button id="asklenno">Cancel</button></div></div></div>
@@ -1135,7 +1153,7 @@ function applyPack(p){Object.values(PACK_URL).forEach(u=>{if(u.startsWith('blob:
 function setCatalog(list,sample,fromPack){
  list=list.filter(c=>!c.gen);CATALOG=[...list,...GEN_FURN];usingSample=sample;
  try{sample||fromPack?localStorage.removeItem(CK):localStorage.setItem(CK,JSON.stringify(list))}catch(e){}
- uCache.clear();stash();let gone=0;S.rooms.forEach(r=>{const n=r.items.length;r.items=r.items.filter(i=>cat(i.k));gone+=n-r.items.length});loadRoom(S.cur);
+ uCache.clear();modelsLoad().catch(()=>{});stash();let gone=0;S.rooms.forEach(r=>{const n=r.items.length;r.items=r.items.filter(i=>cat(i.k));gone+=n-r.items.length});loadRoom(S.cur);
  renderCat();render();return gone}
 $('imp').onclick=()=>$('impfile').click();
 $('impfile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
@@ -1345,6 +1363,78 @@ function boardDone(r){
 $('drawroom').onclick=()=>openBoard('room');
 $('drawhouse').onclick=()=>openBoard('house');
 
+// ---- 3D models: the company's own 3D files per product (made light by models3d.js, loaded when the panel opens), and which
+// models someone checked against the store's photo. Kept on this device (IndexedDB), per company and SKU.
+// A record: {k, glb (the light .glb, for an uploaded file), file, tris, bytes, notes, ok (checked), bad (marked as not
+// matching), src (for a pack's own model: the file that was checked)}.
+const M3D='2026-10-30a';let m3Lib=null;const m3dMod=()=>m3Lib||(m3Lib=import('./models3d.js?v='+M3D).catch(e=>{m3Lib=null;throw e}));
+function mdb(){return new Promise((ok,no)=>{const q=indexedDB.open('fitcheck-models',1);q.onupgradeneeded=()=>q.result.createObjectStore('m');q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)})}
+async function mdbDo(mode,fn){const db=await mdb();return new Promise((ok,no)=>{const t=db.transaction('m',mode),r=fn(t.objectStore('m'));t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>no(t.error)})}
+let MODEL_REC={},MODEL_URL={};
+async function modelsLoad(){const all=await mdbDo('readonly',st=>st.getAll());
+ Object.values(MODEL_URL).forEach(u=>URL.revokeObjectURL(u));MODEL_REC={};MODEL_URL={};
+ for(const r of all||[])if(r.co===COMPANY){MODEL_REC[r.k]=r;if(r.glb)MODEL_URL[r.k]=URL.createObjectURL(r.glb)}}
+const modelSave=r=>mdbDo('readwrite',st=>st.put({...r,co:COMPANY},COMPANY+'|'+r.k)).then(modelsLoad);
+const modelDel=k=>mdbDo('readwrite',st=>st.delete(COMPANY+'|'+k)).then(modelsLoad);
+// An uploaded file comes before the pack's own model.
+const modelOf=c=>MODEL_URL[c.k]||assetUrl(c.m);
+const modelOk=c=>{const r=MODEL_REC[c.k];return !!r&&!!r.ok&&(!!r.glb||r.src===c.m)};
+const mb=b=>b<1048576?Math.max(1,Math.round(b/1024))+' KB':(b/1048576).toFixed(1)+' MB';
+let m3Sku=null,m3Busy=false,m3Left=null,m3Res=[],m3Cur=null;
+function m3Status(c){const r=MODEL_REC[c.k],up=!!(r&&r.glb),what=up?'Company 3D file':'3D model';
+ if(!modelOf(c))return['mute','No 3D file: a simple stand-in shape is shown'];
+ if(modelOk(c))return['ok',`${what}, checked against the photo`];
+ return r&&r.bad&&(up||r.src===c.m)?['err',`${what} marked as not matching the photo, shown as approximate.${up?' Replace or remove it.':''}`]:['warn',`${what}, not checked yet: shown as approximate`]}
+function renderM3(){const q=$('m3dq').value.trim().toLowerCase(),list=CATALOG.filter(c=>!c.gen&&(!q||c.n.toLowerCase().includes(q)||String(c.k).toLowerCase().includes(q)));
+ $('m3dlist').innerHTML=list.map(c=>{const r=MODEL_REC[c.k],up=!!(r&&r.glb),[cls,txt]=m3Status(c);
+  return `<div class="m3row"><div><b>${esc(c.n)}</b><small>${esc(c.k)} · ${UUU(c.w,c.d,c.h)}${up?` · ${(r.tris||0).toLocaleString('en')} triangles, ${mb(r.bytes||0)}`:''}</small><span class="m3st" style="color:var(--${cls})">${esc(txt)}</span>${up&&r.notes&&r.notes.length?`<span class="m3st" style="color:var(--warn)">${esc(r.notes.join(' '))}</span>`:''}</div>
+   <div class="m3btns"><button data-m3add="${esc(c.k)}">${up?'Replace':'Add 3D file'}</button>${modelOf(c)?`<button data-m3chk="${esc(c.k)}"${modelOk(c)?'':' class="primary"'}>Check</button>`:''}${up?`<button data-m3rm="${esc(c.k)}">Remove</button>`:''}</div></div>`}).join('')||'<div class="hint">No match.</div>'}
+function renderM3Res(){const un=m3Left&&m3Left.un.length?m3Left.un:[],opts=CATALOG.filter(c=>!c.gen).map(c=>`<option value="${esc(c.k)}">${esc(c.n)} (${esc(c.k)})</option>`).join('');
+ $('m3dres').innerHTML=m3Res.map(x=>`<div class="m3res" style="color:var(--${x.err?'err':'ink'})">${esc(x.t)}${x.k?`<button data-m3chk="${esc(x.k)}">Check</button>`:''}</div>`).join('')+
+  (un.length?`<div class="m3un"><p class="hint" style="color:var(--ink);margin:0">${un.length} file${un.length>1?'s':''} did not match a product by name (name each file after its SKU, for example BH-1023.glb). Choose the product:</p>${un.map((f,i)=>`<div class="m3row"><div><b>${esc(f.name)}</b></div><div class="m3btns"><select data-m3pick="${i}" aria-label="Product for ${esc(f.name)}"><option value="">Choose product...</option>${opts}</select><button data-m3use="${i}">Use</button></div></div>`).join('')}</div>`:'')}
+// Prepares the files one at a time (each takes from under a second to about a minute for a very big file).
+async function m3Run(jobs,files){if(!jobs.length)return;const M=await m3dMod();m3Busy=true;$('m3dprog').hidden=false;
+ for(let i=0;i<jobs.length;i++){const {f,c}=jobs[i],lab=`${jobs.length>1?`File ${i+1} of ${jobs.length}: `:''}${f.name} for ${c.n}`;$('m3dbar').value=i/jobs.length;$('m3dstep').textContent=lab+'...';
+  try{const r=await M.prepare(files,f,c,{on:st=>{$('m3dstep').textContent=`${lab}: ${st}...`}});
+   await modelSave({k:c.k,glb:r.glb,file:r.file,tris:r.tris,trisIn:r.trisIn,bytes:r.bytes,bytesIn:r.bytesIn,orient:r.orient,notes:r.notes,ok:false,at:Date.now()});
+   m3Res.push({k:c.k,t:`${f.name} for ${c.n}: ${r.trisIn.toLocaleString('en')} to ${r.tris.toLocaleString('en')} triangles, ${mb(r.bytesIn)} to ${mb(r.bytes)}. ${r.notes.length?r.notes.join(' ')+' ':''}Check it against the photo.`})}
+  catch(e){m3Res.push({err:true,t:`${f.name}: ${e&&e.message||e}`})}
+  renderM3Res();renderM3()}
+ $('m3dbar').value=1;$('m3dstep').textContent=`Done: ${jobs.length} file${jobs.length>1?'s':''}.`;m3Busy=false}
+$('m3d').onclick=()=>{$('m3dwrap').hidden=false;$('m3chk').hidden=true;m3Res=[];m3Left=null;$('m3dprog').hidden=true;renderM3Res();renderM3();m3dMod().catch(()=>{})};   // starts fetching the tools
+$('m3dx').onclick=()=>{m3Close();$('m3dwrap').hidden=true};
+$('m3dq').oninput=renderM3;
+$('m3dadd').onclick=()=>{if(m3Busy)return;m3Sku=null;$('m3dfile').click()};
+$('m3dfile').onchange=async e=>{const list=[...e.target.files],sku=m3Sku;e.target.value='';m3Sku=null;if(!list.length||m3Busy)return;
+ try{const M=await m3dMod(),{files,mains}=await M.expand(list);
+  if(!mains.length){m3Res.push({err:true,t:'There is no 3D file in what was picked. FitCheck reads .glb, .gltf, .obj, .fbx and .usdz, also inside a .zip.'});renderM3Res();return}
+  if(sku){await m3Run([{f:mains[0],c:cat(sku)}],files);return}
+  const prods=CATALOG.filter(c=>!c.gen),jobs=[],un=[];mains.forEach(f=>{const c=M.matchFile(f.name,prods);c?jobs.push({f,c}):un.push(f)});
+  m3Left={un,files};renderM3Res();await m3Run(jobs,files)}
+ catch(err){m3Busy=false;m3Res.push({err:true,t:`The files could not be read (${err.message}). The first time, this needs an internet connection.`});renderM3Res()}};
+$('m3dbody').onclick=async e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+ if(d.m3add!=null){if(m3Busy)return;m3Sku=d.m3add;$('m3dfile').click()}
+ else if(d.m3chk!=null)m3Check(d.m3chk);
+ else if(d.m3rm!=null){const c=cat(d.m3rm);if(c&&await ask(`Remove the uploaded 3D file for ${c.n}?`,'Remove')){await modelDel(c.k);renderM3()}}
+ else if(d.m3use!=null&&!m3Busy){const i=+d.m3use,sel=document.querySelector(`[data-m3pick="${i}"]`),c=sel&&cat(sel.value);if(!c)return;
+  const f=m3Left.un.splice(i,1)[0];renderM3Res();await m3Run([{f,c}],m3Left.files)}};
+// Photo check: the store's photo next to the model, seen from the front at an angle like most product photos.
+async function m3Check(k){const c=cat(k);if(!c||!modelOf(c))return;m3Cur=k;const r=MODEL_REC[k],up=!!(r&&r.glb),ph=c.ph&&assetUrl(c.ph);
+ $('m3chk').hidden=false;$('m3cttl').textContent=`Check: ${c.n}`;
+ $('m3cph').innerHTML=ph?`<img src="${esc(ph)}" alt="The store's photo of ${esc(c.n)}">`:`<p class="hint">No store photo for this product. Compare it with the real piece.</p>`;
+ $('m3turn').hidden=$('m3up').hidden=!up;$('m3cmsg').textContent='Loading the 3D...';
+ try{const M=await m3dMod();await M.showModel($('m3c3d'),modelOf(c));if(m3Cur!==k)return;
+  $('m3cmsg').textContent=`Drag to turn it. Does it look like the photo: the same shape, colours and details?${up?' If it lies on its side, tap Stand up; if it faces the wrong way, tap Turn.':''}`}
+ catch(e){$('m3cmsg').textContent=`The 3D file could not be shown (${e.message}).`}}
+function m3Close(){$('m3chk').hidden=true;m3Cur=null;if(m3Lib)m3dMod().then(M=>M.hideModel()).catch(()=>{})}
+async function m3Fix(o){const k=m3Cur,c=cat(k),r=MODEL_REC[k];if(!r||!r.glb||m3Busy)return;m3Busy=true;$('m3cmsg').textContent='Turning it...';
+ try{const M=await m3dMod(),x=await M.reorient(r.glb,c,o);await modelSave({...r,glb:x.glb,tris:x.tris,bytes:x.bytes,ok:false,bad:false,at:Date.now()});m3Busy=false;renderM3();m3Check(k)}
+ catch(e){m3Busy=false;$('m3cmsg').textContent=`It could not be turned (${e.message}).`}}
+$('m3turn').onclick=()=>m3Fix({up:0,yaw:1});$('m3up').onclick=()=>m3Fix({up:1,yaw:0});
+$('m3ok').onclick=async()=>{const c=cat(m3Cur);if(!c||m3Busy)return;const r=MODEL_REC[c.k];await modelSave(r&&r.glb?{...r,ok:true,bad:false}:{k:c.k,src:c.m,ok:true});m3Close();renderM3()};
+$('m3no').onclick=async()=>{const c=cat(m3Cur);if(!c||m3Busy)return;const r=MODEL_REC[c.k];await modelSave(r&&r.glb?{...r,ok:false,bad:true}:{k:c.k,src:c.m,ok:false,bad:true});m3Close();renderM3()};
+$('m3back').onclick=m3Close;
+
 // ---- 3D view (view3d.js, loaded the first time it opens) ----
 // Everything the 3D view needs, in cm and plan coordinates (x right, y down): the outline, doors and windows on its edges,
 // fixed features and the placed pieces. Wall references (wall number, or N/E/S/W) become edge numbers of the outline.
@@ -1363,15 +1453,18 @@ function roomModel(){
  const finishes=(S.finishes||[]).map(f=>{const c=finCat(f.k),R=finRegion(f),o=c&&R.b>R.a&&opening(f.wall,R.a,R.b-R.a,R.h0,R.h1,'finish');return o&&{...o,col:finCol(f),f:c.f,tex:assetUrl(c.tx),tw:c.u==='roll'?c.w:c.w,th:c.u==='roll'?(c.rep||c.w):c.h}}).filter(Boolean);
  return{H,loop,door,finishes,openings:[door,...wins].filter(Boolean),cuts:S.cuts.map(c=>({x:c.x,y:c.y,w:c.w,d:c.d})),
   obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
-  items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:assetUrl(c.m),tex:assetUrl(c.tx),color:c.gen||c.col&&!c.f?c.col||'':''}})}}
+  items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:modelOf(c),tex:assetUrl(c.tx),color:c.gen||c.col&&!c.f?c.col||'':''}})}}
 // Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
-const V3D='2026-10-28b';
+const V3D='2026-10-30a';
 let view3d=null,v3dTimer=0;
 async function open3d(){
  if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
  const wrap=$('v3dwrap'),msg=$('v3dmsg');wrap.hidden=false;$('v3dttl').textContent=`3D: ${S.name||'this room'}`;msg.hidden=false;msg.textContent='Loading the 3D view...';
  try{const mod=await import('./view3d.js?v='+V3D);if(wrap.hidden)return;view3d=await mod.open($('v3dcanvas'),roomModel());
-  msg.textContent=[...view3d.notes,'Drag to turn, pinch to zoom, two fingers to move. Every piece is drawn at its catalog size; its shape and finish are close to the product, not exact.'].join(' ');
+  const pcs=S.items.map(spec).filter(Boolean),plain=pcs.filter(c=>!modelOf(c)).length,approx=[...new Set(pcs.filter(c=>modelOf(c)&&!modelOk(c)).map(c=>c.n))];
+  msg.textContent=[...view3d.notes,'Drag to turn, pinch to zoom, two fingers to move. Every piece is drawn at its catalog size.',
+   approx.length?`Approximate 3D (not yet checked against the store's photo): ${approx.slice(0,3).join(', ')}${approx.length>3?` and ${approx.length-3} more`:''}.`:'',
+   plain?`${plain} piece${plain>1?'s have':' has'} no 3D file yet, so a simple shape is shown.`:''].filter(Boolean).join(' ');
   clearTimeout(v3dTimer);v3dTimer=setTimeout(()=>{if(view3d&&!view3d.notes.length)msg.hidden=true},7000)}
  catch(e){msg.textContent=`The 3D view could not start (${e.message}). It needs an internet connection the first time, and a browser that can show 3D (WebGL).`}}
 function close3d(){if(view3d){view3d.close();view3d=null}$('v3dshot').hidden=true;$('v3dwrap').hidden=true}
@@ -1680,6 +1773,7 @@ async function defaultPack(){const b=await (await fetch(DEFAULT_PACK)).blob(),p=
  p.remote=Object.fromEntries(rows.slice(1).map(r=>r.split(',')[mi]).filter(m=>m&&/\.glb$/i.test(m)&&!p.files[m]).map(m=>[m,DEFAULT_MODELS+m+'?v='+MODELS_V]));return p}
 (async()=>{let hasPack=false,samples=false;try{hasPack=localStorage.getItem('fitcheck-haspack')==='1';samples=localStorage.getItem('fitcheck-samples')==='1'}catch(e){}
  try{const p=hasPack?await packLoad():samples?null:await defaultPack(),r=p&&applyPack(p);if(r&&!r.errs.length){CATALOG=[...r.out,...GEN_FURN];usingSample=false}}catch(e){}
+ try{await modelsLoad()}catch(e){}
  S.cur=Math.min(S.cur||0,S.rooms.length-1);oldKeys(S.rooms);S.rooms.forEach(r=>r.items=(r.items||[]).filter(i=>cat(i.k)));loadRoom(S.cur);
  load();renderCat();render()})();
 </script>

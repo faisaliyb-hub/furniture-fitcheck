@@ -168,7 +168,10 @@ function baseModel(it){const n=it.name.toLowerCase(),w=it.w*M,d=it.d*M,h=it.h*M,
 // A real 3D file for the product (catalog column "model"): scaled to the catalog width, height and depth. glTF's front is +z, like ours.
 // Company models may be Draco-compressed (the Baffi pack is, to keep the whole catalogue small); the decoder comes from the same CDN.
 const loader=new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/')),GLB=new Map();
-async function fileModel(url,it){if(!GLB.has(url))GLB.set(url,loader.loadAsync(url));const src=(await GLB.get(url)).scene.clone(true);
+// Files uploaded in the 3D models panel are meshopt-compressed; its decoder is fetched the first time a file is loaded.
+let meshopt=null;
+async function fileModel(url,it){if(!meshopt)meshopt=import('https://cdn.jsdelivr.net/npm/meshoptimizer@1.3.0/+esm').then(async m=>{await m.MeshoptDecoder.ready;loader.setMeshoptDecoder(m.MeshoptDecoder)}).catch(()=>{});await meshopt;
+ if(!GLB.has(url))GLB.set(url,loader.loadAsync(url));const src=(await GLB.get(url)).scene.clone(true);
  const b=new THREE.Box3().setFromObject(src),s=b.getSize(new THREE.Vector3());src.scale.set(it.w*M/(s.x||1),it.h*M/(s.y||1),it.d*M/(s.z||1));
  const b2=new THREE.Box3().setFromObject(src),c=b2.getCenter(new THREE.Vector3());src.position.sub(new THREE.Vector3(c.x,b2.min.y,c.z));
  // a file's materials get the same room light as our own pieces (0.45); left at three.js's default of 1 they came out

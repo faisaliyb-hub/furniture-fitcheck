@@ -501,6 +501,46 @@ export async function run(){
   ok('openings: Add window hides while a piece is picked',$('addwin').hidden);
   freshVisit()}
 
+ // ---- 3D models: the company's own files (needs the CDN: three.js, glTF-Transform, meshoptimizer) ----
+ {const M=await m3dMod(),THREE=await import('three'),{GLTFExporter}=await import('three/addons/exporters/GLTFExporter.js');
+  const c=CATALOG.find(x=>!x.gen&&x.w>x.d*1.3&&x.w>x.h*1.3),toGlb=o=>new GLTFExporter().parseAsync(o,{binary:true});
+  // a heavy file: an egg the product's size, about 320,000 triangles
+  const egg=new THREE.Mesh(new THREE.SphereGeometry(1,400,400),new THREE.MeshStandardMaterial({color:0x6688aa}));egg.scale.set(c.w/2,c.d/2,c.h/2);
+  const glb=await toGlb(egg),f=new File([glb],String(c.k).toUpperCase().replace(/-/g,'_')+'.glb');
+  ok('3D files: a file named after the SKU finds its product (case and dashes ignored)',M.matchFile(f.name,CATALOG)===c,f.name);
+  const r=await M.prepare(new Map(),f,c);
+  ok('3D files: a .glb stays the way up it was saved and keeps the catalogue proportions',r.orient.up===0&&r.stretch<.2,[r.orient,r.stretch]);
+  {const {OBJExporter}=await import('three/addons/exporters/OBJExporter.js'),box=new THREE.Mesh(new THREE.BoxGeometry(c.w,c.d,c.h),new THREE.MeshPhongMaterial());   // z up, in cm
+   const o=await M.prepare(new Map(),new File([new OBJExporter().parse(box)],'cad.obj'),c);
+   ok('3D files: an .obj saved z-up is stood up and keeps the catalogue proportions',o.orient.up===1&&o.orient.yaw===0&&o.stretch<.01,[o.orient,o.stretch])}
+  ok('3D files: a heavy file is cut to the triangle budget and compressed',r.trisIn>300000&&r.tris<=M.BUDGET.tris*1.1&&r.bytes<glb.byteLength/5,[r.trisIn,r.tris,r.bytes,glb.byteLength]);
+  const t=await M.reorient(r.glb,c,{up:0,yaw:1});
+  ok('3D files: Turn turns the prepared model a quarter (its own proportions are kept)',t.stretch>.25&&t.orient.yaw===1,t.stretch);
+  {let msg='';try{await M.prepare(new Map(),new File([new Uint8Array(10)],'x.stl'),c)}catch(e){msg=e.message}ok('3D files: a file type it cannot read says which ones it can',/\.glb.*\.usdz/.test(msg),msg)}
+  // the panel: two files at once, one named after a SKU and one not
+  for(const k of Object.keys(MODEL_REC))await modelDel(k);
+  $('m3d').click();ok('3D models: the panel lists the furniture',!$('m3dwrap').hidden&&$('m3dlist').querySelectorAll('.m3row').length===CATALOG.filter(x=>!x.gen).length);
+  const small=await toGlb(new THREE.Mesh(new THREE.BoxGeometry(c.w/100,c.h/100,c.d/100),new THREE.MeshStandardMaterial()));
+  const dt=new DataTransfer();dt.items.add(new File([small],c.k+'.glb'));dt.items.add(new File([small],'no-such-product.glb'));
+  $('m3dfile').files=dt.files;$('m3dfile').dispatchEvent(new Event('change'));
+  for(let i=0;i<300&&(m3Busy||!/^Done/.test($('m3dstep').textContent));i++)await wait(50);
+  ok('3D models: the file named after the SKU is prepared and saved for its product',!!MODEL_URL[c.k]&&!MODEL_REC[c.k].ok&&modelOf(c)===MODEL_URL[c.k],MODEL_REC[c.k]);
+  ok('3D models: a file with no matching name waits for the rep to choose the product',m3Left&&m3Left.un.length===1&&!!$('m3dres').querySelector('[data-m3pick="0"]'));
+  const c2=CATALOG.find(x=>!x.gen&&x!==c);$('m3dres').querySelector('[data-m3pick="0"]').value=c2.k;$('m3dres').querySelector('[data-m3use="0"]').click();
+  for(let i=0;i<300&&(m3Busy||!MODEL_REC[c2.k]);i++)await wait(50);
+  ok('3D models: Use prepares it for the chosen product',!!MODEL_URL[c2.k]&&MODEL_REC[c2.k].file==='no-such-product.glb');
+  ok('3D models: an unchecked model shows as approximate',m3Status(c)[0]==='warn'&&/approximate/.test(m3Status(c)[1]));
+  $('m3dlist').querySelector(`[data-m3chk="${c.k}"]`).click();for(let i=0;i<100&&!/^Drag/.test($('m3cmsg').textContent);i++)await wait(50);
+  ok('3D models: Check shows the model next to the store photo, with Turn and Stand up',!$('m3chk').hidden&&!!$('m3c3d').querySelector('canvas')&&!$('m3turn').hidden&&/^Drag/.test($('m3cmsg').textContent),$('m3cmsg').textContent);
+  $('m3ok').click();for(let i=0;i<40&&!modelOk(c);i++)await wait(50);
+  ok('3D models: Matches the photo marks it checked',modelOk(c)&&$('m3chk').hidden&&m3Status(c)[0]==='ok');
+  $('m3dlist').querySelector(`[data-m3chk="${c2.k}"]`).click();await wait(50);$('m3no').click();for(let i=0;i<40&&!(MODEL_REC[c2.k]||{}).bad;i++)await wait(50);
+  ok("3D models: Doesn't match keeps it approximate and says to replace or remove it",!modelOk(c2)&&/Replace or remove/.test(m3Status(c2)[1]));
+  freshVisit({mode:'rect',shape:'rect',rw:600,rl:500});S.walls=[];render();placePiece(c);ok('3D models: the 3D view uses the uploaded file',roomModel().items[0].model===MODEL_URL[c.k]);
+  $('m3dlist').querySelector(`[data-m3rm="${c2.k}"]`).click();await wait(10);$('askyes').click();for(let i=0;i<40&&MODEL_REC[c2.k];i++)await wait(50);
+  ok('3D models: Remove goes back to the pack model or the stand-in',!MODEL_REC[c2.k]&&modelOf(c2)===assetUrl(c2.m));
+  $('m3dx').click();for(const k of Object.keys(MODEL_REC))await modelDel(k);freshVisit()}
+
  window.removeEventListener('error',onErr);
  ok('no page errors during the run',!errs.length,errs);
  freshVisit();
