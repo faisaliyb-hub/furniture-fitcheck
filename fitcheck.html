@@ -87,7 +87,8 @@ details{margin-top:10px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
 .sizehead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.sizehead h2{margin:0}.unitmini{display:flex;align-items:center;gap:6px;margin:0;font-size:13px}.unitmini select{width:auto;min-height:36px;padding:4px 8px}
 .iconbtn{width:44px;padding:0;display:grid;place-items:center}.iconbtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 #layoutcard{position:relative}#layouth{padding-right:120px}.corner{position:absolute;top:8px;right:8px;min-height:36px;padding:4px 12px;font-weight:600}.corner2{right:64px}
-.pickbtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}#pickdel:not(:disabled){background:var(--err);border-color:var(--err);color:#fff}
+.pickbtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+#opbar{flex-wrap:wrap}#opmsg{flex:1 1 220px}#opbar .pickbtns{flex:0 1 auto;flex-wrap:nowrap}   /* door and window bar: the buttons stay in one row, under the message on a phone */#pickdel:not(:disabled){background:var(--err);border-color:var(--err);color:#fff}
 .doorbar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:600}.doorbar button{min-height:34px;padding:4px 12px}
 .probline{margin:8px 0 0;color:var(--err);font-size:14px}
 .qbig{text-align:center;margin:4px 0 14px}.qbig small{display:block;color:var(--mute);font-size:13px}.qbig b{display:block;font-size:40px;line-height:1.15}
@@ -200,10 +201,11 @@ body[data-step="2"] #layoutcard .hint{margin-top:4px}
  <section class="card" id="layoutcard" data-step="2"><h2 id="layouth">Layout</h2><button id="v3d" class="corner" aria-label="3D view">3D</button><button id="fit" class="corner corner2" hidden>Fit</button>
   <div id="finbar" class="doorbar" hidden><span>Tap the wall to finish</span><button id="fincancel">Cancel</button></div>
   <div id="pickbar" class="doorbar" hidden><span id="pickmsg">Tap pieces to select them</span><span class="pickbtns"><button id="pickall">All</button><button id="pickdel" disabled>Remove</button><button id="pickdone">Done</button></span></div>
-  <div id="doorbar" class="doorbar" hidden><span>Tap the wall where the door is</span><button id="doorskip">Skip</button></div>
+  <div id="doorbar" class="doorbar" hidden><span id="doormsg">Tap the wall where the door is</span><button id="doorskip">Skip</button></div>
+  <div id="opbar" class="doorbar" hidden><span id="opmsg"></span><span class="pickbtns"><button id="opw">Width</button><button id="opsill">Sill</button><button id="oprm">Remove</button><button id="opdone">Done</button></span></div>
   <svg id="plan" viewBox="0 0 600 500"></svg><button id="drawopen" class="drawopen" hidden>Catalogue</button>
   <p id="probline" class="probline" hidden></p>
-  <div class="tools" id="plantools"><button id="selbtn">Select</button><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><button id="finbtn">Wall finish</button><button id="doorbtn">Door style</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
+  <div class="tools" id="plantools"><button id="selbtn">Select</button><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><button id="addwin">Add window</button><button id="finbtn">Wall finish</button><button id="doorbtn">Door style</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
   <div class="hint adv">Drawn to scale: each piece covers only its own footprint. Tap a piece to see the free space around it. Orange zone = clearance needed in front.</div><div id="tipmsg" class="hint" style="color:var(--warn)"></div>
  </section>
  <aside id="drawer" data-step="2" aria-label="Catalogue">
@@ -263,6 +265,7 @@ body[data-step="2"] #layoutcard .hint{margin-top:4px}
  <div class="pvfoot"><div id="pvinfo" class="pvinfo"></div><button id="pvadd" class="primary">Add to room</button></div></div>
 <div id="v3dwrap" class="v3d" hidden role="dialog" aria-modal="true" aria-labelledby="v3dttl"><div class="v3dbar"><b id="v3dttl">3D view</b><button id="v3dshoot">Photo</button><button id="v3dov">Overview</button><button id="v3deye">Door view</button><button id="v3dx" class="primary">Close</button></div><div id="v3dcanvas"><p class="v3dnote" id="v3dmsg"></p>
  <div id="v3dshot" class="v3dshot" hidden><img id="v3dimg" alt="Photo of the room"><div class="tools"><button id="shotshare" class="primary" hidden>Share photo</button><a id="shotsave" class="btnlike" download="room.jpg" href="#">Save photo</a><button id="shotclose">Back to 3D</button></div></div></div></div>
+<div id="asklen" class="askov" hidden role="dialog" aria-modal="true" aria-labelledby="asklenmsg"><div class="card" style="max-width:380px"><label id="asklenmsg" for="asklenin" style="display:block;margin:0 0 8px"></label><input id="asklenin" class="len" type="text" inputmode="decimal" autocomplete="off" style="margin:0 0 12px"><div class="tools" style="margin:0"><button id="asklenok" class="primary">OK</button><button id="asklenno">Cancel</button></div></div></div>
 <div id="ask" class="askov" hidden role="dialog" aria-modal="true" aria-labelledby="askmsg"><div class="card" style="max-width:380px"><p id="askmsg" style="margin:0 0 12px"></p><div class="tools" style="margin:0"><button id="askyes" class="primary">Continue</button><button id="askno">Cancel</button></div></div></div>
 <script>
 // Sample catalog: 26 real IKEA UK products (sizes and GBP prices as listed on ikea.com/gb on 2026-10-22; sources in docs/SAMPLE_CATALOG.md).
@@ -353,7 +356,8 @@ function fixRoom(){S.finishes=S.finishes||[];S.cuts=S.cuts||[];S.obs=S.obs||[];S
 const clone=o=>JSON.parse(JSON.stringify(o));
 function stash(){const o={};RF.forEach(k=>o[k]=S[k]);o.closed=S.mode==='walls'?!!S.closed:true;S.rooms[S.cur]=clone(o)}
 let pick=null;   // Select mode: the set of ticked piece ids in the open room; null when off
-function loadRoom(i){S.cur=i;Object.assign(S,normRoom(clone(S.rooms[i])));fixRoom();S.sel=null;pick=null}
+let opSel=null,addWin=false;   // the door ('door') or window (its id) picked on the plan; adding a window waits for a tap on a wall
+function loadRoom(i){S.cur=i;Object.assign(S,normRoom(clone(S.rooms[i])));fixRoom();S.sel=null;pick=null;opSel=null;addWin=false}
 function withRoom(r,fn){const keep={};RF.forEach(k=>keep[k]=S[k]);const sel=S.sel;Object.assign(S,normRoom(clone(r)));fixRoom();S.sel=null;try{return fn()}finally{Object.assign(S,keep);recomputeShape();S.sel=sel}}
 // A piece suits the room if it lists no rooms, lists this room type, or the room type is "other".
 const suits=c=>!c.r||!c.r.length||S.type==='other'||c.r.includes(S.type);
@@ -684,16 +688,26 @@ function drawPlan(sel,print){
  const ds=wallSpan(S.dwall,S.doff,S.dw,S.dw),dl=ds?ds.line:[0,0,0,0];
  (S.finishes||[]).forEach(f=>{const c=finCat(f.k),R=finRegion(f),sp=c&&R.b>R.a&&wallSpan(f.wall,R.a,R.b-R.a,0);if(!sp)return;const l=sp.line,o=u*4.5,on=f.id===finSel;
   h+=`<line x1="${l[0]+sp.n.x*o}" y1="${l[1]+sp.n.y*o}" x2="${l[2]+sp.n.x*o}" y2="${l[3]+sp.n.y*o}" stroke="${finCol(f)}" stroke-width="${u*(on?8:6)}" stroke-opacity=".95" stroke-linecap="butt"${f.half?` stroke-dasharray="${u*8} ${u*3}"`:''}/>`});
- h+=`<line x1="${dl[0]}" y1="${dl[1]}" x2="${dl[2]}" y2="${dl[3]}" stroke="var(--accent)" stroke-width="${u*4}"/>`;
+ // a wide see-through line over the door and each window, so a finger can pick it up and slide it along the wall
+ const hitl=(l,k)=>print?'':`<line data-op="${k}" x1="${l[0]}" y1="${l[1]}" x2="${l[2]}" y2="${l[3]}" stroke="transparent" stroke-width="${u*16}" style="cursor:grab"/>`;
+ // a measurement in a rounded label; tapping it lets the rep type the exact value
+ const pill=(x,y,v,attr)=>{const t=U(v),th=fs*1.5,tw=Math.max(fs*3,t.length*fs*.56+fs*.9);
+  return `<g ${attr} style="cursor:pointer"><rect x="${x-tw/2}" y="${y-th/2}" width="${tw}" height="${th}" rx="${th/2}" fill="var(--card)" stroke="var(--accent)" stroke-width="${sw*.8}"/><text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="${fs*.9}" font-weight="600" fill="var(--ink)" pointer-events="none">${esc(t)}</text></g>`};
+ h+=`<line x1="${dl[0]}" y1="${dl[1]}" x2="${dl[2]}" y2="${dl[3]}" stroke="var(--accent)" stroke-width="${u*(opSel==='door'&&!print?7:4)}" pointer-events="none"/>`+hitl(dl,'door');
  h+=`<defs><pattern id="hatch" width="${u*8}" height="${u*8}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${u*8}" stroke="var(--mute)" stroke-width="${u*1.2}" stroke-opacity=".55"/></pattern></defs>`;
  S.cuts.forEach(c=>{h+=`<rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.d}" fill="var(--card)"/><rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.d}" fill="url(#hatch)" stroke="var(--ink)" stroke-width="${sw}"/>`});
  S.obs.forEach(o=>{const k=OBS[o.kind];if(!k)return;
   if(k.wall){const sp=wallSpan(o.wall,o.off,o.w,20);if(!sp)return;const wl=sp.line,cx=(wl[0]+wl[2])/2+sp.n.x*u*14,cy=(wl[1]+wl[3])/2+sp.n.y*u*14+fs*.3,f=fs*.8;
-   h+=`<line x1="${wl[0]}" y1="${wl[1]}" x2="${wl[2]}" y2="${wl[3]}" stroke="var(--info)" stroke-width="${u*5}" pointer-events="none"/>`;
-   h+=`<text x="${cx}" y="${cy}" text-anchor="middle" font-size="${f}" fill="var(--info)" pointer-events="none">Window, sill ${U(o.sill)}</text>`;return}
+   h+=`<line x1="${wl[0]}" y1="${wl[1]}" x2="${wl[2]}" y2="${wl[3]}" stroke="var(--info)" stroke-width="${u*(opSel===o.id&&!print?8:5)}" pointer-events="none"/>`+hitl(wl,o.id);
+   if(opSel!==o.id||print)h+=`<text x="${cx}" y="${cy}" text-anchor="middle" font-size="${f}" fill="var(--info)" pointer-events="none">Window, sill ${U(o.sill)}</text>`;return}   // the bar names the picked window
   const r=rectOf(o),lab=k.hard?k.label.replace(' / fixed unit','').replace(' (swing area)',' swing'):`Low ceiling: max ${U(o.h)}`,f=Math.max(u*6,Math.min(fs*.8,o.w*.95/Math.max(lab.length*.68,1)));
   if(k.hard)h+=`<g data-ob="${o.id}" style="cursor:grab"><rect x="${o.x}" y="${o.y}" width="${o.w}" height="${o.d}" fill="var(--mute)" fill-opacity=".3" stroke="var(--ink)" stroke-width="${sw*.8}"/>`+(o.kind==='column'?`<line x1="${o.x}" y1="${o.y}" x2="${o.x+o.w}" y2="${o.y+o.d}" stroke="var(--ink)" stroke-width="${sw*.6}"/><line x1="${o.x+o.w}" y1="${o.y}" x2="${o.x}" y2="${o.y+o.d}" stroke="var(--ink)" stroke-width="${sw*.6}"/>`:'')+`<text x="${o.x+o.w/2}" y="${o.y+o.d/2}" text-anchor="middle" dominant-baseline="middle" font-size="${f}" fill="var(--ink)" pointer-events="none">${esc(lab)}</text></g>`;
   else h+=`<g data-ob="${o.id}" style="cursor:grab"><rect x="${o.x}" y="${o.y}" width="${o.w}" height="${o.d}" fill="var(--warn)" fill-opacity=".07" stroke="var(--warn)" stroke-dasharray="${u*3} ${u*3}" stroke-width="${sw*.8}"/><text x="${o.x+o.w/2}" y="${o.y+o.d/2}" text-anchor="middle" dominant-baseline="middle" font-size="${f}" fill="var(--warn)" pointer-events="none">${esc(lab)}</text></g>`});
+ const op=!print&&opObj(),oq=op&&opGet(op),owl=oq&&wallOf(oq.wall);
+ if(owl){const n=wallSpan(oq.wall,0,1,1).n,o=u*24,P=t=>({x:owl.a.x+owl.dx*t+n.x*o,y:owl.a.y+owl.dy*t+n.y*o}),tk=u*5,
+  seg=(t0,t1,k)=>{const a=P(t0),b=P(t1),m=P((t0+t1)/2);
+   return `<g stroke="var(--accent)" stroke-width="${sw*.8}" pointer-events="none"><line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/><line x1="${a.x-n.x*tk}" y1="${a.y-n.y*tk}" x2="${a.x+n.x*tk}" y2="${a.y+n.y*tk}"/><line x1="${b.x-n.x*tk}" y1="${b.y-n.y*tk}" x2="${b.x+n.x*tk}" y2="${b.y+n.y*tk}"/></g>`+pill(m.x,m.y,t1-t0,`data-opgap="${k}"`)};
+  h+=seg(0,oq.off,'a')+seg(oq.off+oq.w,owl.len,'b')}
  h+=`<text x="${W/2}" y="${-12}" text-anchor="middle" font-size="${fs}" fill="var(--mute)">${U(W)}</text>`;
  h+=`<text x="${-12}" y="${L/2}" text-anchor="middle" font-size="${fs}" fill="var(--mute)" transform="rotate(-90 -12 ${L/2})">${U(L)}</text>`;
  if(S.mode==='walls')S.wallGeo.forEach((g,i)=>{const mx=g.mid.x+g.nx*u*13,my=g.mid.y+g.ny*u*13+fs*.3;
@@ -714,12 +728,12 @@ function drawPlan(sel,print){
   h+=`<text x="${it.x}" y="${it.y-(lines.length-1)*f1*.55+f1*.3}" text-anchor="middle" font-size="${f1}" font-weight="600" fill="var(--ink)" ${halo} pointer-events="none">${lines.map((l,i)=>`<tspan x="${it.x}" dy="${i?f1*1.1:0}">${esc(l)}</tspan>`).join('')}</text>`;
   if(on)h+=`<text x="${it.x}" y="${it.y+lines.length*f1*.55+f1*.55}" text-anchor="middle" font-size="${f1*.8}" fill="var(--ink)" ${halo} pointer-events="none">${UU(bw,bh)}</text>`;
   h+='</g>';
-  if(on){const g=gaps(it),dim=(x1,y1,x2,y2,v)=>{if(v<12)return '';   // gaps under 12 cm are not labelled (they crowd small pieces)
+  if(on){const g=gaps(it),dim=(x1,y1,x2,y2,v,k)=>{if(v<12)return '';   // gaps under 12 cm are not labelled (they crowd small pieces)
    const tx=(x1+x2)/2,ty=(y1+y2)/2,hz=y1===y2;
     return `<g stroke="var(--ink)" stroke-width="${sw*.7}"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`+
      (hz?`<line x1="${x1}" y1="${y1-u*4}" x2="${x1}" y2="${y1+u*4}"/><line x1="${x2}" y1="${y2-u*4}" x2="${x2}" y2="${y2+u*4}"/>`:`<line x1="${x1-u*4}" y1="${y1}" x2="${x1+u*4}" y2="${y1}"/><line x1="${x2-u*4}" y1="${y2}" x2="${x2+u*4}" y2="${y2}"/>`)+
-     `</g><text x="${hz?tx:tx+u*7}" y="${hz?ty-u*6:ty+fs*.35}" text-anchor="${hz?'middle':'start'}" font-size="${fs}" font-weight="600" fill="var(--ink)" ${halo} pointer-events="none">${U(v)}</text>`};
-   h+=dim(g.left,it.y,b.x0,it.y,g.gl)+dim(b.x1,it.y,g.right,it.y,g.gr)+dim(it.x,g.up,it.x,b.y0,g.gu)+dim(it.x,b.y1,it.x,g.down,g.gd)}
+     `</g>`+pill(tx,ty,v,`data-gap="${k}"`)};
+   if(!pick)h+=dim(g.left,it.y,b.x0,it.y,g.gl,'l')+dim(b.x1,it.y,g.right,it.y,g.gr,'r')+dim(it.x,g.up,it.x,b.y0,g.gu,'u')+dim(it.x,b.y1,it.x,g.down,g.gd,'d')}
  });
  if(ghost&&!print){const c=spec(ghost),w=ghost.rot%180?c.d:c.w,d=ghost.rot%180?c.w:c.d;
   h+=`<rect x="${ghost.x-w/2+sw/2}" y="${ghost.y-d/2+sw/2}" width="${w-sw}" height="${d-sw}" fill="var(--accent)" fill-opacity=".15" stroke="var(--accent)" stroke-width="${sw}" stroke-dasharray="${u*6} ${u*4}" pointer-events="none"/><text x="${ghost.x}" y="${ghost.y}" text-anchor="middle" dominant-baseline="middle" font-size="${fs}" fill="var(--ink)" pointer-events="none">${esc(c.n)}</text>`}
@@ -759,7 +773,7 @@ function backGapRects(b,ri,hr,W,L){const ys=q=>q.y0<b.y1-.5&&q.y1>b.y0+.5,xs=q=>
  return b.x0-Math.max(0,...hr.filter(q=>ys(q)&&q.x1<=b.x0+.5).map(q=>q.x1))}
 // Best valid spot for catalog piece c (back to a wall when possible), or null. Same rules as check().
 // near: optional target points; the spot closest to one of them wins (used to pair pieces).
-function findSpot(c,cl,rots=[0,90,180,270],near){const W=+S.rw,L=+S.rl,ob=S.items.map(body),of=S.items.map(front),dz=doorRect(),hr=hardRects(),lows=lowZones(),wins=windows(),step=10;let best=null;
+function findSpot(c,cl,rots=[0,90,180,270],near){const W=+S.rw,L=+S.rl,ob=S.items.map(body),of=S.items.map(front),dz=doorRect(),hr=hardRects(),lows=lowZones(),wins=windows(),step=Math.max(10,Math.round(Math.max(W,L)/100/5)*5);let best=null;   // 10 cm steps; coarser in very big rooms, so the list stays quick
  if(c.h>S.rh)return null;const isBed=['bed','sofa'].includes(typeOf(c));
  for(const rot of rots){const w=rot%180?c.d:c.w,d=rot%180?c.w:c.d;if(w>W||d>L)continue;
   const xs=new Set([W-w]),ys=new Set([L-d]);
@@ -943,7 +957,11 @@ function render(){
  $('sizebtn').setAttribute('aria-expanded',String(has&&sizeOpen));$('sizebtn').classList.toggle('on',has&&sizeOpen);
  const pr=problems();$('probline').hidden=!pr.length;$('probline').textContent=pr.length?pr[0][1]+(pr.length>1?` (+${pr.length-1} more)`:''):'';
  if(S.sel!=null)finSel=null;if(S.step!==2)finPick=false;$('finbar').hidden=!finPick;$('finbtn').hidden=$('doorbtn').hidden=has||finPick||(S.mode==='walls'&&!S.closed);
- const asking=doorAsk()&&!finPick;document.body.classList.toggle('doormode',asking||finPick);$('doorbar').hidden=!asking;$('doorskip').textContent=S.doorSet?'Cancel':'Skip';
+ if(S.step!==2||has||pick||!opObj())opSel=null;if(S.step!==2||has||pick||(S.mode==='walls'&&!S.closed))addWin=false;
+ const opo=opObj();$('opbar').hidden=!opo;if(opo){const q=opGet(opo);$('opmsg').textContent=opo==='door'?`Door, ${U(q.w)} wide. Slide it along the wall or tap a distance.`:`Window, ${U(q.w)} wide, sill ${U(opo.sill)}. Slide it or tap a distance.`;$('opsill').hidden=$('oprm').hidden=opo==='door'}
+ $('addwin').hidden=has||S.step!==2||doorAsk()||(S.mode==='walls'&&!S.closed);
+ const asking=(doorAsk()||addWin)&&!finPick;document.body.classList.toggle('doormode',asking||finPick);$('doorbar').hidden=!asking;
+ $('doormsg').textContent=addWin&&!doorAsk()?'Tap the wall where the window is':'Tap the wall where the door is';$('doorskip').textContent=addWin&&!doorAsk()?'Cancel':S.doorSet?'Cancel':'Skip';
  $('showcl').checked=!!S.showCl;
  const us=usage(),free=us.free;
  $('space').innerHTML=`<table><tr><td>Room floor${S.cuts.length?' (without cut-outs)':''}</td><td class="n">${UA(us.room)}</td></tr>${us.fixed?`<tr><td>Fixed features (columns, radiators...)</td><td class="n">${UA(us.fixed)}</td></tr>`:''}<tr><td>Furniture footprint</td><td class="n">${UA(us.used)} (${us.room?Math.round(us.used/us.room*100):0}%)</td></tr><tr><th>Free floor space</th><th class="n">${UA(free)}</th></tr></table>${us.overlap?'<div class="hint">Some pieces overlap each other or a fixed feature, so these figures are approximate.</div>':''}`;
@@ -1306,7 +1324,7 @@ $('sizechips').onclick=e=>{const b=e.target.closest('[data-sz]'),it=b&&S.items.f
 // A room drawn on its own keeps its drawing (S.plan). The whole house is one drawing for the visit (S.house); each enclosed
 // area becomes a room, matched to the room it made last time by where that room's middle (hk) was, so redrawing keeps names,
 // types and furniture. Rooms that came from the house and are no longer drawn are removed when nothing is placed in them.
-const DPV='2026-10-29h';let drawMod=null;   // version of drawplan.js: change it whenever drawplan.js changes
+const DPV='2026-10-29i';let drawMod=null;   // version of drawplan.js: change it whenever drawplan.js changes
 const blankRoom=name=>({name,type:'other',mode:'walls',shape:'rect',sketch:null,walls:[],rw:300,rl:300,dwall:'0',dw:90,doff:40,dh:205,items:[],cuts:[],obs:[],rh:260});
 async function openBoard(mode){
  try{drawMod=drawMod||await import('./drawplan.js?v='+DPV)}catch(e){await ask('The drawing board could not load. Check the connection and try again.','OK');return}
@@ -1408,7 +1426,15 @@ let keepRect=null;
 $('notrect').onclick=()=>{keepRect=S.shape==='rect'&&S.walls.length===4?[+S.walls[0].len||0,+S.walls[1].len||0]:null;showShapes=true;S.mode='walls';S.shape='sketch';S.sketch=null;S.walls=[];onShapeChange(true)};
 $('sizebtn').onclick=()=>{sizeOpen=!sizeOpen;render()};
 $('movedoor').onclick=()=>{moveDoor=true;render()};
-$('doorskip').onclick=()=>{S.doorSet=true;moveDoor=false;render()};
+$('doorskip').onclick=()=>{if(addWin&&!doorAsk()){addWin=false;render();return}S.doorSet=true;moveDoor=false;render()};
+$('addwin').onclick=()=>{addWin=true;finPick=false;S.sel=null;opSel=null;render()};
+$('opdone').onclick=()=>{opSel=null;render()};
+$('oprm').onclick=()=>{S.obs=S.obs.filter(o=>o.id!==opSel);opSel=null;renderFeat();render()};
+$('opw').onclick=async()=>{const o=opObj();if(!o)return;const q=opGet(o),wl=wallOf(q.wall),max=wl?Math.round(wl.len):1000;
+ const v=await askLen(`${o==='door'?'Door':'Window'} width (30 to ${U(max)})`,q.w);if(v==null||opObj()!==o)return;const w=Math.round(Math.min(max,Math.max(30,v))*10)/10;
+ if(o==='door')S.dw=w;else o.w=w;opSet(o,q.wall,q.off+(q.w-w)/2);renderFeat();render()};   // keeps its middle where it was
+$('opsill').onclick=async()=>{const o=opObj();if(!o||o==='door')return;const v=await askLen(`Window sill height (0 to ${U(+S.rh||260)})`,+o.sill||0);if(v==null||opObj()!==o)return;
+ o.sill=Math.round(Math.min(+S.rh||260,Math.max(0,v))*10)/10;renderFeat();render()};
 $('qrooms').onclick=e=>{const b=e.target.closest('[data-qr]');if(!b)return;stash();loadRoom(+b.dataset.qr);load();renderCat();goStep(S.mode==='walls'&&!S.closed?1:2)};
 $('qaddroom').onclick=()=>{$('addroom').click();goStep(1)};
 
@@ -1471,12 +1497,39 @@ $('reset').onclick=async()=>{if(await ask('Start a new visit? All rooms and layo
 let drag=null;
 function pt(e){const p=$('plan'),q=p.createSVGPoint();q.x=e.clientX;q.y=e.clientY;return q.matrixTransform(p.getScreenCTM().inverse())}
 // Door step: the door goes on the wall nearest to where the plan was tapped, centred on that spot.
-function placeDoorAt(p){
- if(S.mode==='walls'){if(!S.closed)return;let best=null;
-  S.wallGeo.forEach((g,i)=>{if(g.curve)return;const t=Math.max(0,Math.min(g.len,(p.x-g.a.x)*g.dx+(p.y-g.a.y)*g.dy)),d=Math.hypot(p.x-g.a.x-g.dx*t,p.y-g.a.y-g.dy*t);if(!best||d<best.d)best={i,t,d}});
-  if(!best)return;const g=S.wallGeo[best.i];S.dwall=String(best.i);S.doff=Math.round(Math.max(0,Math.min(g.len-S.dw,best.t-S.dw/2)))}
- else{const W=+S.rw,L=+S.rl,c=[['N',p.y,p.x,W],['S',L-p.y,p.x,W],['W',p.x,p.y,L],['E',W-p.x,p.y,L]].sort((a,b)=>a[1]-b[1])[0];S.dwall=c[0];S.doff=Math.round(Math.max(0,Math.min(c[3]-S.dw,c[2]-S.dw/2)))}
+// Straight walls as lines: ref (wall index, or N/S/W/E in a quick rectangle), start corner a, direction (dx, dy), length.
+// Door and window offsets run along a wall from a (as in wallSpan).
+function straightWalls(){if(S.mode==='walls')return S.wallGeo.map((g,i)=>g.curve?null:{ref:i,a:g.a,dx:g.dx,dy:g.dy,len:g.len}).filter(Boolean);
+ const W=+S.rw,L=+S.rl;return [{ref:'N',a:{x:0,y:0},dx:1,dy:0,len:W},{ref:'S',a:{x:0,y:L},dx:1,dy:0,len:W},{ref:'W',a:{x:0,y:0},dx:0,dy:1,len:L},{ref:'E',a:{x:W,y:0},dx:0,dy:1,len:L}]}
+const wallOf=ref=>straightWalls().find(w=>String(w.ref)===String(ref));
+// The straight wall nearest to plan point p, with how far along it (t) and how far away (d).
+function nearWall(p){let best=null;straightWalls().forEach(w=>{const t=Math.max(0,Math.min(w.len,(p.x-w.a.x)*w.dx+(p.y-w.a.y)*w.dy)),d=Math.hypot(p.x-w.a.x-w.dx*t,p.y-w.a.y-w.dy*t);if(!best||d<best.d)best={w,t,d}});return best}
+// Door and windows on the plan: o is 'door' (the room's door) or a window from S.obs.
+const opGet=o=>o==='door'?{wall:S.dwall,off:+S.doff||0,w:+S.dw||0}:{wall:o.wall,off:+o.off||0,w:+o.w||0};
+const opObj=()=>opSel==='door'?'door':S.obs.find(o=>o.id===opSel&&o.kind==='window')||null;
+// Put o on wall ref, starting off cm from its first corner (kept on the wall, 0.1 cm steps).
+function opSet(o,ref,off){const wl=wallOf(ref);if(!wl)return;const w=opGet(o).w;off=Math.round(Math.max(0,Math.min(wl.len-w,off))*10)/10;
+ if(o==='door'){S.dwall=String(ref);S.doff=off}else{o.wall=S.mode==='walls'?+ref:ref;o.off=off}}
+function placeDoorAt(p){if(S.mode==='walls'&&!S.closed)return;const nw=nearWall(p);if(!nw)return;opSet('door',nw.w.ref,Math.round(nw.t-S.dw/2));
  $('dwall').value=S.dwall;$('doff').value=U(S.doff,true);render()}
+function addWindowAt(p){const nw=nearWall(p);if(!nw)return;const o={id:S.next++,kind:'window',wall:nw.w.ref,off:0,w:Math.min(OBS.window.w,Math.round(nw.w.len)),sill:OBS.window.sill};
+ S.obs.push(o);opSet(o,nw.w.ref,Math.round(nw.t-o.w/2));opSel=o.id;S.sel=null;renderFeat();render()}
+// A length typed in a small in-page box (the browser's prompt() can be blocked); resolves to cm, or null when cancelled.
+function askLen(msg,v){return new Promise(res=>{const d=$('asklen'),i=$('asklenin');$('asklenmsg').textContent=msg;i.setAttribute('inputmode',imperial()?'text':'decimal');i.value=U(v,true);i.classList.remove('bad');d.hidden=false;i.focus();i.select();
+ const done=x=>{d.hidden=true;$('asklenok').onclick=$('asklenno').onclick=i.onkeydown=null;res(x)};
+ $('asklenok').onclick=()=>{const cm=parseLen(i.value);if(!isFinite(cm)||cm<0){i.classList.add('bad');return}done(cm)};
+ $('asklenno').onclick=()=>done(null);i.onkeydown=e=>{if(e.key==='Enter')$('asklenok').click();else if(e.key==='Escape')done(null)}})}
+// Tapping a gap on the plan: type the space wanted and the piece moves to it (as far as the space on that line allows).
+const GAPW={l:'to the left of',r:'to the right of',u:'above',d:'below'};
+async function typeGap(k){const it=S.items.find(i=>i.id===S.sel);if(!it)return;const g=gaps(it),cur={l:g.gl,r:g.gr,u:g.gu,d:g.gd}[k],room=k==='l'||k==='r'?g.gl+g.gr:g.gu+g.gd;
+ const v=await askLen(`Space ${GAPW[k]} ${spec(it).n} (0 to ${U(room)})`,cur);if(v==null||!S.items.includes(it))return;const dv=Math.min(Math.max(0,v),room)-cur;
+ if(k==='l')it.x+=dv;else if(k==='r')it.x-=dv;else if(k==='u')it.y+=dv;else it.y-=dv;it.x=Math.round(it.x*10)/10;it.y=Math.round(it.y*10)/10;render()}
+// Tapping a corner distance of the picked door or window: type it and the opening moves along its wall.
+async function typeOpGap(k){const o=opObj();if(!o)return;const q=opGet(o),wl=wallOf(q.wall);if(!wl)return;const max=Math.max(0,wl.len-q.w),cur=k==='a'?q.off:max-q.off;
+ const end=k==='a'?wl.a:{x:wl.a.x+wl.dx*wl.len,y:wl.a.y+wl.dy*wl.len},o2=k==='a'?{x:wl.a.x+wl.dx*wl.len,y:wl.a.y+wl.dy*wl.len}:wl.a,   // name the corner as it looks on the plan
+  side=Math.abs(wl.dx)>=Math.abs(wl.dy)?(end.x<o2.x?'left':'right'):(end.y<o2.y?'top':'bottom');
+ const v=await askLen(`${o==='door'?'Door':'Window'}: distance to the ${side} corner (0 to ${U(max)})`,cur);if(v==null||opObj()!==o)return;
+ opSet(o,q.wall,k==='a'?v:max-v);if(o==='door')S.doorSet=true;render()}
 // ---- Wall finishes: panels, wallpaper and paint on a whole wall or part of it ----
 // Sample finishes: typical sizes; prices are placeholders, not from a supplier. A finish sits on a straight wall (ref as for doors),
 // optionally on part of it (from/to along the wall, measured like the door offset) and optionally at half height (to 120 cm).
@@ -1572,7 +1625,8 @@ function zoomAt(z,P,cx,cy){const F=planFull(),r=$('plan').getBoundingClientRect(
 $('fit').onclick=()=>{pv.z=1;setPlanBox()};
 $('plan').addEventListener('wheel',e=>{if(S.step!==2)return;e.preventDefault();zoomAt(pv.z*Math.exp(-e.deltaY*.0015),pt(e),e.clientX,e.clientY)},{passive:false});
 const endPtr=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size)pan=null};
-$('plan').addEventListener('pointerup',endPtr);$('plan').addEventListener('pointercancel',endPtr);
+// on the whole page: a finger can lift over something else (the box a tapped measurement opens), and a finger left behind would turn the next touch into a pinch
+window.addEventListener('pointerup',endPtr);window.addEventListener('pointercancel',endPtr);
 $('plan').addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(ptrs.size===2&&S.step===2){const [a,b]=[...ptrs.values()],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;drag=null;pan=null;   // a second finger: pinch instead of drag
   pinch={d0:Math.hypot(a.x-b.x,a.y-b.y)||1,z0:pv.z,P:pt({clientX:mx,clientY:my})};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}return}
@@ -1580,16 +1634,25 @@ $('plan').addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,{x:e.clientX,y
  if(finPick&&S.step===2){finPick=false;openFinish(nearestWall(pt(e)));return}   // picking the wall for a finish
  if(pick){const g=e.target.closest('[data-id]'),it=g&&S.items.find(i=>i.id==g.dataset.id);   // Select: a tap ticks or unticks a piece; nothing moves
   if(it){pick.has(it.id)?pick.delete(it.id):pick.add(it.id);render()}else if(pv.z>1.01){pan={sx:e.clientX,sy:e.clientY,x0:pv.x,y0:pv.y};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}}return}
+ const gp=e.target.closest('[data-gap]');if(gp&&S.sel!=null){typeGap(gp.dataset.gap);return}   // a tapped gap or corner distance asks for the exact value
+ const ogp=e.target.closest('[data-opgap]');if(ogp&&opObj()){typeOpGap(ogp.dataset.opgap);return}
  const g=e.target.closest('[data-id]'),og=!g&&e.target.closest('[data-ob]');
  if(doorAsk()&&!g&&!og){S.doorSet=true;moveDoor=false;placeDoorAt(pt(e));return}   // a tap on a piece still selects it
+ if(addWin&&!g&&!og){addWin=false;addWindowAt(pt(e));return}
+ const opg=!g&&!og&&S.step===2&&e.target.closest('[data-op]'),o=opg&&(opg.dataset.op==='door'?'door':S.obs.find(x=>x.id==opg.dataset.op));
+ if(o){opSel=o==='door'?'door':o.id;S.sel=null;const q=opGet(o),nw=nearWall(pt(e));   // the door or a window: pick it up and slide it along the wall
+  drag={op:o,ref:String(q.wall),dt:nw&&String(nw.w.ref)===String(q.wall)?nw.t-q.off:q.w/2};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}render();return}
  if(og){const o=S.obs.find(x=>x.id==og.dataset.ob);if(o){const p=pt(e);drag={ob:o,dx:p.x-o.x,dy:p.y-o.y};S.sel=null;try{$('plan').setPointerCapture(e.pointerId)}catch(_){}render()}return}
- if(!g){if(pv.z>1.01&&S.step===2){pan={sx:e.clientX,sy:e.clientY,x0:pv.x,y0:pv.y};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}}S.sel=null;render();return}
- const it=S.items.find(i=>i.id==g.dataset.id);S.sel=it.id;const p=pt(e);drag={it,dx:p.x-it.x,dy:p.y-it.y};
+ if(!g){if(pv.z>1.01&&S.step===2){pan={sx:e.clientX,sy:e.clientY,x0:pv.x,y0:pv.y};try{$('plan').setPointerCapture(e.pointerId)}catch(_){}}S.sel=null;opSel=null;render();return}
+ const it=S.items.find(i=>i.id==g.dataset.id);S.sel=it.id;opSel=null;const p=pt(e);drag={it,dx:p.x-it.x,dy:p.y-it.y};
  try{$('plan').setPointerCapture(e.pointerId)}catch(_){}render()});
 $('plan').addEventListener('pointermove',e=>{if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(pinch&&ptrs.size>=2){const [a,b]=[...ptrs.values()];zoomAt(pinch.z0*Math.hypot(a.x-b.x,a.y-b.y)/pinch.d0,pinch.P,(a.x+b.x)/2,(a.y+b.y)/2);return}
  if(pan){const r=$('plan').getBoundingClientRect(),F=planFull(),k=Math.min(r.width*pv.z/F.w,r.height*pv.z/F.h);pv.x=pan.x0-(e.clientX-pan.sx)/k;pv.y=pan.y0-(e.clientY-pan.sy)/k;setPlanBox();return}
  if(!drag)return;const p=pt(e);
+ if(drag.op){const nw=nearWall(p);if(!nw)return;const q=opGet(drag.op);if(String(nw.w.ref)!==drag.ref){drag.ref=String(nw.w.ref);drag.dt=q.w/2}   // onto another wall: held by its middle
+  let off=Math.round(nw.t-drag.dt);const max=nw.w.len-q.w;if(off<5)off=0;else if(max-off<5)off=max;   // snaps into a corner within 5 cm
+  opSet(drag.op,nw.w.ref,off);if(drag.op==='door')S.doorSet=true;render();return}
  if(drag.ob){const o=drag.ob;o.x=Math.round(Math.min(Math.max(0,p.x-drag.dx),Math.max(0,S.rw-o.w)));o.y=Math.round(Math.min(Math.max(0,p.y-drag.dy),Math.max(0,S.rl-o.d)));render();return}
  const it=drag.it;
  it.x=p.x-drag.dx;it.y=p.y-drag.dy;

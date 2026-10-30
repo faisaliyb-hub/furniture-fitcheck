@@ -467,6 +467,40 @@ export async function run(){
   $('selbtn').click();$('pickdone').click();ok('select: Done leaves without removing',S.items.length===2&&!pick);
   freshVisit()}
 
+ // ---- Door and windows on the plan: slide along the walls, tap a distance to type it; tap a gap to move a piece ----
+ {freshVisit({type:'living',name:'Living room',dwall:'0',doff:40,keepCatalog:true});setTemplate('rect',[450,380]);goStep(2);S.doorSet=true;render();
+  const plan=$('plan'),scr=(x,y)=>{const q=plan.createSVGPoint();q.x=x;q.y=y;return q.matrixTransform(plan.getScreenCTM())},
+   ev=(el,ty,p,id)=>el.dispatchEvent(new PointerEvent(ty,{bubbles:true,clientX:p.x,clientY:p.y,pointerId:id})),
+   tapAt=(x,y,id)=>{plan.scrollIntoView({block:'center'});const p=scr(x,y);ev(document.elementFromPoint(p.x,p.y),'pointerdown',p,id);ev(plan,'pointerup',p,id)},
+   pills=sel=>[...plan.querySelectorAll(sel)].map(g=>parseFloat(g.textContent));
+  ok('openings: Add window shows on the plan tools',!$('addwin').hidden);
+  $('addwin').click();ok('openings: Add window asks for a wall',!$('doorbar').hidden&&$('doormsg').textContent.includes('window'));
+  tapAt(449,150,41);const w=S.obs[S.obs.length-1];
+  ok('openings: a tap on the right wall puts a 120 cm window there, centred on the tap',S.obs.length===1&&w.kind==='window'&&w.wall===1&&near(w.off,90,1)&&opSel===w.id,S.obs);
+  ok('openings: the picked window shows its bar and its distances to both corners',!$('opbar').hidden&&!$('oprm').hidden&&pills('[data-opgap]').length===2&&near(pills('[data-opgap]').reduce((a,b)=>a+b,0)+w.w,380,1),pills('[data-opgap]'));
+  {const hit=plan.querySelector(`[data-op="${w.id}"]`),a=scr(449,150),b=scr(452,330);ev(hit,'pointerdown',a,42);ev(plan,'pointermove',b,42);ev(plan,'pointerup',b,42)}
+  ok('openings: dragging the window slides it down its wall and snaps it into the corner',w.wall===1&&near(w.off,260,.1),w);
+  {const hit=plan.querySelector('[data-op="door"]'),a=scr(85,0),b=scr(1,200);ev(hit,'pointerdown',a,43);ev(plan,'pointermove',b,43);ev(plan,'pointerup',b,43)}
+  ok('openings: the door can be dragged onto another wall',S.dwall==='3'&&opSel==='door'&&$('oprm').hidden&&$('opsill').hidden,[S.dwall,S.doff]);
+  {const gs=[...plan.querySelectorAll('[data-opgap]')],b=gs.find(g=>g.dataset.opgap==='b'),r=b.getBoundingClientRect();
+   ev(b,'pointerdown',{x:r.x+r.width/2,y:r.y+r.height/2},44);ev(document.body,'pointerup',{x:0,y:0},44);await wait(10);
+   ok('openings: tapping a distance asks for it, naming the corner',!$('asklen').hidden&&/(top|bottom) corner/.test($('asklenmsg').textContent),$('asklenmsg').textContent);
+   $('asklenin').value='35';$('asklenok').click();await wait(10)}
+  {const wl=wallOf(S.dwall),toEnd=wl.len-S.dw-S.doff;ok('openings: the typed distance moves the door',$('asklen').hidden&&near(toEnd,35,.1),[S.doff,toEnd])}
+  $('opw').click();await wait(10);$('asklenin').value='100';$('asklenok').click();await wait(10);ok('openings: Width changes the door width',S.dw===100&&!$('opbar').hidden,S.dw);
+  S.sel=null;opSel=w.id;render();$('opsill').click();await wait(10);$('asklenin').value='110';$('asklenok').click();await wait(10);ok('openings: Sill changes the window sill',w.sill===110);
+  $('opdone').click();ok('openings: Done puts the window down',opSel==null&&$('opbar').hidden);
+  opSel=w.id;render();$('oprm').click();ok('openings: Remove takes the window away',!S.obs.length&&$('opbar').hidden);
+  const c=CATALOG.find(x=>x.k===K.sofa3),it=placePiece(c);it.x=225;it.y=300;it.rot=0;S.sel=it.id;render();
+  ok('gaps: a picked piece shows four tappable gaps',pills('[data-gap]').length===4,pills('[data-gap]'));
+  {const g0=gaps(it),lg=plan.querySelector('[data-gap="l"]'),r=lg.getBoundingClientRect();ev(lg,'pointerdown',{x:r.x+r.width/2,y:r.y+r.height/2},45);ev(document.body,'pointerup',{x:0,y:0},45);await wait(10);
+   $('asklenin').value='20';$('asklenok').click();await wait(10);const g1=gaps(it);
+   ok('gaps: typing the left gap moves the piece to it',near(g1.gl,20,.1)&&near(g1.gl+g1.gr,g0.gl+g0.gr,.1)&&S.sel===it.id,g1)}
+  {const dg=plan.querySelector('[data-gap="d"]'),r=dg.getBoundingClientRect();ev(dg,'pointerdown',{x:r.x+r.width/2,y:r.y+r.height/2},46);ev(document.body,'pointerup',{x:0,y:0},46);await wait(10);
+   $('asklenin').value='9999';$('asklenok').click();await wait(10);ok('gaps: a gap bigger than the room stops at the far wall',rectInRoom(body(it))&&near(gaps(it).gu,0,.1),gaps(it))}
+  ok('openings: Add window hides while a piece is picked',$('addwin').hidden);
+  freshVisit()}
+
  window.removeEventListener('error',onErr);
  ok('no page errors during the run',!errs.length,errs);
  freshVisit();

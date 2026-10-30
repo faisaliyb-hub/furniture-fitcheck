@@ -249,8 +249,10 @@ export const edgeLen = (plan, e) => dist(plan.v[e.a], plan.v[e.b]);
 // Type a wall's real length: everything beyond the wall's far end moves along the wall by the difference, so walls in line
 // with it (other rooms, shared walls) stay joined. Returns the other measured walls whose length changed.
 export function setLength(plan, ei, L) {
-  const e = plan.e[ei], a = plan.v[e.a], b = { ...plan.v[e.b] }, cur = dist(a, b);   // b copied: it moves too
-  if (!(L > 0) || !cur) return [];
+  const e = plan.e[ei];
+  if (!e || !(L > 0)) return [];                       // a wall removed meanwhile (undo, delete): nothing to do
+  const a = plan.v[e.a], b = { ...plan.v[e.b] }, cur = dist(a, b);   // b copied: it moves too
+  if (!cur) return [];
   const ux = (b.x - a.x) / cur, uy = (b.y - a.y) / cur, delta = L - cur, before = plan.e.map(x => x && x.m ? edgeLen(plan, x) : 0);
   const axis = Math.abs(uy) < 1e-6 ? 'x' : Math.abs(ux) < 1e-6 ? 'y' : null;
   plan.v.forEach((p, i) => {
