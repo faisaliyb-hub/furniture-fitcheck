@@ -238,21 +238,39 @@ function buildRoom(R,scene){const T=textures(),H=R.H*M,loop=R.loop.map(p=>({x:p.
   const cas=new THREE.Group();cas.position.set(a.x+e.dx*(t0+w/2)+inx*.008,0,a.y+e.dy*(t0+w/2)+inz*.008);cas.rotation.y=-rot;
   for(const [w2,h2,x,y2] of [[.07,dh+.07,-w/2-.035,(dh+.07)/2],[.07,dh+.07,w/2+.035,(dh+.07)/2],[w+.14,.07,0,dh+.035]]){const f=new THREE.Mesh(new THREE.BoxGeometry(w2,h2,.016),trimM);f.position.set(x,y2,0);f.castShadow=true;cas.add(f)}
   g.add(cas);walls[D.edge].parts.push(cas);
-  const leafW=w-.02,leaf=new THREE.Group();leaf.position.set(hx+e.dx*.02+inx*(leafW/2),0,hz+e.dy*.02+inz*(leafW/2));leaf.rotation.y=Math.atan2(inx,inz);
-  const dcol=D.col||'#f4f2ee',st=D.tex?'photo':(D.style||'flat'),base=mat(st==='fluted'?'wood':'paint',dcol),lh=dh-.01;
-  const part=(w,h,d,x,y,z,m,rx)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);if(rx)o.rotation.x=rx;o.castShadow=o.receiveShadow=true;leaf.add(o);return o};
-  if(st==='glass'){const fr=.08,gl=new THREE.MeshPhysicalMaterial({color:'#dfe9ec',roughness:.05,transparent:true,opacity:.25,depthWrite:false});   // frame and glass
-   part(.04,lh,fr,0,lh/2,-leafW/2+fr/2,base);part(.04,lh,fr,0,lh/2,leafW/2-fr/2,base);part(.04,fr,leafW-2*fr,0,lh-fr/2,0,base);part(.04,.22,leafW-2*fr,0,.11,0,base);
-   part(.012,lh-fr-.22,leafW-2*fr,0,.22+(lh-fr-.22)/2,0,gl)}
-  else{part(.04,lh,leafW,0,lh/2,0,st==='photo'?texMat(D.tex,1,1,.5):base);   // a photo covers the whole leaf, edges too (one material: Photo mixes up a list of them)
-   for(const sx of [-1,1]){const x=sx*.022;
-    if(st==='panel'){const pw=(leafW-.24)/2;for(const [zz,yy,hh] of [[-1,lh*.62,lh*.5],[1,lh*.62,lh*.5],[-1,lh*.2,lh*.26],[1,lh*.2,lh*.26]])part(.008,hh,pw,x,yy,zz*(pw/2+.04),base)}
-    else if(st==='fluted')for(let z=-leafW/2+.04;z<=leafW/2-.04;z+=.03)part(.006,lh-.04,.014,x,lh/2,z,base);
-    else if(st==='geometric'){const groove=mat('paint','#3a3633');   // thin grooves across the face, like a veneer pattern
-     for(const [u0,v0,u1,v1] of [[.38,1,.62,.62],[0,.52,1,.72],[.25,.48,.75,.28],[0,.24,1,.1]]){const z0=-leafW/2+u0*leafW,z1=-leafW/2+u1*leafW,y0=v0*lh,y1=v1*lh,len=Math.hypot(z1-z0,y1-y0);
-      part(.004,len,.006,x,(y0+y1)/2,(z0+z1)/2,groove,Math.atan2(z1-z0,y1-y0))}}}}
-  for(const s of [-1,1]){const hd=new THREE.Mesh(new THREE.BoxGeometry(.02,.02,.13),mat('metal','#b4b4b2'));hd.position.set(s*.035,1.0,leafW/2-.09);leaf.add(hd)}
-  g.add(leaf)}
+  // the door by its type (D.type): hinged leaves stand open 90 degrees, into the room (D.swing 1) or out (-1), from the
+  // hinge end of the opening (D.hinge 0 = t0, 1 = t1); a pair has one at each jamb; folding doors stand as two panels
+  // in a V each side; a sliding leaf is pushed aside over the wall on the room side, under its rail; a pocket door is
+  // inside the wall, so only the opening shows
+  const ux=e.dx,uz=e.dy,sw=D.swing||1,vx=inx*sw,vz=inz*sw,typ=D.type||'single';
+  const at=(t,o)=>({x:a.x+ux*t+vx*o,z:a.y+uz*t+vz*o});
+  const mkLeaf=leafW=>{const leaf=new THREE.Group();
+    const dcol=D.col||'#f4f2ee',st=D.tex?'photo':(D.style||'flat'),base=mat(st==='fluted'?'wood':'paint',dcol),lh=dh-.01;
+    const part=(w,h,d,x,y,z,m,rx)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);if(rx)o.rotation.x=rx;o.castShadow=o.receiveShadow=true;leaf.add(o);return o};
+    if(st==='glass'){const fr=.08,gl=new THREE.MeshPhysicalMaterial({color:'#dfe9ec',roughness:.05,transparent:true,opacity:.25,depthWrite:false});   // frame and glass
+     part(.04,lh,fr,0,lh/2,-leafW/2+fr/2,base);part(.04,lh,fr,0,lh/2,leafW/2-fr/2,base);part(.04,fr,leafW-2*fr,0,lh-fr/2,0,base);part(.04,.22,leafW-2*fr,0,.11,0,base);
+     part(.012,lh-fr-.22,leafW-2*fr,0,.22+(lh-fr-.22)/2,0,gl)}
+    else{part(.04,lh,leafW,0,lh/2,0,st==='photo'?texMat(D.tex,1,1,.5):base);   // a photo covers the whole leaf, edges too (one material: Photo mixes up a list of them)
+     for(const sx of [-1,1]){const x=sx*.022;
+      if(st==='panel'){const pw=(leafW-.24)/2;for(const [zz,yy,hh] of [[-1,lh*.62,lh*.5],[1,lh*.62,lh*.5],[-1,lh*.2,lh*.26],[1,lh*.2,lh*.26]])part(.008,hh,pw,x,yy,zz*(pw/2+.04),base)}
+      else if(st==='fluted')for(let z=-leafW/2+.04;z<=leafW/2-.04;z+=.03)part(.006,lh-.04,.014,x,lh/2,z,base);
+      else if(st==='geometric'){const groove=mat('paint','#3a3633');   // thin grooves across the face, like a veneer pattern
+       for(const [u0,v0,u1,v1] of [[.38,1,.62,.62],[0,.52,1,.72],[.25,.48,.75,.28],[0,.24,1,.1]]){const z0=-leafW/2+u0*leafW,z1=-leafW/2+u1*leafW,y0=v0*lh,y1=v1*lh,len=Math.hypot(z1-z0,y1-y0);
+        part(.004,len,.006,x,(y0+y1)/2,(z0+z1)/2,groove,Math.atan2(z1-z0,y1-y0))}}}}
+    for(const s of [-1,1]){const hd=new THREE.Mesh(new THREE.BoxGeometry(.02,.02,.13),mat('metal','#b4b4b2'));hd.position.set(s*.035,1.0,leafW/2-.09);leaf.add(hd)}
+   return leaf};
+  const place=(lf,cx,cz,dirx,dirz)=>{lf.position.set(cx,0,cz);lf.rotation.y=Math.atan2(dirx,dirz);g.add(lf)};   // as before: a leaf stays when its wall is cut away
+  const hingeT=D.hinge?t1:t0,toward=D.hinge?-1:1;   // from the hinge jamb, the opening runs this way along the wall
+  if(typ==='single'||typ==='double'){const legs=typ==='double'?[[hingeT,toward],[D.hinge?t0:t1,-toward]]:[[hingeT,toward]],lw=(typ==='double'?w/2:w)-.02;
+   legs.forEach(([tj,dir])=>{const H=at(tj+dir*.02,0);place(mkLeaf(lw),H.x+vx*lw/2,H.z+vz*lw/2,vx,vz)})}
+  else if(typ==='folding'){const pw=w/4-.01,c=Math.cos(Math.PI/3),s=Math.sin(Math.PI/3);
+   [[hingeT,toward],[D.hinge?t0:t1,-toward]].forEach(([tj,dir])=>{const J=at(tj+dir*.01,0),d1={x:ux*dir*c+vx*s,z:uz*dir*c+vz*s},d2={x:ux*dir*c-vx*s,z:uz*dir*c-vz*s},Mx=J.x+d1.x*pw,Mz=J.z+d1.z*pw;
+    place(mkLeaf(pw),J.x+d1.x*pw/2,J.z+d1.z*pw/2,d1.x,d1.z);place(mkLeaf(pw),Mx+d2.x*pw/2,Mz+d2.z*pw/2,d2.x,d2.z)})}
+  else if(typ==='sliding'){const lw=w+.06,C=at(hingeT-toward*(lw/2-.05),0),off=.035;
+   place(mkLeaf(lw),C.x+inx*off,C.z+inz*off,ux,uz);
+   const rail=new THREE.Mesh(new THREE.BoxGeometry(2*w+.1,.035,.03),mat('metal','#3a3a3a'));const R0=at(hingeT-toward*(w/2-.05),0);
+   rail.position.set(R0.x+inx*off,dh+.06,R0.z+inz*off);rail.rotation.y=-Math.atan2(uz,ux);g.add(rail);walls[D.edge].parts.push(rail)}
+  }
  // cut-outs (quick rectangle mode) are solid parts of the building; fixed features
  const block=(r,y0,y1,m)=>prism([{x:r.x*M,y:r.y*M},{x:(r.x+r.w)*M,y:r.y*M},{x:(r.x+r.w)*M,y:(r.y+r.d)*M},{x:r.x*M,y:(r.y+r.d)*M}],y0,y1,m);
  R.cuts.forEach(c=>g.add(block(c,0,H,wallM)));
