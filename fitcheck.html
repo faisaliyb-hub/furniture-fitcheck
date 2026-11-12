@@ -213,7 +213,7 @@ body[data-step="2"] #layoutcard .hint{margin-top:4px}
   <div id="opbar" class="doorbar" hidden><span id="opmsg"></span><span class="pickbtns"><button id="opw">Width</button><button id="opsill">Sill</button><button id="oprm">Remove</button><button id="opdone">Done</button></span></div>
   <svg id="plan" viewBox="0 0 600 500"></svg><button id="drawopen" class="drawopen" hidden>Catalogue</button>
   <p id="probline" class="probline" hidden></p>
-  <div class="tools" id="plantools"><button id="selbtn">Select</button><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><button id="addwin">Add window</button><button id="finbtn">Wall finish</button><button id="doorbtn">Door style</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
+  <div class="tools" id="plantools"><button id="selbtn">Select</button><button id="rot">Turn</button><button id="sizebtn" aria-expanded="false">Size</button><button id="wall" class="adv">Move to wall</button><button id="del">Remove</button><button id="movedoor">Move door</button><button id="addwin">Add window</button><button id="finbtn">Wall finish</button><button id="doorbtn">Door type</button><label class="adv" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="showcl" style="width:auto;min-height:0">Show all clearance zones</label></div>
   <div class="hint adv">Drawn to scale: each piece covers only its own footprint. Tap a piece to see the free space around it. Orange zone = clearance needed in front.</div><div id="tipmsg" class="hint" style="color:var(--warn)"></div>
  </section>
  <aside id="drawer" data-step="2" aria-label="Catalogue">
@@ -223,7 +223,7 @@ body[data-step="2"] #layoutcard .hint{margin-top:4px}
    <div class="chips" id="fincov" role="group" aria-label="How much of the wall"></div>
    <div class="row" id="finpart" hidden><div><label for="finfrom" id="finfroml">From the wall's start</label><input id="finfrom" class="len" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="finto" id="fintol">To</label><input id="finto" class="len" type="text" inputmode="decimal" autocomplete="off"></div></div>
    <div id="finres" class="finres"></div><div class="tools"><button id="findone" class="primary">Done</button><button id="finrm">Remove finish</button></div></div>
-  <div id="doorbox" hidden><div style="font-weight:600;margin-bottom:6px">Door</div><div id="doorchips" role="group" aria-label="Door styles"></div><div class="tools"><button id="doordone" class="primary">Done</button></div></div>
+  <div id="doorbox" hidden><div style="font-weight:600;margin-bottom:6px">Door</div><div id="doortype" role="group" aria-label="Door type"></div><div id="doorchips" role="group" aria-label="Door styles"></div><div class="tools"><button id="doordone" class="primary">Done</button></div></div>
   <div id="sizebox" hidden><div id="sizettl" style="font-weight:600;margin-bottom:6px"></div><div id="sizechips" class="chips" role="group" aria-label="Sizes"></div><div id="colrow" class="pal" role="group" aria-label="Colour" hidden></div>
    <div class="row3"><div><label for="szw" id="szwl">Width</label><input id="szw" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szd" id="szdl">Depth</label><input id="szd" type="text" inputmode="decimal" autocomplete="off"></div><div><label for="szh" id="szhl">Height</label><input id="szh" type="text" inputmode="decimal" autocomplete="off"></div></div>
    <div id="sizehint" class="hint"></div></div>
@@ -574,7 +574,16 @@ function wallSpan(ref,off,len,depth){
  return{rect:{N:{x0:a,y0:0,x1:b,y1:t},S:{x0:a,y0:L-t,x1:b,y1:L},W:{x0:0,y0:a,x1:t,y1:b},E:{x0:W-t,y0:a,x1:W,y1:b}}[ref]||{x0:0,y0:0,x1:0,y1:0},
   line:{N:[a,0,b,0],S:[a,L,b,L],W:[0,a,0,b],E:[W,a,W,b]}[ref]||[0,0,0,0],n:{N:{x:0,y:1},S:{x:0,y:-1},W:{x:1,y:0},E:{x:-1,y:0}}[ref]||{x:0,y:0}}}
 const EMPTY={x0:0,y0:0,x1:0,y1:0};
-const doorRect=()=>(wallSpan(S.dwall,S.doff,S.dw,S.dw)||{rect:EMPTY}).rect;
+// Door type (S.dtype), which jamb carries the hinges or the slide (S.dhinge: 'a' = where the wall starts, 'b' = its end),
+// and whether it opens into the room (S.dswing 'in') or out. Older visits have none of these: a single door, hinged at
+// the start, opening in.
+const DOOR_TYPES=[['single','Single'],['double','Double'],['sliding','Sliding'],['pocket','Pocket'],['folding','Folding']];
+const dType=()=>DOOR_TYPES.some(t=>t[0]===S.dtype)?S.dtype:'single';
+const dIn=()=>S.dswing!=='out'&&!['sliding','pocket'].includes(dType());
+// The floor in front of the door kept clear: the leaf's swing (a full leaf, half for a pair, a quarter for folding
+// panels) or, for sliding, pocket and outward doors, a 40 cm walkway.
+function doorDepth(){const w=+S.dw||0,t=dType();if(!dIn())return Math.min(40,w);return t==='double'?Math.max(40,w/2):t==='folding'?Math.max(40,w/4):w}
+const doorRect=()=>(wallSpan(S.dwall,S.doff,S.dw,doorDepth())||{rect:EMPTY}).rect;
 
 // ---- Room shape and fixed features ----
 // Cut-outs remove parts of the overall rectangle (L/U/T shapes). Columns, radiators, built-ins, stairs and other doors block the floor.
@@ -713,9 +722,25 @@ function opening(sp,kind,picked,sw,fs){const [x0,y0,x1,y1]=sp.line,len=Math.hypo
  let h=`<g pointer-events="none" stroke="var(--ink)" fill="none" stroke-linecap="square">`;
  h+=`<path d="M${P(0,-.5)} L${P(len,-.5)} L${P(len,T+1)} L${P(0,T+1)}Z" fill="var(--card)" stroke="none"/>`;   // the opening through the wall
  h+=L(0,0,0,T,thin)+L(len,0,len,T,thin);   // jambs
- if(kind==='door'){const lt=4,tip={x:x0+nx*len,y:y0+ny*len},sweep=(nx*dy-ny*dx)>0?1:0;
-  h+=`<path d="M${x0} ${y0} L${tip.x} ${tip.y} L${tip.x+dx*lt} ${tip.y+dy*lt} L${x0+dx*lt} ${y0+dy*lt}Z" fill="var(--card)" stroke-width="${sw*.8}"/>`;   // the leaf, open
-  h+=`<path d="M${tip.x} ${tip.y} A${len} ${len} 0 0 ${sweep} ${x1} ${y1}" stroke-width="${thin}"/>`;   // its swing
+ if(kind==='door'){const t=dType(),hb=S.dhinge==='b',sg=dIn()?1:-1,vx=nx*sg,vy=ny*sg,lt=4;
+  // points by distance along the opening from the hinge (or slide) jamb, and out from the wall face: into the room
+  // when the door opens in, outside when it opens out
+  const Q=(a,o)=>{const tt=hb?len-a:a;return{x:x0+dx*tt+vx*o,y:y0+dy*tt+vy*o}},pt=p=>`${p.x} ${p.y}`;
+  const arc=(c,r,from,to)=>{const p1=Q(c,0),f=from,e=to,cr=(f.x-p1.x)*(e.y-p1.y)-(f.y-p1.y)*(e.x-p1.x);
+   return `<path d="M${pt(f)} A${r} ${r} 0 0 ${cr>0?1:0} ${pt(e)}" stroke-width="${thin}"/>`};
+  // a leaf standing open at jamb j (0 = hinge side, len = the other), w wide, swung into the side v
+  const openLeaf=(j,w,dir)=>{const H=Q(j,0),tip={x:H.x+vx*w,y:H.y+vy*w},ex=dx*(hb?-1:1)*dir*lt,ey=dy*(hb?-1:1)*dir*lt,closed=Q(j+dir*w,0);
+   return `<path d="M${pt(H)} L${pt(tip)} L${tip.x+ex} ${tip.y+ey} L${H.x+ex} ${H.y+ey}Z" fill="var(--card)" stroke-width="${sw*.8}"/>`+arc(j,w,tip,closed)};
+  if(t==='single')h+=openLeaf(0,len,1);
+  else if(t==='double')h+=openLeaf(0,len/2,1)+openLeaf(len,len/2,-1);
+  else if(t==='folding'){[[0,1],[len,-1]].forEach(([j,dir])=>{const pw=len/4,J=Q(j,0),M={x:J.x+dx*(hb?-1:1)*dir*pw*.5+vx*pw*.87,y:J.y+dy*(hb?-1:1)*dir*pw*.5+vy*pw*.87},K=Q(j+dir*pw,0);
+    h+=`<path d="M${pt(J)} L${pt(M)} L${pt(K)}" stroke-width="${sw*1.1}" stroke-linejoin="round"/>`})}   // panels folded back in a V each side
+  else if(t==='sliding'){const A=Q(-len*.92,0),B=Q(len*.08,0),o1=4,o2=8,P1={x:A.x+nx*o1,y:A.y+ny*o1},P2={x:B.x+nx*o1,y:B.y+ny*o1},P3={x:B.x+nx*o2,y:B.y+ny*o2},P4={x:A.x+nx*o2,y:A.y+ny*o2};
+   h+=`<path d="M${pt(P1)} L${pt(P2)} L${pt(P3)} L${pt(P4)}Z" fill="var(--card)" stroke-width="${sw*.8}"/>`;   // the leaf slid open over the wall, room side
+   const m0=Q(len*.55,0),m1=Q(len*.15,0),ax=dx*(hb?-1:1),ay=dy*(hb?-1:1),mo=14;
+   h+=`<path d="M${m0.x+nx*mo} ${m0.y+ny*mo} L${m1.x+nx*mo} ${m1.y+ny*mo} M${m1.x+nx*mo+ax*4+nx*2.5} ${m1.y+ny*mo+ay*4+ny*2.5} L${m1.x+nx*mo} ${m1.y+ny*mo} L${m1.x+nx*mo+ax*4-nx*2.5} ${m1.y+ny*mo+ay*4-ny*2.5}" stroke-width="${thin}"/>`}   // arrow: the way it slides
+  else if(t==='pocket'){const A=Q(-len*.95,0),B=Q(len*.05,0),m=T/2;
+   h+=`<line x1="${A.x+ox*m}" y1="${A.y+oy*m}" x2="${B.x+ox*m}" y2="${B.y+oy*m}" stroke="var(--card)" stroke-width="${lt*.8}" stroke-dasharray="${lt*1.5} ${lt}"/>`}   // the leaf hidden in the wall
   h+=L(0,T,len,T,thin*.7)}   // threshold on the outer face
  else{h+=L(0,0,len,0,thin)+L(0,T,len,T,thin);   // frame on both wall faces
   h+=L(0,T*.43,len,T*.43,thin)+L(0,T*.57,len,T*.57,thin);   // glass
@@ -1476,7 +1501,10 @@ function roomModel(){
   const t=[[sp.line[0],sp.line[1]],[sp.line[2],sp.line[3]]].map(([x,y])=>(x-a.x)*ux+(y-a.y)*uy).sort((p,q)=>p-q);
   return{edge:e,t0:Math.max(0,t[0]),t1:Math.min(l,t[1]),y0,y1,kind}};
  const dd=doorCat(S.doorK)||GEN_DOOR,door0=opening(S.dwall,+S.doff,+S.dw,0,Math.min(+S.dh||205,H-5),'door');
- const door=door0&&{...door0,style:dd.style,col:dd.gen?(S.doorCol||dd.col):dd.col,tex:assetUrl(dd.tx)};
+ const door=door0&&{...door0,style:dd.style,col:dd.gen?(S.doorCol||dd.col):dd.col,tex:assetUrl(dd.tx),type:dType(),swing:dIn()?1:-1};
+ if(door){const sp=wallSpan(S.dwall,+S.doff,+S.dw,0),a=loop[door.edge],b=loop[(door.edge+1)%loop.length],l=Math.hypot(b.x-a.x,b.y-a.y)||1,
+  hp=S.dhinge==='b'?[sp.line[2],sp.line[3]]:[sp.line[0],sp.line[1]],th=(hp[0]-a.x)*(b.x-a.x)/l+(hp[1]-a.y)*(b.y-a.y)/l;
+  door.hinge=Math.abs(th-door.t0)<=Math.abs(th-door.t1)?0:1}   // which end of the opening (along the 3D wall) carries the hinge
  // A window's height is not measured: it is drawn from the sill to 210 cm (at least 60 cm tall, and 25 cm below the ceiling).
  const wins=windows().map(o=>opening(o.wall,+o.off,+o.w,+o.sill||0,Math.min(H-25,Math.max((+o.sill||0)+60,210)),'window')).filter(Boolean);
  const finishes=(S.finishes||[]).map(f=>{const c=finCat(f.k),R=finRegion(f),o=c&&R.b>R.a&&opening(f.wall,R.a,R.b-R.a,R.h0,R.h1,'finish');return o&&{...o,col:finCol(f),f:c.f,tex:assetUrl(c.tx),tw:c.u==='roll'?c.w:c.w,th:c.u==='roll'?(c.rep||c.w):c.h}}).filter(Boolean);
@@ -1484,7 +1512,7 @@ function roomModel(){
   obs:S.obs.filter(o=>o.kind!=='window').map(o=>({kind:o.kind,x:+o.x,y:+o.y,w:+o.w,d:+o.d,h:+o.h||0})),
   items:S.items.map(it=>{const c=spec(it);return{id:it.id,x:it.x,y:it.y,rot:it.rot,w:c.w,d:c.d,h:c.h,type:typeOf(c),name:c.n,finish:c.f||'',model:modelOf(c),tex:assetUrl(c.tx),color:c.gen||c.col&&!c.f?c.col||'':''}})}}
 // Version of view3d.js: change it whenever view3d.js changes, so phones do not keep running a cached old copy.
-const V3D='2026-10-30a';
+const V3D='2026-11-12a';
 let view3d=null,v3dTimer=0;
 async function open3d(){
  if(S.mode==='walls'&&!S.closed){$('tipmsg').textContent='Finish measuring the walls first: the room outline is not closed yet.';return}
@@ -1722,11 +1750,15 @@ $('fincov').onclick=e=>{const b=e.target.closest('[data-cov]'),f=b&&S.finishes.f
  el.addEventListener('change',()=>{const f=S.finishes.find(x=>x.id===finSel);if(f){el.value=U(ix?f.to:f.from,true);el.classList.remove('bad')}})});
 $('findone').onclick=()=>{finSel=null;render()};
 // Door style: the company's doors (their photo or style, size and price) or a generic plain door in any colour.
-function renderDoorbox(){const box=$('doorbox'),show=doorOpen&&S.step===2&&S.sel==null&&finSel==null;box.hidden=!show;if(!show)return;const cur=doorCat(S.doorK)||GEN_DOOR;
+function renderDoorbox(){const box=$('doorbox'),show=doorOpen&&S.step===2&&S.sel==null&&finSel==null;box.hidden=!show;if(!show)return;const cur=doorCat(S.doorK)||GEN_DOOR,t=dType(),slide=['sliding','pocket'].includes(t);
+ $('doortype').innerHTML=`<span class="finlab">Type</span><div class="chips" style="margin:0">${DOOR_TYPES.map(([k,n])=>`<button class="chip${t===k?' on':''}" data-dt="${k}" aria-pressed="${t===k}">${n}</button>`).join('')}</div>`+
+  `<div class="tools" style="margin:6px 0 4px"><button data-dflip>${slide?'Slide to the other side':t==='single'?'Hinge on the other side':'Swap sides'}</button>`+(slide?'':`<button data-dswing aria-pressed="${!dIn()}">${dIn()?'Opens into the room':'Opens out of the room'}</button>`)+`</div>`;
  const chip=d=>`<button class="chip${cur.k===d.k?' on':''}" data-dk="${esc(d.k)}"><span class="dot" style="background:${d.gen?(S.doorCol||d.col):d.col}"></span>${esc(d.n)}<small>${d.gen?'any colour &middot; not in the quote':`${UU(d.w,d.h)} &middot; ${d.p.toLocaleString()}`}</small></button>`;
  $('doorchips').innerHTML=(CO_DOORS.length?`<span class="finlab">${esc(COMPANY)}</span><div class="chips" style="margin:0">${CO_DOORS.map(chip).join('')}</div>`:'')+`<span class="finlab">Generic</span><div class="chips" style="margin:0">${chip(GEN_DOOR)}</div>`+(cur.gen?`<div class="pal">${palHtml(S.doorCol||GEN_DOOR.col,'dcol')}</div>`:'')}
 $('doorbtn').onclick=()=>{doorOpen=true;finSel=null;S.sel=null;render()};
 $('doordone').onclick=()=>{doorOpen=false;render()};
+$('doortype').onclick=e=>{const b=e.target.closest('[data-dt]');if(b)S.dtype=b.dataset.dt;else if(e.target.closest('[data-dflip]'))S.dhinge=S.dhinge==='b'?'a':'b';
+ else if(e.target.closest('[data-dswing]'))S.dswing=dIn()?'out':'in';else return;render()};
 $('doorchips').onclick=e=>{const b=e.target.closest('[data-dk]'),c=e.target.closest('[data-dcol]');
  if(b){S.doorK=b.dataset.dk;const d=doorCat(S.doorK);if(d&&!d.gen){S.dw=d.w;S.dh=d.h;$('dw').value=U(S.dw,true);$('dh').value=U(S.dh,true)}render()}else if(c){S.doorCol=c.dataset.dcol;render()}};
 $('doorchips').addEventListener('input',e=>{if(e.target.matches('[data-dcolany]')){S.doorCol=e.target.value;render()}});

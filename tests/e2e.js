@@ -542,6 +542,19 @@ export async function run(){
   $('m3dx').click();for(const k of Object.keys(MODEL_REC))await modelDel(k);freshVisit()}
 
  window.removeEventListener('error',onErr);
+ // ---- door types (2026-11-12): each has its plan symbol, its clear zone and its 3D data ----
+ freshVisit({rw:400,rl:300,mode:'rect',dwall:'N',dw:120,doff:140,doorSet:true,step:2});
+ const planH=()=>$('plan').innerHTML,arcs=()=>(planH().match(/ A\d/g)||[]).length,dzD=()=>{const r=doorRect();return Math.round(r.y1-r.y0)};
+ ok('door: an old visit (no type) is a single door opening in, its swing kept clear',dType()==='single'&&dIn()&&dzD()===120&&arcs()===1);
+ S.dtype='double';render();ok('door: a pair draws two swings and keeps half its width clear',arcs()===2&&dzD()===60);
+ S.dtype='folding';render();ok('door: folding draws its panels, no swing arc, a 40 cm walkway',arcs()===0&&/stroke-linejoin="round"/.test(planH())&&dzD()===40);
+ S.dtype='sliding';render();ok('door: sliding has no swing, a 40 cm walkway, and never opens out',arcs()===0&&dzD()===40&&!dIn());
+ S.dtype='pocket';render();ok('door: pocket shows the leaf hidden in the wall',/stroke-dasharray/.test(planH())&&arcs()===0);
+ S.dtype='single';S.dswing='out';render();ok('door: opening out keeps only a walkway in the room',dzD()===40&&arcs()===1);
+ S.dswing='in';S.dhinge='b';render();const rm=roomModel();ok('door: the hinge side and type reach the 3D view',rm.door&&rm.door.type==='single'&&rm.door.swing===1&&(rm.door.hinge===0||rm.door.hinge===1));
+ doorOpen=true;render();ok('door: the Door type panel lists the five types',$('doortype').querySelectorAll('[data-dt]').length===5&&visible('#doortype'));
+ $('doortype').querySelector('[data-dt="double"]').click();ok('door: tapping a type chooses it',S.dtype==='double');
+ doorOpen=false;S.dtype=S.dhinge=S.dswing=undefined;render();
  ok('no page errors during the run',!errs.length,errs);
  freshVisit();
  const failed=R.filter(r=>!r.pass);
