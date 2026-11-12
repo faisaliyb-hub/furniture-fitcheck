@@ -695,14 +695,41 @@ function drawOpen(W,L,u,sw,fs){
  h+=`<circle cx="${s0.x}" cy="${s0.y}" r="${u*5}" fill="var(--accent)"/><text x="${s0.x}" y="${s0.y-u*9}" text-anchor="middle" font-size="${fs*.85}" fill="var(--accent)">start</text>`;
  h+=`<circle cx="${e.x}" cy="${e.y}" r="${u*5}" fill="var(--warn)"/>`;
  return h}
+// ---- Architectural plan symbols ----
+const WALL_T_CM=12;   // wall thickness on the plan, the same as the 3D view's WALL_T
+// The outline pushed outwards by t (mitred corners, capped at 3t on very sharp ones): the outer face of the walls.
+function outerLoop(P,t){const n=P.length,inside=(x,y)=>{let c=false;for(let i=0,j=n-1;i<n;j=i++){const a=P[i],b=P[j];if((a.y>y)!==(b.y>y)&&x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x)c=!c}return c};
+ const nrm=P.map((a,i)=>{const b=P[(i+1)%n],l=Math.hypot(b.x-a.x,b.y-a.y)||1;let x=(b.y-a.y)/l,y=-(b.x-a.x)/l;
+  if(inside((a.x+b.x)/2+x*.5,(a.y+b.y)/2+y*.5)){x=-x;y=-y}return{x,y}});
+ return P.map((p,i)=>{const a=nrm[(i-1+n)%n],b=nrm[i],mx=a.x+b.x,my=a.y+b.y,ml=Math.hypot(mx,my)||1,ux=mx/ml,uy=my/ml,k=Math.min(3,1/Math.max(.2,ux*b.x+uy*b.y));
+  return{x:p.x+ux*t*k,y:p.y+uy*t*k}})}
+// A door or window as drawn on an architect's plan. sp is its wallSpan (line on the room face, n into the room).
+// Door: a clear gap through the wall, the leaf drawn open 90 degrees into the room from its hinge (the start of the
+// opening, as in 3D) and the quarter-circle swing to the far jamb. Window: the wall band replaced by the frame, the two
+// wall faces, a double glass line in the middle and the sill projecting outside.
+function opening(sp,kind,picked,sw,fs){const [x0,y0,x1,y1]=sp.line,len=Math.hypot(x1-x0,y1-y0);if(len<1)return'';
+ const T=WALL_T_CM,dx=(x1-x0)/len,dy=(y1-y0)/len,nx=sp.n.x,ny=sp.n.y,ox=-nx,oy=-ny,P=(t,o)=>`${x0+dx*t+ox*o} ${y0+dy*t+oy*o}`,
+  L=(t0,o0,t1,o1,w)=>`<line x1="${x0+dx*t0+ox*o0}" y1="${y0+dy*t0+oy*o0}" x2="${x0+dx*t1+ox*o1}" y2="${y0+dy*t1+oy*o1}" stroke-width="${w}"/>`,thin=sw*.55;
+ let h=`<g pointer-events="none" stroke="var(--ink)" fill="none" stroke-linecap="square">`;
+ h+=`<path d="M${P(0,-.5)} L${P(len,-.5)} L${P(len,T+1)} L${P(0,T+1)}Z" fill="var(--card)" stroke="none"/>`;   // the opening through the wall
+ h+=L(0,0,0,T,thin)+L(len,0,len,T,thin);   // jambs
+ if(kind==='door'){const lt=4,tip={x:x0+nx*len,y:y0+ny*len},sweep=(nx*dy-ny*dx)>0?1:0;
+  h+=`<path d="M${x0} ${y0} L${tip.x} ${tip.y} L${tip.x+dx*lt} ${tip.y+dy*lt} L${x0+dx*lt} ${y0+dy*lt}Z" fill="var(--card)" stroke-width="${sw*.8}"/>`;   // the leaf, open
+  h+=`<path d="M${tip.x} ${tip.y} A${len} ${len} 0 0 ${sweep} ${x1} ${y1}" stroke-width="${thin}"/>`;   // its swing
+  h+=L(0,T,len,T,thin*.7)}   // threshold on the outer face
+ else{h+=L(0,0,len,0,thin)+L(0,T,len,T,thin);   // frame on both wall faces
+  h+=L(0,T*.43,len,T*.43,thin)+L(0,T*.57,len,T*.57,thin);   // glass
+  h+=`<path d="M${P(-4,T)} L${P(-4,T+3)} L${P(len+4,T+3)} L${P(len+4,T)}" stroke-width="${thin}"/>`}   // sill, outside
+ h+='</g>';
+ if(picked)h+=`<path d="M${P(0,-1)} L${P(len,-1)} L${P(len,T+1)} L${P(0,T+1)}Z" fill="var(--accent)" fill-opacity=".18" stroke="var(--accent)" stroke-width="${sw*1.2}" pointer-events="none"/>`;
+ return h}
 function drawPlan(sel,print){
  const W=+S.rw||1,L=+S.rl||1,dz=doorRect(),u=Math.max(W,L)/400,sw=u*1.5,fs=u*11;
  if(S.mode==='walls'&&!S.closed)return drawOpen(W,L,u,sw,fs);
- let h;
- if(S.poly){const pp=S.poly.map(p=>`${p.x},${p.y}`).join(' ');
-  h=`<path d="M0 0H${W}V${L}H0Z M${S.poly.map(p=>`${p.x} ${p.y}`).join(' L')}Z" fill="url(#hatch)" fill-rule="evenodd" opacity=".7"/><polygon points="${pp}" fill="var(--room)" stroke="var(--ink)" stroke-width="${sw}" stroke-linejoin="round"/>`}
- else h=`<rect x="0" y="0" width="${W}" height="${L}" fill="var(--room)"/><rect x="${-sw/2}" y="${-sw/2}" width="${W+sw}" height="${L+sw}" fill="none" stroke="var(--ink)" stroke-width="${sw}"/>`;
- h+=`<rect x="${dz.x0}" y="${dz.y0}" width="${dz.x1-dz.x0}" height="${dz.y1-dz.y0}" fill="var(--accent)" opacity=".12"/>`;
+ // Walls drawn as an architect draws a plan: cut walls 12 cm thick (as in 3D) outside the measured outline, filled solid;
+ // the door and windows are openings in that band with their standard symbols (see opening() below).
+ const inner=S.poly||[{x:0,y:0},{x:W,y:0},{x:W,y:L},{x:0,y:L}],outer=outerLoop(inner,WALL_T_CM),pth=P=>'M'+P.map(p=>`${p.x} ${p.y}`).join(' L')+'Z';
+ let h=`<path d="${pth(inner)}" fill="var(--room)"/><path d="${pth(outer)} ${pth(inner)}" fill="var(--ink)" fill-rule="evenodd" stroke="var(--ink)" stroke-width="${sw*.5}" stroke-linejoin="miter"/>`;
  const ds=wallSpan(S.dwall,S.doff,S.dw,S.dw),dl=ds?ds.line:[0,0,0,0];
  (S.finishes||[]).forEach(f=>{const c=finCat(f.k),R=finRegion(f),sp=c&&R.b>R.a&&wallSpan(f.wall,R.a,R.b-R.a,0);if(!sp)return;const l=sp.line,o=u*4.5,on=f.id===finSel;
   h+=`<line x1="${l[0]+sp.n.x*o}" y1="${l[1]+sp.n.y*o}" x2="${l[2]+sp.n.x*o}" y2="${l[3]+sp.n.y*o}" stroke="${finCol(f)}" stroke-width="${u*(on?8:6)}" stroke-opacity=".95" stroke-linecap="butt"${f.half?` stroke-dasharray="${u*8} ${u*3}"`:''}/>`});
@@ -711,13 +738,14 @@ function drawPlan(sel,print){
  // a measurement in a rounded label; tapping it lets the rep type the exact value
  const pill=(x,y,v,attr)=>{const t=U(v),th=fs*1.5,tw=Math.max(fs*3,t.length*fs*.56+fs*.9);
   return `<g ${attr} style="cursor:pointer"><rect x="${x-tw/2}" y="${y-th/2}" width="${tw}" height="${th}" rx="${th/2}" fill="var(--card)" stroke="var(--accent)" stroke-width="${sw*.8}"/><text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="${fs*.9}" font-weight="600" fill="var(--ink)" pointer-events="none">${esc(t)}</text></g>`};
- h+=`<line x1="${dl[0]}" y1="${dl[1]}" x2="${dl[2]}" y2="${dl[3]}" stroke="var(--accent)" stroke-width="${u*(opSel==='door'&&!print?7:4)}" pointer-events="none"/>`+hitl(dl,'door');
+ if(ds)h+=opening(ds,'door',opSel==='door'&&!print,sw,fs)+hitl(dl,'door');
  h+=`<defs><pattern id="hatch" width="${u*8}" height="${u*8}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${u*8}" stroke="var(--mute)" stroke-width="${u*1.2}" stroke-opacity=".55"/></pattern></defs>`;
  S.cuts.forEach(c=>{h+=`<rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.d}" fill="var(--card)"/><rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.d}" fill="url(#hatch)" stroke="var(--ink)" stroke-width="${sw}"/>`});
  S.obs.forEach(o=>{const k=OBS[o.kind];if(!k)return;
-  if(k.wall){const sp=wallSpan(o.wall,o.off,o.w,20);if(!sp)return;const wl=sp.line,cx=(wl[0]+wl[2])/2+sp.n.x*u*14,cy=(wl[1]+wl[3])/2+sp.n.y*u*14+fs*.3,f=fs*.8;
-   h+=`<line x1="${wl[0]}" y1="${wl[1]}" x2="${wl[2]}" y2="${wl[3]}" stroke="var(--info)" stroke-width="${u*(opSel===o.id&&!print?8:5)}" pointer-events="none"/>`+hitl(wl,o.id);
-   if(opSel!==o.id||print)h+=`<text x="${cx}" y="${cy}" text-anchor="middle" font-size="${f}" fill="var(--info)" pointer-events="none">Window, sill ${U(o.sill)}</text>`;return}   // the bar names the picked window
+  if(k.wall){const sp=wallSpan(o.wall,o.off,o.w,20);if(!sp)return;const wl=sp.line,to=WALL_T_CM+u*12,cx=(wl[0]+wl[2])/2-sp.n.x*to,cy=(wl[1]+wl[3])/2-sp.n.y*to,f=fs*.7;   // the tag sits outside, as on a drawing
+   h+=opening(sp,'window',opSel===o.id&&!print,sw,fs)+hitl(wl,o.id);
+   if(opSel!==o.id||print){let a=Math.atan2(wl[3]-wl[1],wl[2]-wl[0])*180/Math.PI;if(a>90)a-=180;if(a<=-90)a+=180;   // runs along its wall, reading upright
+    h+=`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="${f}" fill="var(--mute)" pointer-events="none" transform="rotate(${a} ${cx} ${cy})">W${windows().indexOf(o)+1} · sill ${U(o.sill)}</text>`}return}   // the bar names the picked window
   const r=rectOf(o),lab=k.hard?k.label.replace(' / fixed unit','').replace(' (swing area)',' swing'):`Low ceiling: max ${U(o.h)}`,f=Math.max(u*6,Math.min(fs*.8,o.w*.95/Math.max(lab.length*.68,1)));
   if(k.hard)h+=`<g data-ob="${o.id}" style="cursor:grab"><rect x="${o.x}" y="${o.y}" width="${o.w}" height="${o.d}" fill="var(--mute)" fill-opacity=".3" stroke="var(--ink)" stroke-width="${sw*.8}"/>`+(o.kind==='column'?`<line x1="${o.x}" y1="${o.y}" x2="${o.x+o.w}" y2="${o.y+o.d}" stroke="var(--ink)" stroke-width="${sw*.6}"/><line x1="${o.x+o.w}" y1="${o.y}" x2="${o.x}" y2="${o.y+o.d}" stroke="var(--ink)" stroke-width="${sw*.6}"/>`:'')+`<text x="${o.x+o.w/2}" y="${o.y+o.d/2}" text-anchor="middle" dominant-baseline="middle" font-size="${f}" fill="var(--ink)" pointer-events="none">${esc(lab)}</text></g>`;
   else h+=`<g data-ob="${o.id}" style="cursor:grab"><rect x="${o.x}" y="${o.y}" width="${o.w}" height="${o.d}" fill="var(--warn)" fill-opacity=".07" stroke="var(--warn)" stroke-dasharray="${u*3} ${u*3}" stroke-width="${sw*.8}"/><text x="${o.x+o.w/2}" y="${o.y+o.d/2}" text-anchor="middle" dominant-baseline="middle" font-size="${f}" fill="var(--warn)" pointer-events="none">${esc(lab)}</text></g>`});
@@ -726,8 +754,9 @@ function drawPlan(sel,print){
   seg=(t0,t1,k)=>{const a=P(t0),b=P(t1),m=P((t0+t1)/2);
    return `<g stroke="var(--accent)" stroke-width="${sw*.8}" pointer-events="none"><line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/><line x1="${a.x-n.x*tk}" y1="${a.y-n.y*tk}" x2="${a.x+n.x*tk}" y2="${a.y+n.y*tk}"/><line x1="${b.x-n.x*tk}" y1="${b.y-n.y*tk}" x2="${b.x+n.x*tk}" y2="${b.y+n.y*tk}"/></g>`+pill(m.x,m.y,t1-t0,`data-opgap="${k}"`)};
   h+=seg(0,oq.off,'a')+seg(oq.off+oq.w,owl.len,'b')}
- h+=`<text x="${W/2}" y="${-12}" text-anchor="middle" font-size="${fs}" fill="var(--mute)">${U(W)}</text>`;
- h+=`<text x="${-12}" y="${L/2}" text-anchor="middle" font-size="${fs}" fill="var(--mute)" transform="rotate(-90 -12 ${L/2})">${U(L)}</text>`;
+ const lo=WALL_T_CM+8;   // overall sizes just outside the wall band
+ h+=`<text x="${W/2}" y="${-lo}" text-anchor="middle" font-size="${fs}" fill="var(--mute)">${U(W)}</text>`;
+ h+=`<text x="${-lo}" y="${L/2}" text-anchor="middle" font-size="${fs}" fill="var(--mute)" transform="rotate(-90 -${lo} ${L/2})">${U(L)}</text>`;
  if(S.mode==='walls')S.wallGeo.forEach((g,i)=>{const mx=g.mid.x+g.nx*u*13,my=g.mid.y+g.ny*u*13+fs*.3;
   h+=`<text x="${mx}" y="${my}" text-anchor="middle" font-size="${fs*.8}" fill="var(--mute)" pointer-events="none">${i+1}: ${U(g.len)}${g.curve?' curve':''}</text>`});
  const sb=imperial()?91.44:100,sbl=imperial()?'3 ft':{m:'1 m',mm:'1000 mm',cm:'100 cm'}[S.unit];
